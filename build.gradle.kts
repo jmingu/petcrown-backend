@@ -6,7 +6,7 @@ plugins {
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
+		languageVersion.set(JavaLanguageVersion.of(21))
 	}
 }
 
@@ -20,10 +20,8 @@ allprojects {
 }
 
 
-configurations {
-	compileOnly {
-		extendsFrom(configurations.annotationProcessor.get())
-	}
+configurations.named("compileOnly") {
+	extendsFrom(configurations.named("annotationProcessor").get())
 }
 
 subprojects {
@@ -45,6 +43,7 @@ subprojects {
 
 		implementation("org.springframework.boot:spring-boot-starter-web")
 		implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+		runtimeOnly("org.postgresql:postgresql")
 
 		compileOnly("org.projectlombok:lombok")
 		annotationProcessor("org.projectlombok:lombok")
