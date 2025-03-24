@@ -1,7 +1,6 @@
-package kr.co.api.adapter.out.persistence.repository.user;
+package kr.co.api.adapter.out.jpa.repository.user;
 
-import kr.co.api.adapter.out.persistence.repository.JpaBaseRepository;
-import kr.co.api.domain.model.user.User;
+import kr.co.api.adapter.out.jpa.repository.JpaBaseRepository;
 import kr.co.common.entity.user.UserEntity;
 import org.springframework.stereotype.Repository;
 

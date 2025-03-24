@@ -1,4 +1,4 @@
-package kr.co.api.adapter.out.persistence.repository;
+package kr.co.api.adapter.out.jpa.repository;
 
 
 import org.springframework.data.repository.*;

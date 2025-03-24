@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserDtoConverter {
 
-    public User toDomain(UserRegistrationRequestDto dto) {
-        return new User(dto.getEmail(), dto.getName(), dto.getPassword(), dto.getPasswordCheck());
+    public User registerRequestDtoToDomain(UserRegistrationRequestDto dto) {
+        return new User(dto.getEmail(), dto.getName(), dto.getNickname(), dto.getPassword(), dto.getPasswordCheck());
     }
 }

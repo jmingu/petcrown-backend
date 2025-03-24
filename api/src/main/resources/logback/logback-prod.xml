@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_FILE" value="logs/prod-api.log"/>
+    <property name="LOG_LEVEL" value="INFO"/>
+
+    <!-- 로그 파일 저장 설정 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory><!-- 30일간 로그 보관 -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 패키지별 로깅 레벨 적용 -->
+    <logger name="kr.co.api" level="${LOG_LEVEL}"/>
+
+    <!-- Root 로거 설정 -->
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
