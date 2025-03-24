@@ -1,7 +1,7 @@
 package kr.co.api.application.service.user;
 
 import kr.co.api.application.port.in.user.UserUseCase;
-import kr.co.api.application.port.out.email.Email;
+import kr.co.api.application.port.out.email.EmailSenderPort;
 import kr.co.api.application.port.out.repository.user.UserRepository;
 import kr.co.api.domain.model.user.User;
 import lombok.RequiredArgsConstructor;
@@ -14,14 +14,10 @@ import org.springframework.stereotype.Service;
 public class UserService implements UserUseCase {
 
     private final UserRepository userRepository;
-    private final Email email;
+    private final EmailSenderPort emailSenderPort;
 
     @Override
-    public void save(User user) {
-
-        // 중복 이메일 검증
-
-
+    public void sendVerificationCode(String email) {
         String content = "<html>"
                 + "<body>"
                 + "<h1>ImgForest 인증 코드: " + "1252" + "</h1>"
@@ -31,7 +27,18 @@ public class UserService implements UserUseCase {
                 + "</footer>"
                 + "</body>"
                 + "</html>";
-//        userRepository.save(user);
-        email.sendEmail("jmg173@naver.com", "test", content);
+        // 중복 이메일 검증
+
+        // 이메일 전송
+        emailSenderPort.sendEmail("jmg173@naver.com", "test", content);
+
+    }
+
+    @Override
+    public void save(User user) {
+
+        userRepository.save(user);
+
+
     }
 }

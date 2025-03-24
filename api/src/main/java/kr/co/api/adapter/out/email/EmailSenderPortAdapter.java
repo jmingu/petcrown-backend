@@ -1,6 +1,6 @@
 package kr.co.api.adapter.out.email;
 
-import kr.co.api.application.port.out.email.Email;
+import kr.co.api.application.port.out.email.EmailSenderPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class EmailAdapter implements Email {
+public class EmailSenderPortAdapter implements EmailSenderPort {
 
     private final JavaMailSender emailSender;
 
