@@ -10,7 +10,7 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmailVerificationRequestDto {
+public class EmailCheckRequestDto {
 
     @Schema(description = "이메일", required = true, example = "example@example.com")
     private String email;

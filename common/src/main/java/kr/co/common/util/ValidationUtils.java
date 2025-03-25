@@ -6,7 +6,7 @@ public class ValidationUtils {
     private static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
-    // 이메일 검증
+    // 이메일 형식 검증
     public static String validateEmail(String email) {
         if (!EMAIL_PATTERN.matcher(email).matches()) {
             throw new IllegalArgumentException("유효하지 않은 이메일 형식입니다.");

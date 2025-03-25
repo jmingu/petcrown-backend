@@ -2,22 +2,53 @@ package kr.co.api.application.service.user;
 
 import kr.co.api.application.port.in.user.UserUseCase;
 import kr.co.api.application.port.out.email.EmailSenderPort;
-import kr.co.api.application.port.out.repository.user.UserRepository;
+import kr.co.api.application.port.out.repository.user.UserRepositoryPort;
 import kr.co.api.domain.model.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserService implements UserUseCase {
 
-    private final UserRepository userRepository;
+    private final UserRepositoryPort userRepositoryPort;
     private final EmailSenderPort emailSenderPort;
 
+    /**
+     * 이메일 중복검사
+     */
     @Override
-    public void sendVerificationCode(String email) {
+    public void checkEmailDuplication(String email) {
+
+        // 중복 이메일 검증
+        Optional<User> user  = userRepositoryPort.findByEmail(email);
+
+        // 이메일이 이미 존재하면 예외 발생
+        if (user.isPresent()) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+
+    }
+    /**
+     * 회원가입
+     */
+    @Transactional
+    @Override
+    public void save(User user) {
+
+        // 비밀번호 일치 확인
+        if (!user.isPasswordMatching()) {
+            throw new IllegalArgumentException("패스워드가 일치하지 않습니다.");
+        }
+
+        userRepositoryPort.save(user);
+
+        // 미완선
         String content = "<html>"
                 + "<body>"
                 + "<h1>ImgForest 인증 코드: " + "1252" + "</h1>"
@@ -27,18 +58,8 @@ public class UserService implements UserUseCase {
                 + "</footer>"
                 + "</body>"
                 + "</html>";
-        // 중복 이메일 검증
 
-        // 이메일 전송
-        emailSenderPort.sendEmail("jmg173@naver.com", "test", content);
-
-    }
-
-    @Override
-    public void save(User user) {
-
-        userRepository.save(user);
-
-
+        // 이메일 전송(비동기로 변경필요)
+//        emailSenderPort.sendEmail(user.getEmail(), "test", content);
     }
 }

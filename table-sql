@@ -1,0 +1,67 @@
+CREATE TABLE company (
+    company_id INTEGER PRIMARY KEY, -- 조직 ID (자동증가)
+    company_name VARCHAR(20) NOT NULL, -- 조직 이름
+    company_code VARCHAR(50) NOT NULL, -- 조직 고유 코드
+    address VARCHAR(100), -- 조직 주소
+    phone_number VARCHAR(15), -- 조직 연락처
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
+);
+
+CREATE TABLE user_role (
+    role_id INTEGER PRIMARY KEY, -- 역할 ID (자동증가)
+    role_name VARCHAR(20) NOT NULL, -- 역할 이름 (USER, ADMIN 등)
+    level INTEGER NOT NULL, -- 역할 레벨
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
+);
+
+CREATE TABLE user_login_type (
+    login_type_id INTEGER PRIMARY KEY, -- 로그인 방식 ID (자동증가)
+    type_name VARCHAR(20) NOT NULL, -- 로그인 방식 (EMAIL, GOOGLE, KAKAO 등)
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
+);
+
+
+CREATE TABLE "user" (
+    user_id BIGSERIAL PRIMARY KEY, -- 기본 PK (자동증가)
+    email VARCHAR(100) NOT NULL, -- 이메일
+    user_uuid VARCHAR(100) NOT NULL, -- 외부 노출용 UUID
+    password VARCHAR(255), -- 비밀번호 (소셜 로그인 사용자는 null 가능)
+    role_id INTEGER, -- 역할 (외래키)
+    name VARCHAR(30) NOT NULL, -- 사용자 이름
+    nickname VARCHAR(30) NOT NULL, -- 닉네임
+    phone_number VARCHAR(15), -- 핸드폰 번호
+    profile_image_url VARCHAR(255), -- 프로필 이미지 URL
+    birth_date DATE, -- 생년월일
+    gender CHAR(1), -- 성별 (M, F)
+    login_type_id INTEGER, -- 로그인 방식 (외래키)
+    login_id VARCHAR(255), -- 로그인 ID (소셜로그인: provider에서 제공하는 고유 ID)
+    is_email_verified CHAR(1) DEFAULT 'N', -- 이메일 인증 여부
+    company_id INTEGER, -- 소속된 조직 (외래키)
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N', -- 삭제여부 (Y/N)
+    CONSTRAINT user_unique UNIQUE (email),
+    FOREIGN KEY (role_id) REFERENCES user_role(role_id) ON DELETE SET NULL,
+    FOREIGN KEY (login_type_id) REFERENCES user_login_type(login_type_id) ON DELETE SET NULL,
+    FOREIGN KEY (company_id) REFERENCES company(company_id) ON DELETE SET NULL
+);
+
+
