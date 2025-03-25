@@ -15,5 +15,10 @@ public interface UserRepositoryPort {
      * 회원가입
      */
     void save(User user);
+
+    /**
+     * 이메일 인증번호 저장
+     */
+
 }
 

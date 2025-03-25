@@ -16,7 +16,7 @@ spring:
   datasource:
     hikari:
       maximum-pool-size: 4
-    url: jdbc:postgresql://localhost:5432/petcrown
+    url: jdbc:postgresql://localhost:5432/petcrown_dev
     username: postgres
     password: '0000'
     plaform: postgres

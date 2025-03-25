@@ -3,7 +3,6 @@ package kr.co.common.entity.base;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -16,7 +15,7 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @Getter
 @NoArgsConstructor
-public abstract class BaseEntity {
+public abstract class BaseTimeEntity {
 
     @CreatedDate
     @Column(updatable = false)
@@ -25,17 +24,10 @@ public abstract class BaseEntity {
     @LastModifiedDate
     private LocalDateTime updatedDate; // 업데이트 일자
     private Long updateUserId;  // 수정ID
-    private LocalDateTime deleteDate; // 삭제 일자
-    private String deleteYn; // 삭제여부
 
-    public BaseEntity(Long createUserId, Long updateUserId) {
+    public BaseTimeEntity(Long createUserId, Long updateUserId) {
         this.createUserId = createUserId;
         this.updateUserId = updateUserId;
     }
 
-    public BaseEntity(Long createUserId, Long updateUserId, String deleteYn) {
-        this.createUserId = createUserId;
-        this.updateUserId = updateUserId;
-        this.deleteYn = deleteYn;
-    }
 }

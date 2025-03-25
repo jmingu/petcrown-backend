@@ -72,7 +72,9 @@ public class User {
         ValidationUtils.validateEmail(email); // 이메일 패턴 확인
         ValidationUtils.validateString(name, 2, 10);
         ValidationUtils.validateString(nickname, 1, 10);
+        ValidationUtils.validateString(birthDate, 8, 8);
         Password pwd = new Password(password, passwordCheck);
+
 
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
 

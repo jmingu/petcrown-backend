@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EnableJpaRepositories(basePackages = "kr.co.api.adapter.out.jpa.repository")
+@EnableJpaRepositories(basePackages = "kr.co.api.adapter.out.persistence.repository")
 @EntityScan(basePackages = "kr.co.common.entity")
 @EnableJpaAuditing
 public class PetCrownApiApplication {

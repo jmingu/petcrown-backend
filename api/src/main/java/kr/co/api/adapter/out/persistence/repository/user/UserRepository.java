@@ -1,5 +1,6 @@
-package kr.co.api.adapter.out.jpa.repository.user;
+package kr.co.api.adapter.out.persistence.repository.user;
 
+import kr.co.api.adapter.out.persistence.repository.user.jpa.JpaUserRepository;
 import kr.co.api.application.port.out.repository.user.UserRepositoryPort;
 import kr.co.api.converter.user.UserEntityConverter;
 import kr.co.api.domain.model.user.User;
