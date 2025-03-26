@@ -55,6 +55,14 @@ subprojects { // 각 모듈에 적용할 공통 설정
 
 	}
 
+//	// 모든 서브 프로젝트에서 'org.springframework.boot:spring-boot-starter-data-jpa'를 사용하되, 'subProjectA'에서는 사용하지 않고 싶다
+//	project(':gateway') {
+//		configurations {
+//			all*.exclude group: 'org.springframework.boot', module: 'spring-boot-starter-data-jpa'
+//		}
+//	}
+
+
 	dependencyManagement {
 		imports {
 //			mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
