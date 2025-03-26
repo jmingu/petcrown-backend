@@ -5,12 +5,15 @@ import kr.co.common.entity.user.UserLoginTypeEntity;
 import kr.co.common.entity.user.UserRoleEntity;
 import kr.co.common.util.DateUtils;
 import kr.co.common.util.ValidationUtils;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
+@AllArgsConstructor
 public class User {
     private Long userId;
     private String email;
@@ -45,12 +48,9 @@ public class User {
         this.company = company;
     }
 
-    // 유저 반환
-    public User(String email, String name, String nickname, String password) {
+    // 이메일로 유저 생성
+    public User(String email) {
         this.email = email;
-        this.name = name;
-        this.nickname = nickname;
-        this.password = new Password(password);
     }
 
     // 이메일을 통해 가입하는 유저 생성

@@ -12,5 +12,15 @@ public interface UserUseCase {
     /**
      * 회원가입
      */
-    void save(User user);
+    void register(User user);
+
+    /**
+     * 이메일 인증코드 인증
+     */
+    void verifyEmailCode(String code, String email);
+
+    /**
+     * 인증코드 발송
+     */
+    void sendVerificationCode(String email);
 }

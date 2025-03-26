@@ -64,4 +64,16 @@ CREATE TABLE "user" (
     FOREIGN KEY (company_id) REFERENCES company(company_id) ON DELETE SET NULL
 );
 
+CREATE TABLE user_email_verification (
+    email_verification_id BIGSERIAL PRIMARY KEY,  -- 자동 증가 PK
+    user_id BIGINT NOT NULL,  -- user 테이블의 PK (FK)
+    verification_code VARCHAR(6) NOT NULL,  -- 인증 코드
+    expires_date TIMESTAMP NOT NULL,  -- 만료 시간 (ex: 10분 후)
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
+);
+
 

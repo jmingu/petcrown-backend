@@ -1,4 +1,4 @@
-package kr.co.api.application.service.asunc;
+package kr.co.api.application.service.async;
 
 import kr.co.api.application.port.out.email.EmailSenderPort;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +18,12 @@ public class AsyncService {
      */
     @Async
     public void sendEmailAsync(String toEmail, String subject, String content) {
-        emailSenderPort.sendEmail(toEmail, subject, content);
+        try {
+            emailSenderPort.sendEmail(toEmail, subject, content);
+        } catch (Exception e) {
+            log.error("메세지 에러");
+            log.error(e.getMessage());
+        }
+
     }
 }

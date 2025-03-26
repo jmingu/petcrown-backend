@@ -19,10 +19,19 @@ public class UserEmailVerificationEntity extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long emailVerificationId;  // 이메일 인증 ID (자동 증가 PK)
 
-    private String email;  // 이메일 (중복 방지)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user; // FK 참조
 
     private String verificationCode;  // 인증 코드
 
     private LocalDateTime expiresDate;  // 만료 시간 (ex: 10분 후)
 
+    public UserEmailVerificationEntity(Long createUserId, Long updateUserId, Long emailVerificationId, UserEntity user, String verificationCode, LocalDateTime expiresDate) {
+        super(createUserId, updateUserId);
+        this.emailVerificationId = emailVerificationId;
+        this.user = user;
+        this.verificationCode = verificationCode;
+        this.expiresDate = expiresDate;
+    }
 }
