@@ -8,7 +8,7 @@ spring:
       - local
     include:
       - db
-      - api-log
+      - common
 
 # 메일
   mail:

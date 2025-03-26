@@ -8,6 +8,7 @@ import kr.co.api.adapter.in.dto.user.UserEmailRegistrationRequestDto;
 import kr.co.api.application.port.in.user.UserUseCase;
 import kr.co.api.converter.user.UserDtoConverter;
 import kr.co.api.domain.model.user.User;
+import kr.co.common.entity.common.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,11 +29,11 @@ public class UserRestController {
 
     @PostMapping("/v1/check-email")
     @Operation(summary = "회원가입 이메일 중복 검사", description = "회원가입 이메일 중복 검사")
-    public ResponseEntity<Void> checkEmail(@RequestBody EmailCheckRequestDto requestDto) {
+    public ResponseEntity<CommonResponseDto> checkEmail(@RequestBody EmailCheckRequestDto requestDto) {
 
         userUseCase.checkEmailDuplication(requestDto.getEmail());
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return CommonResponseDto.success(null);
     }
 
     @PostMapping("/v1/register")

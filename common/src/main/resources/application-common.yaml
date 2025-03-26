@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+server:
+  shutdown: immediate
+
+jwt:
+  secret-key: petcrown_application_secret_key  #256bit 넘어야 한다
+  token-decrypt-key: petcrown-token
+  expired-time: 600 #600분
+  expired-refresh-time: 4320 #3일

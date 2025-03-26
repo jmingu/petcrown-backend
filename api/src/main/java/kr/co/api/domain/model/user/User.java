@@ -82,14 +82,19 @@ public class User {
         return new User(email, uuid, name, nickname, pwd, role, phoneNumber, null, localDate ,gender, loginType, null, "N", company);
     }
 
+    // 패스워드 getter
+    public String getPassword() {
+        if (password == null) {
+            return null;
+        }
+        return password.getPassword();
+    }
+
     // 비밀번호 일치 확인
     public boolean isPasswordMatching() {
         return this.password.isPasswordMatching();
     }
 
-    // 패스워드 getter
-    public String getPassword() {
-        return password.getPassword();
-    }
+
 
 }

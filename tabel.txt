@@ -11,6 +11,9 @@ CREATE TABLE company (
     delete_date TIMESTAMP, -- 삭제 일자
     delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
 );
+INSERT INTO company
+(company_id, company_name, company_code, address, phone_number, create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(0, 'no', '0', NULL, NULL, '2025-03-26 21:20:40.363', NULL, '2025-03-26 21:20:40.363', NULL, NULL, 'N');
 
 CREATE TABLE user_role (
     role_id INTEGER PRIMARY KEY, -- 역할 ID (자동증가)
@@ -23,6 +26,9 @@ CREATE TABLE user_role (
     delete_date TIMESTAMP, -- 삭제 일자
     delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
 );
+INSERT INTO user_role
+(role_id, role_name, "level", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(0, 'USER', 0, '2025-03-26 21:22:02.170', NULL, '2025-03-26 21:22:02.170', NULL, NULL, 'N');
 
 CREATE TABLE user_login_type (
     login_type_id INTEGER PRIMARY KEY, -- 로그인 방식 ID (자동증가)
@@ -34,6 +40,9 @@ CREATE TABLE user_login_type (
     delete_date TIMESTAMP, -- 삭제 일자
     delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
 );
+INSERT INTO user_login_type
+(login_type_id, type_name, create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(0, 'EMAIL', '2025-03-26 21:21:26.599', NULL, '2025-03-26 21:21:26.599', NULL, NULL, 'N');
 
 
 CREATE TABLE "user" (
@@ -66,7 +75,7 @@ CREATE TABLE "user" (
 
 CREATE TABLE user_email_verification (
     email_verification_id BIGSERIAL PRIMARY KEY,  -- 자동 증가 PK
-    user_id BIGINT NOT NULL,  -- user 테이블의 PK (FK)
+    user_id BIGINT NULL,  -- user 테이블의 PK (FK)
     verification_code VARCHAR(6) NOT NULL,  -- 인증 코드
     expires_date TIMESTAMP NOT NULL,  -- 만료 시간 (ex: 10분 후)
     create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자

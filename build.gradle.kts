@@ -24,7 +24,7 @@ configurations.named("compileOnly") {
 	extendsFrom(configurations.named("annotationProcessor").get())
 }
 
-subprojects {
+subprojects { // 각 모듈에 적용할 공통 설정
 	apply {
 		plugin("java")
 		plugin("java-library")
@@ -66,16 +66,5 @@ subprojects {
 	}
 }
 
-//dependencies {
-////	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-//	//	runtimeOnly("org.postgresql:postgresql")
-//	implementation("org.springframework.boot:spring-boot-starter-security")
-//	implementation("org.springframework.boot:spring-boot-starter-web")
-//
-//
-//
-//
-//
-//}
 
 
