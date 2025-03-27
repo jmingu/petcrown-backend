@@ -29,12 +29,11 @@ public class SecurityConfiguration {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/oauth/**").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/healthcheck/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class); // 인증을 처리하는 기본필터UsernamePasswordAuthenticationFilter.class대신 별도 커스텀 필터 등록
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class); // 인증을 처리하는 기본필터UsernamePasswordAuthenticationFilter.class앞에서 실행됨
         return http.build();
     }
 

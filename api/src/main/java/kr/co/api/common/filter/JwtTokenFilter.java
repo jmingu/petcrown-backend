@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -22,12 +23,15 @@ import java.io.IOException;
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private static final List<String> EXCLUDED_PATHS = List.of(
+            "/swagger-ui/", "/v3/api-docs", "/healthcheck/ok"
+    );
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
-        // 로그인은 제외
-        if (request.getRequestURI().startsWith("/api/oauth/")) {
+        String requestURI = request.getRequestURI();
+        // ✅ 청은 필터를 타지 않고 바로 다음 필터로 진행
+        if (EXCLUDED_PATHS.stream().anyMatch(requestURI::startsWith)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -36,6 +40,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         final String header = request.getHeader("X-Auth-Status");
 
         if (header == null ) { // 띄어쓰기 있음
+            log.debug("requestURI ==> {}", requestURI);
             log.error("Error header");
             filterChain.doFilter(request, response);
             return;
