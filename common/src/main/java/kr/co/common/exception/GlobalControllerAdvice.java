@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalControllerAdvice {
 
-    @ExceptionHandler(petCrownException.class)
-    public ResponseEntity<?> applicationHandler(petCrownException e) {
+    @ExceptionHandler(PetCrownException.class)
+    public ResponseEntity<?> applicationHandler(PetCrownException e) {
         e.printStackTrace();
         return CommonResponseDto.error(e.getResultCode(), e.getResultMessage());
     }

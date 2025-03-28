@@ -7,23 +7,23 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class petCrownException extends RuntimeException {
+public class PetCrownException extends RuntimeException {
 
     private int resultCode;
     private String resultMessage;
 
-    public petCrownException(CodeEnum codeEnum) {
+    public PetCrownException(CodeEnum codeEnum) {
         this.resultCode = codeEnum.getCode();
         this.resultMessage = null;
     }
 
-    public petCrownException(String resultMessage) {
+    public PetCrownException(String resultMessage) {
         super(resultMessage);
         this.resultCode = CodeEnum.ERROR.getCode();
         this.resultMessage = resultMessage;
     }
 
-    public petCrownException(CodeEnum codeEnum, String resultMessage) {
+    public PetCrownException(CodeEnum codeEnum, String resultMessage) {
         super(resultMessage);
         this.resultCode = codeEnum.getCode();
         this.resultMessage = resultMessage;

@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.co.api.common.util.CryptoUtil;
 import kr.co.api.common.util.JwtUtil;
+import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,8 +43,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (header == null ) { // 띄어쓰기 있음
             log.debug("requestURI ==> {}", requestURI);
             log.error("Error header");
-            filterChain.doFilter(request, response);
-            return;
+            throw new PetCrownException("에러");
         }
 
         try {
