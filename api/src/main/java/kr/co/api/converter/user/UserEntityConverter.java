@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserEntityConverter {
 
-    public UserEntity userToEntity(User user) {
+    public UserEntity registerUserToEntity(User user, String encodedPassword) {
 
-        return new UserEntity(user.getUserId(),user.getUserId(),"N", null, user.getEmail(), user.getUserUuid(), user.getPassword(), user.getRole(), user.getName(), user.getNickname(), user.getPhoneNumber(), user.getProfileImageUrl(), user.getBirthDate(), user.getGender(), user.getLoginType(), user.getLoginId(), user.getIsEmailVerified(), user.getCompany());
+        return new UserEntity(user.getUserId(),user.getUserId(),"N", null, user.getEmail(), user.getUserUuid(), encodedPassword, user.getRole(), user.getName(), user.getNickname(), user.getPhoneNumber(), user.getProfileImageUrl(), user.getBirthDate(), user.getGender(), user.getLoginType(), user.getLoginId(), user.getIsEmailVerified(), user.getCompany());
     }
 
     public User toDomain(UserEntity userEntity) {

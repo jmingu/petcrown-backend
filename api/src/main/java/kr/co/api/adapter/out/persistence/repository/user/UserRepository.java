@@ -48,9 +48,9 @@ public class UserRepository implements UserRepositoryPort {
      */
     @Override
     @Transactional
-    public User register(User user, Email email) {
+    public User register(User user, String encodedPassword,  Email email) {
         // 회원가입
-        UserEntity entity = userEntityConverter.userToEntity(user);
+        UserEntity entity = userEntityConverter.registerUserToEntity(user, encodedPassword);
         UserEntity saveUser = jpaUserRepository.save(entity);
 
         // 인증코드 저장

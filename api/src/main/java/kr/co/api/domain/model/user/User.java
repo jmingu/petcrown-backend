@@ -7,7 +7,9 @@ import kr.co.common.util.DateUtils;
 import kr.co.common.util.ValidationUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -20,6 +22,7 @@ public class User {
     private String userUuid;
     private String name;
     private String nickname;
+    @Setter
     private Password password;
     private UserRoleEntity role; // 사용자 역할
     private String phoneNumber;
@@ -94,7 +97,6 @@ public class User {
     public boolean isPasswordMatching() {
         return this.password.isPasswordMatching();
     }
-
 
 
 }

@@ -14,10 +14,10 @@ import org.springframework.http.ResponseEntity;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CommonResponseDto<T> {
+public class CommonResponseDto {
     private int resultCode;
     private String resultMessage;
-    private  T result;
+    private Object result;
 
     public CommonResponseDto(CodeEnum codeEnum) {
         this.resultCode = codeEnum.getCode();
@@ -29,33 +29,34 @@ public class CommonResponseDto<T> {
         this.resultMessage = resultMessage;
     }
 
-    public CommonResponseDto(T result) {
+    public CommonResponseDto(Object result) {
         this.resultCode = CodeEnum.SUCCESS.getCode();
         this.resultMessage = CodeEnum.SUCCESS.getMessage();
         this.result = result;
     }
 
-    public CommonResponseDto(CodeEnum codeEnum, T result) {
+    public CommonResponseDto(CodeEnum codeEnum, Object result) {
         this.resultCode = codeEnum.getCode();
         this.resultMessage = codeEnum.getMessage();
         this.result = result;
     }
 
-    public static <T> ResponseEntity<CommonResponseDto> success(T result) {
-        return ResponseEntity.status(CodeEnum.SUCCESS.getCode()).body(new CommonResponseDto<>(result));
-    }
-
-    public static ResponseEntity<CommonResponseDto> error() {
-        return ResponseEntity.status(CodeEnum.ERROR.getCode()).body(new CommonResponseDto<>(CodeEnum.ERROR));
-    }
-
-    public static ResponseEntity<CommonResponseDto> error(int resultCode, String resultMessage) {
-        return ResponseEntity.status(resultCode).body(new CommonResponseDto(resultCode, resultMessage));
-    }
-
-    public static ResponseEntity<CommonResponseDto> error(CodeEnum codeEnum) {
-        return ResponseEntity.status(codeEnum.getCode()).body(new CommonResponseDto<>(codeEnum));
-    }
+//    public static <T> ResponseEntity<CommonResponseDto<T>> success(T result) {
+//        return ResponseEntity.status(CodeEnum.SUCCESS.getCode()).body(new CommonResponseDto<>(result));
+//    }
+//
+//
+//    public static ResponseEntity<CommonResponseDto> error() {
+//        return ResponseEntity.status(CodeEnum.ERROR.getCode()).body(new CommonResponseDto<>(CodeEnum.ERROR));
+//    }
+//
+//    public static ResponseEntity<CommonResponseDto> error(int resultCode, String resultMessage) {
+//        return ResponseEntity.status(resultCode).body(new CommonResponseDto(resultCode, resultMessage));
+//    }
+//
+//    public static ResponseEntity<CommonResponseDto> error(CodeEnum codeEnum) {
+//        return ResponseEntity.status(codeEnum.getCode()).body(new CommonResponseDto<>(codeEnum));
+//    }
 
 
 }

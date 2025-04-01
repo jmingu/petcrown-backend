@@ -39,6 +39,7 @@ subprojects { // 각 모듈에 적용할 공통 설정
 	}
 
 	dependencies {
+		implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
 
 
 		implementation("org.springframework.boot:spring-boot-starter-web")

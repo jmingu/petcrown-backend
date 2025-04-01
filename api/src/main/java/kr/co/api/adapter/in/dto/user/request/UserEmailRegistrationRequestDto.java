@@ -1,4 +1,4 @@
-package kr.co.api.adapter.in.dto.user;
+package kr.co.api.adapter.in.dto.user.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

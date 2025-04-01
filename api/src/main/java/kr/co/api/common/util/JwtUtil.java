@@ -6,7 +6,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import kr.co.api.common.property.JwtProperty;
-import kr.co.common.entity.user.UserEntity;
+import kr.co.api.domain.model.user.User;
+import kr.co.common.util.CryptoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,13 +23,13 @@ import java.util.Date;
 public class JwtUtil {
     private final JwtProperty jwtProperty;
 
+
     /**
      * 토큰생성
      */
-    public String makeAuthToken(UserEntity userEntity, int tokeTime, String tokenClf) {
+    public String makeAuthToken(User user, int tokeTime) throws Exception {
         Claims claims = Jwts.claims();
-        claims.put("userId", userEntity.getUserId()+"");
-        claims.put("tokenClf", tokenClf);
+        claims.put("identifier", CryptoUtil.encrypt(user.getUserId()+"", jwtProperty.getTokenDecryptKey()));
 
         // 현재 날짜와 시간 가져오기
         Date currentDate = new Date();
@@ -81,13 +82,8 @@ public class JwtUtil {
     }
 
     // 토큰에서 정보 가져오기
-    public String getUserName(String token, String key) {
-        String tokenClf = extractClaims(token, key).get("tokenClf", String.class);
-        log.debug("tokenClf ==> {}", tokenClf);
-        if (!"refreshToken".equals(tokenClf)) {
-            throw new IllegalArgumentException("허용되지 않은 값이 있습니다.");
-        }
-        return extractClaims(token, key).get("userId", String.class); //body에서 userId가져오기
+    public String getUserName(String token, String key, String value) {
+        return extractClaims(token, key).get(value, String.class); //body에서 userId가져오기
     }
 
 }

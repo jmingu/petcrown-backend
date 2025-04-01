@@ -1,14 +1,18 @@
 package kr.co.api.application.service.user;
 
-import kr.co.api.application.dto.EmailSendDto;
+import kr.co.api.application.dto.user.EmailSendDto;
+import kr.co.api.application.dto.user.response.LoginResponseDto;
 import kr.co.api.application.port.in.user.UserUseCase;
 import kr.co.api.application.port.out.repository.user.UserRepositoryPort;
 import kr.co.api.application.service.async.AsyncService;
+import kr.co.api.common.property.JwtProperty;
+import kr.co.api.common.util.JwtUtil;
 import kr.co.api.domain.model.Email;
 import kr.co.api.domain.model.user.User;
-import kr.co.common.util.ValidationUtils;
+import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +25,10 @@ public class UserService implements UserUseCase {
 
     private final UserRepositoryPort userRepositoryPort;
     private final AsyncService asyncService;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProperty jwtProperty;
+    private final JwtUtil jwtUtil;
+
 
 
     /**
@@ -34,7 +42,7 @@ public class UserService implements UserUseCase {
 
         // 이메일이 이미 존재하면 예외 발생
         if (user.isPresent()) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new PetCrownException("이미 사용 중인 이메일입니다.");
         }
 
     }
@@ -44,19 +52,22 @@ public class UserService implements UserUseCase {
     @Override
     public void register(User user) {
 
-        // 비밀번호 일치 확인
+        // 비밀번호와 비밀번호 확인 일치 확인
         if (!user.isPasswordMatching()) {
-            throw new IllegalArgumentException("패스워드가 일치하지 않습니다.");
+            throw new PetCrownException("패스워드가 일치하지 않습니다.");
         }
+
+        // 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(user.getPassword());
 
         // 이메일 인증 정보 생성
         EmailSendDto emailSendDto = emailInfo();
 
         // 회원가입 및 인증코드 저장
-        User saveUser = userRepositoryPort.register(user, new Email(null, user, emailSendDto.getVerificationCode(), emailSendDto.getExpiresDate()));
+        User saveUser = userRepositoryPort.register(user, encodedPassword, new Email(null, user, emailSendDto.getVerificationCode(), emailSendDto.getExpiresDate()));
 
         // 이메일 전송(비동기)
-        asyncService.sendEmailAsync(saveUser.getEmail(), emailSendDto.getTitle(), emailSendDto.getContent());
+//        asyncService.sendEmailAsync(saveUser.getEmail(), emailSendDto.getTitle(), emailSendDto.getContent());
     }
 
     // 이메일 인증 정보 생성
@@ -88,30 +99,30 @@ public class UserService implements UserUseCase {
 
         // 인증코드 검증
         if (code == null) {
-            throw new IllegalArgumentException("값이 없습니다.");
+            throw new PetCrownException("값이 없습니다.");
         }
 
         Optional<User> user  = userRepositoryPort.findByEmail(email);
 
         // 사용자 없으면 예외 발생
         if (!(user.isPresent())) {
-            throw new IllegalArgumentException("없는 유저입니다.");
+            throw new PetCrownException("없는 유저입니다.");
         }
 
         // 이메일 검증
         Optional<Email> findEmail = userRepositoryPort.findEmailByUserId(user.get().getUserId());
         if (!(findEmail.isPresent())) {
-            throw new IllegalArgumentException("없는 이메일입니다.");
+            throw new PetCrownException("없는 이메일입니다.");
         }
 
         // 만료 시간 확인
         if (findEmail.get().isExpired()) {
-            throw new IllegalArgumentException("인증 코드가 만료되었습니다.");
+            throw new PetCrownException("인증 코드가 만료되었습니다.");
         }
 
         // 인증 코드 확인
         if (!findEmail.get().isVerificationCodeValid(code)) {
-            throw new IllegalArgumentException("인증 코드가 잘못되었습니다.");
+            throw new PetCrownException("인증 코드가 잘못되었습니다.");
         }
 
         // 사용자 인증정보 업데이트
@@ -137,5 +148,37 @@ public class UserService implements UserUseCase {
         asyncService.sendEmailAsync(email, emailSendDto.getTitle(), emailSendDto.getContent());
 
     }
+
+    /**
+     * 로그인
+     */
+    @Override
+    public LoginResponseDto login(String email, String password) throws Exception{
+        // 사용자 조회
+        // 중복 이메일 검증
+        Optional<User> user  = userRepositoryPort.findByEmail(email);
+
+        // 사용자 존재하지 않으면
+        // 값이 없으면 예외를 던지고, 있으면 값 반환
+        User foundUser = user.orElseThrow(() -> new PetCrownException("존재하지 않는 이메일입니다."));
+
+        // 비밀번호 확인
+        boolean matches = passwordEncoder.matches(password, foundUser.getPassword());
+        if (!matches) {
+            new PetCrownException("비빌번호 오류입니다.");
+        }
+
+        // jwt 토큰 생성
+        // 엑세스토큰발행
+        String accessToken = jwtUtil.makeAuthToken(foundUser, jwtProperty.getExpiredTime());
+        // 리프레시 토큰발행
+        String refreshToken = jwtUtil.makeAuthToken(foundUser, jwtProperty.getExpiredRefreshTime());
+
+
+        return new LoginResponseDto(accessToken, refreshToken);
+    }
+
+
+
 
 }

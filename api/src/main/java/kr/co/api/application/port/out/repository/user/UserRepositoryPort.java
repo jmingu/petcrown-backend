@@ -15,7 +15,7 @@ public interface UserRepositoryPort {
     /**
      * 회원가입
      */
-    User register(User user, Email email);
+    User register(User user, String encodedPassword, Email email);
 
     /**
      * 이메일 인증 조회

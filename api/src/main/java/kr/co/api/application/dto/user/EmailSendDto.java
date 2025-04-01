@@ -1,4 +1,4 @@
-package kr.co.api.application.dto;
+package kr.co.api.application.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

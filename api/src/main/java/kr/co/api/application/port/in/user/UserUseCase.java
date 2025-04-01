@@ -1,5 +1,6 @@
 package kr.co.api.application.port.in.user;
 
+import kr.co.api.application.dto.user.response.LoginResponseDto;
 import kr.co.api.domain.model.user.User;
 
 public interface UserUseCase {
@@ -23,4 +24,9 @@ public interface UserUseCase {
      * 인증코드 발송
      */
     void sendVerificationCode(String email);
+
+    /**
+     * 이메일 로그인
+     */
+    LoginResponseDto login(String email, String password) throws Exception;
 }

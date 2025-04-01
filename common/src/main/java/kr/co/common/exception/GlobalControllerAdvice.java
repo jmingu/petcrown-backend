@@ -13,20 +13,20 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalControllerAdvice {
 
     @ExceptionHandler(PetCrownException.class)
-    public ResponseEntity<?> applicationHandler(PetCrownException e) {
+    public ResponseEntity<CommonResponseDto> applicationHandler(PetCrownException e) {
         e.printStackTrace();
-        return CommonResponseDto.error(e.getResultCode(), e.getResultMessage());
+        return ResponseEntity.status(e.getResultCode()).body(new CommonResponseDto(e.getResultCode(), e.getResultMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<?> exceptionHandler(RuntimeException e) {
+    public ResponseEntity<CommonResponseDto> exceptionHandler(RuntimeException e) {
         e.printStackTrace();
-        return CommonResponseDto.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "SERVER ERROR");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(new CommonResponseDto(HttpStatus.INTERNAL_SERVER_ERROR.value(), "SERVER ERROR"));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handlerException(Exception e) {
+    public ResponseEntity<CommonResponseDto> handlerException(Exception e) {
         e.printStackTrace();
-        return CommonResponseDto.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "SERVER ERROR");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(new CommonResponseDto(HttpStatus.INTERNAL_SERVER_ERROR.value(), "SERVER ERROR"));
     }
 }

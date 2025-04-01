@@ -1,6 +1,6 @@
 package kr.co.api.converter.user;
 
-import kr.co.api.adapter.in.dto.user.UserEmailRegistrationRequestDto;
+import kr.co.api.adapter.in.dto.user.request.UserEmailRegistrationRequestDto;
 import kr.co.api.domain.model.user.User;
 import org.springframework.stereotype.Component;
 
