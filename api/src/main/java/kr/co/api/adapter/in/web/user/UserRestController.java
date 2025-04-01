@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -71,6 +73,15 @@ public class UserRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> login(@RequestBody LoginRequsetDto requestDto) throws Exception{
 
         LoginResponseDto responseDto = userUseCase.login(requestDto.getEmail(), requestDto.getPassword());
+
+        return success(responseDto);
+    }
+
+    @PostMapping("/v1/refresh-token")
+    @Operation(summary = "리프래쉬 토큰으로 토큰 연장", description = "리프래쉬 토큰으로 토큰 연장")
+    public ResponseEntity<CommonResponseDto> refreshToken(@RequestBody refreshTokenRequsetDto requestDto, Principal principal) throws Exception{
+        Long userId = Long.parseLong(principal.getName());
+        LoginResponseDto responseDto = userUseCase.refreshToken(requestDto.getRefreshToken(), userId);
 
         return success(responseDto);
     }

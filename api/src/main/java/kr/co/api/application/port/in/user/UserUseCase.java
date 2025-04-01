@@ -29,4 +29,9 @@ public interface UserUseCase {
      * 이메일 로그인
      */
     LoginResponseDto login(String email, String password) throws Exception;
+
+    /**
+     * 리프래쉬 토큰으로 토큰 연장
+     */
+    LoginResponseDto refreshToken(String refreshToken, Long userId) throws Exception;
 }

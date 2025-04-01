@@ -178,7 +178,23 @@ public class UserService implements UserUseCase {
         return new LoginResponseDto(accessToken, refreshToken);
     }
 
+    /**
+     * 리프래쉬 토큰으로 엑세스 토큰 연장
+     */
+    @Override
+    public LoginResponseDto refreshToken(String token, Long userid) throws Exception {
 
+        User user = new User(userid);
+        // jwt 토큰 생성
+        // 엑세스토큰발행
+        String accessToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime());
+        // 리프레시 토큰발행
+        String refreshToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime());
+
+
+        return new LoginResponseDto(accessToken, refreshToken);
+
+    }
 
 
 }

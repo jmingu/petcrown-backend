@@ -51,10 +51,17 @@ public class User {
         this.company = company;
     }
 
+    // id로 유저 생성
+    public User(Long userId) {
+        this.userId = userId;
+    }
+
     // 이메일로 유저 생성
     public User(String email) {
         this.email = email;
     }
+
+
 
     // 이메일을 통해 가입하는 유저 생성
     public static User createUserByEmail(String email, String name, String nickname, String password, String passwordCheck, String phoneNumber, String birthDate, String gender) {
