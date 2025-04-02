@@ -38,10 +38,10 @@ public class UserService implements UserUseCase {
     public void checkEmailDuplication(String email) {
 
         // 중복 이메일 검증
-        Optional<User> user  = userRepositoryPort.findByEmail(email);
+        User user  = userRepositoryPort.findByEmail(email);
 
         // 이메일이 이미 존재하면 예외 발생
-        if (user.isPresent()) {
+        if (!(user==null)) {
             throw new PetCrownException("이미 사용 중인 이메일입니다.");
         }
 
@@ -67,7 +67,7 @@ public class UserService implements UserUseCase {
         User saveUser = userRepositoryPort.register(user, encodedPassword, new Email(null, user, emailSendDto.getVerificationCode(), emailSendDto.getExpiresDate()));
 
         // 이메일 전송(비동기)
-//        asyncService.sendEmailAsync(saveUser.getEmail(), emailSendDto.getTitle(), emailSendDto.getContent());
+        asyncService.sendEmailAsync(saveUser.getEmail(), emailSendDto.getTitle(), emailSendDto.getContent());
     }
 
     // 이메일 인증 정보 생성
@@ -79,15 +79,29 @@ public class UserService implements UserUseCase {
         // 미완성
         String title = "인증메일입니다.";
         String content = "<html>"
+                + "<head>"
+                + "<style>"
+                + "  body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 40px; }"
+                + "  .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }"
+                + "  h1 { color: #333; }"
+                + "  p { font-size: 14px; color: #555; }"
+                + "  .code-box { font-size: 24px; font-weight: bold; color: #1a73e8; background: #eef2ff; padding: 10px; border-radius: 5px; display: inline-block; margin: 10px 0; }"
+                + "  .footer { font-size: 12px; color: grey; margin-top: 20px; }"
+                + "</style>"
+                + "</head>"
                 + "<body>"
-                + "<h1>ImgForest 인증 코드: " + verificationCode + "</h1>"
-                + "<p>해당 코드를 홈페이지에 입력하세요.</p>"
-                + "<footer style='color: grey; font-size: small;'>"
-                + "<p>※본 메일은 자동응답 메일이므로 본 메일에 회신하지 마시기 바랍니다.</p>"
-                + "</footer>"
+                + "<div class='container'>"
+                + "  <h2>PetCrown 인증 코드</h2>"
+                + "  <p>아래 코드를 홈페이지에 입력하세요.</p>"
+                + "  <div class='code-box'>" + verificationCode + "</div>"
+                + "  <p>이 인증 코드는 일정 시간 후 만료됩니다.</p>"
+                + "  <div class='footer'>"
+                + "    <p>※본 메일은 자동응답 메일이므로 회신하지 마세요.</p>"
+                + "  </div>"
+                + "</div>"
                 + "</body>"
-
                 + "</html>";
+
         return EmailSendDto.builder().title(title).content(content).verificationCode(verificationCode).expiresDate(expiresDate).build();
     }
 
@@ -102,31 +116,32 @@ public class UserService implements UserUseCase {
             throw new PetCrownException("값이 없습니다.");
         }
 
-        Optional<User> user  = userRepositoryPort.findByEmail(email);
+        // 이메일로 사용자 조회
+        User user  = userRepositoryPort.findByEmail(email);
 
         // 사용자 없으면 예외 발생
-        if (!(user.isPresent())) {
+        if (user == null) {
             throw new PetCrownException("없는 유저입니다.");
         }
 
         // 이메일 검증
-        Optional<Email> findEmail = userRepositoryPort.findEmailByUserId(user.get().getUserId());
-        if (!(findEmail.isPresent())) {
+        Email findEmail = userRepositoryPort.findEmailByUserId(user.getUserId());
+        if (findEmail == null) {
             throw new PetCrownException("없는 이메일입니다.");
         }
 
         // 만료 시간 확인
-        if (findEmail.get().isExpired()) {
+        if (findEmail.isExpired()) {
             throw new PetCrownException("인증 코드가 만료되었습니다.");
         }
 
         // 인증 코드 확인
-        if (!findEmail.get().isVerificationCodeValid(code)) {
+        if (!findEmail.isVerificationCodeValid(code)) {
             throw new PetCrownException("인증 코드가 잘못되었습니다.");
         }
 
         // 사용자 인증정보 업데이트
-        userRepositoryPort.updateEmailVerificationStatus(user.get().getUserId(), "Y");
+        userRepositoryPort.updateEmailVerificationStatus(user.getUserId(), "Y");
 
 
     }
@@ -136,12 +151,19 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void sendVerificationCode(String email) {
+        // 이메일로 사용자 조회
+        User user  = userRepositoryPort.findByEmail(email);
+
+        // 사용자 없으면 예외 발생
+        if (user == null) {
+            throw new PetCrownException("없는 유저입니다.");
+        }
 
         // 이메일 인증 정보 생성
         EmailSendDto emailSendDto = emailInfo();
 
-        User user = new User(email);
         Email emailObject = new Email(null, user, emailSendDto.getVerificationCode(), emailSendDto.getExpiresDate());
+
         userRepositoryPort.saveEmailVerification(emailObject);
 
         // 이메일 전송(비동기)
@@ -156,23 +178,24 @@ public class UserService implements UserUseCase {
     public LoginResponseDto login(String email, String password) throws Exception{
         // 사용자 조회
         // 중복 이메일 검증
-        Optional<User> user  = userRepositoryPort.findByEmail(email);
+        User user  = userRepositoryPort.findByEmail(email);
 
-        // 사용자 존재하지 않으면
-        // 값이 없으면 예외를 던지고, 있으면 값 반환
-        User foundUser = user.orElseThrow(() -> new PetCrownException("존재하지 않는 이메일입니다."));
+        // 사용자 존재하지 않으면 값이 없으면 예외를 던지고
+        if (user == null) {
+            new PetCrownException("존재하지 않는 이메일입니다.");
+        }
 
         // 비밀번호 확인
-        boolean matches = passwordEncoder.matches(password, foundUser.getPassword());
+        boolean matches = passwordEncoder.matches(password, user.getPassword());
         if (!matches) {
             new PetCrownException("비빌번호 오류입니다.");
         }
 
         // jwt 토큰 생성
         // 엑세스토큰발행
-        String accessToken = jwtUtil.makeAuthToken(foundUser, jwtProperty.getExpiredTime());
+        String accessToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime());
         // 리프레시 토큰발행
-        String refreshToken = jwtUtil.makeAuthToken(foundUser, jwtProperty.getExpiredRefreshTime());
+        String refreshToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime());
 
 
         return new LoginResponseDto(accessToken, refreshToken);

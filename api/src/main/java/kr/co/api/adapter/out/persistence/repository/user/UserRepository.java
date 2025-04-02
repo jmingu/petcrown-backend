@@ -22,6 +22,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class UserRepository implements UserRepositoryPort {
+    @PersistenceContext
+    private final EntityManager entityManager;
 
     private final JpaUserRepository jpaUserRepository;
     private final UserEntityConverter userEntityConverter;
@@ -32,15 +34,15 @@ public class UserRepository implements UserRepositoryPort {
      * 이메일 중복 검증
      */
     @Override
-    public Optional<User> findByEmail(String email) {
+    public User findByEmail(String email) {
         Optional<UserEntity> userEntity = jpaUserRepository.findByEmail(email);
 
         // userEntity가 존재하면 User로 변환하여 반환
         if (userEntity.isPresent()) {
             User user = userEntityConverter.toDomain(userEntity.get());
-            return Optional.of(user);
+            return user;
         }
-        return Optional.empty();
+        return null;
     }
 
     /**
@@ -50,7 +52,7 @@ public class UserRepository implements UserRepositoryPort {
     @Transactional
     public User register(User user, String encodedPassword,  Email email) {
         // 회원가입
-        UserEntity entity = userEntityConverter.registerUserToEntity(user, encodedPassword);
+        UserEntity entity = userEntityConverter.userToEntityByUserAndPassword(user, encodedPassword);
         UserEntity saveUser = jpaUserRepository.save(entity);
 
         // 인증코드 저장
@@ -66,15 +68,15 @@ public class UserRepository implements UserRepositoryPort {
      * 이메일 인증코드 조회
      */
     @Override
-    public Optional<Email> findEmailByUserId(Long userId) {
+    public Email findEmailByUserId(Long userId) {
         Optional<UserEmailVerificationEntity> entity = jpaUserEmailVerificationRepository.findByUserId(userId);
 
         // userEntity가 존재하면 User로 변환하여 반환
         if (entity.isPresent()) {
             Email email = emailEntityConverter.userEmailVerificationEntityToEmail(entity.get());
-            return Optional.of(email);
+            return email;
         }
-        return Optional.empty();
+        return null;
 
     }
 
@@ -93,12 +95,12 @@ public class UserRepository implements UserRepositoryPort {
     @Transactional
     @Override
     public void saveEmailVerification(Email emailObject) {
-        Optional<UserEntity> userEntity = jpaUserRepository.findByEmail(emailObject.getUser().getEmail());
+        Long userId = emailObject.getUser().getUserId();  // userId 가져오기
 
-        // 사용자 없으면 예외 발생
-        userEntity.orElseThrow(() -> new IllegalArgumentException("없는 유저입니다."));
+        // 프록시 객체 생성하여 연관 관계 유지
+        UserEntity userEntity = entityManager.getReference(UserEntity.class, userId);
 
-        Optional<UserEmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findByUserId(userEntity.get().getUserId());
+        Optional<UserEmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findByUser_UserId(userId); // ✅ 수정
 
         // 있으면 업데이트
         emailEntity.ifPresentOrElse(
@@ -106,16 +108,14 @@ public class UserRepository implements UserRepositoryPort {
                         entity.getEmailVerificationId(),
                         emailObject.getVerificationCode(),
                         emailObject.getExpiresDate(),
-                        userEntity.get().getUserId()
+                        userId  // ✅ userId 직접 사용 (userEntity.getUserId() 대신)
                 ),
                 () -> {
                     // 없으면 저장
-                    UserEmailVerificationEntity userEmailVerificationEntity = emailEntityConverter.EmailToUserEmailVerificationEntity(emailObject, userEntity.get());
+                    UserEmailVerificationEntity userEmailVerificationEntity = emailEntityConverter.EmailToUserEmailVerificationEntity(emailObject, userEntity);
                     jpaUserEmailVerificationRepository.save(userEmailVerificationEntity);
                 }
         );
-
     }
-
 
 }

@@ -10,7 +10,7 @@ public interface UserRepositoryPort {
     /**
      * 이메일 중복 검사
      */
-    Optional<User> findByEmail(String email);
+    User findByEmail(String email);
 
     /**
      * 회원가입
@@ -20,7 +20,7 @@ public interface UserRepositoryPort {
     /**
      * 이메일 인증 조회
      */
-    Optional<Email> findEmailByUserId(Long userId);
+    Email findEmailByUserId(Long userId);
 
     /**
      * 사용자 인증정보 업데이트
