@@ -1,22 +1,20 @@
 package kr.co.api.application.service.user;
 
-import kr.co.api.application.dto.user.EmailSendDto;
+import kr.co.common.dto.EmailContentDto;
 import kr.co.api.application.dto.user.response.LoginResponseDto;
 import kr.co.api.application.port.in.user.UserUseCase;
 import kr.co.api.application.port.out.repository.user.UserRepositoryPort;
 import kr.co.api.application.service.async.AsyncService;
 import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.util.JwtUtil;
-import kr.co.api.domain.model.Email;
+import kr.co.api.domain.model.user.Email;
 import kr.co.api.domain.model.user.User;
 import kr.co.common.exception.PetCrownException;
+import kr.co.common.util.EmailUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +28,6 @@ public class UserService implements UserUseCase {
     private final JwtUtil jwtUtil;
 
 
-
     /**
      * 이메일 중복검사
      */
@@ -41,7 +38,7 @@ public class UserService implements UserUseCase {
         User user  = userRepositoryPort.findByEmail(email);
 
         // 이메일이 이미 존재하면 예외 발생
-        if (!(user==null)) {
+        if (user != null) {
             throw new PetCrownException("이미 사용 중인 이메일입니다.");
         }
 
@@ -50,7 +47,14 @@ public class UserService implements UserUseCase {
      * 회원가입
      */
     @Override
-    public void register(User user) {
+    public void saveUser(User user) {
+
+        // 중복 이메일 검증
+        User byEmail = userRepositoryPort.findByEmail(user.getEmail());
+        // 이메일이 이미 존재하면 예외 발생
+        if (byEmail != null) {
+            throw new PetCrownException("이미 사용 중인 이메일입니다.");
+        }
 
         // 비밀번호와 비밀번호 확인 일치 확인
         if (!user.isPasswordMatching()) {
@@ -60,49 +64,22 @@ public class UserService implements UserUseCase {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(user.getPassword());
 
-        // 이메일 인증 정보 생성
-        EmailSendDto emailSendDto = emailInfo();
+        // 비밀번호 인코딩 후 유저 재 생성
+        User encodePasswordUser = user.encodePassword(encodedPassword);
+
+        // 이메일 생성
+        Email email = new Email(user);
+
+        // 인증코드 생성
+        email.generateVerificationCode();
+        EmailContentDto emailContentDto = EmailUtil.generateEmailContent(email.getVerificationCode());
+
 
         // 회원가입 및 인증코드 저장
-        User saveUser = userRepositoryPort.register(user, encodedPassword, new Email(null, user, emailSendDto.getVerificationCode(), emailSendDto.getExpiresDate()));
+        User registerUser = userRepositoryPort.saveUser(encodePasswordUser, email);
 
         // 이메일 전송(비동기)
-        asyncService.sendEmailAsync(saveUser.getEmail(), emailSendDto.getTitle(), emailSendDto.getContent());
-    }
-
-    // 이메일 인증 정보 생성
-    private EmailSendDto emailInfo() {
-        // 6자리 인증 코드 생성
-        String verificationCode = String.format("%06d", (int)(Math.random() * 1000000));
-        // 인증시간 10분
-        LocalDateTime expiresDate = LocalDateTime.now().plusMinutes(10);
-        // 미완성
-        String title = "인증메일입니다.";
-        String content = "<html>"
-                + "<head>"
-                + "<style>"
-                + "  body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 40px; }"
-                + "  .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }"
-                + "  h1 { color: #333; }"
-                + "  p { font-size: 14px; color: #555; }"
-                + "  .code-box { font-size: 24px; font-weight: bold; color: #1a73e8; background: #eef2ff; padding: 10px; border-radius: 5px; display: inline-block; margin: 10px 0; }"
-                + "  .footer { font-size: 12px; color: grey; margin-top: 20px; }"
-                + "</style>"
-                + "</head>"
-                + "<body>"
-                + "<div class='container'>"
-                + "  <h2>PetCrown 인증 코드</h2>"
-                + "  <p>아래 코드를 홈페이지에 입력하세요.</p>"
-                + "  <div class='code-box'>" + verificationCode + "</div>"
-                + "  <p>이 인증 코드는 일정 시간 후 만료됩니다.</p>"
-                + "  <div class='footer'>"
-                + "    <p>※본 메일은 자동응답 메일이므로 회신하지 마세요.</p>"
-                + "  </div>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
-
-        return EmailSendDto.builder().title(title).content(content).verificationCode(verificationCode).expiresDate(expiresDate).build();
+        asyncService.sendEmailAsync(registerUser.getEmail(), emailContentDto.getTitle(), emailContentDto.getContent());
     }
 
     /**
@@ -160,14 +137,15 @@ public class UserService implements UserUseCase {
         }
 
         // 이메일 인증 정보 생성
-        EmailSendDto emailSendDto = emailInfo();
+        Email emailObject = new Email(user);
+        emailObject.generateVerificationCode();
+        EmailContentDto emailContentDto = EmailUtil.generateEmailContent(emailObject.getVerificationCode());
 
-        Email emailObject = new Email(null, user, emailSendDto.getVerificationCode(), emailSendDto.getExpiresDate());
-
+        // 검증 업데이트/등록
         userRepositoryPort.saveEmailVerification(emailObject);
 
         // 이메일 전송(비동기)
-        asyncService.sendEmailAsync(email, emailSendDto.getTitle(), emailSendDto.getContent());
+        asyncService.sendEmailAsync(email, emailContentDto.getTitle(), emailContentDto.getContent());
 
     }
 
@@ -213,7 +191,6 @@ public class UserService implements UserUseCase {
         String accessToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime());
         // 리프레시 토큰발행
         String refreshToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime());
-
 
         return new LoginResponseDto(accessToken, refreshToken);
 

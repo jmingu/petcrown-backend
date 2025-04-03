@@ -14,7 +14,7 @@ public class PetCrownException extends RuntimeException {
 
     public PetCrownException(CodeEnum codeEnum) {
         this.resultCode = codeEnum.getCode();
-        this.resultMessage = null;
+        this.resultMessage = codeEnum.getMessage();
     }
 
     public PetCrownException(String resultMessage) {

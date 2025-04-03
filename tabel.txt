@@ -15,7 +15,7 @@ INSERT INTO company
 (company_id, company_name, company_code, address, phone_number, create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
 VALUES(0, 'no', '0', NULL, NULL, '2025-03-26 21:20:40.363', NULL, '2025-03-26 21:20:40.363', NULL, NULL, 'N');
 
-CREATE TABLE user_role (
+CREATE TABLE role (
     role_id INTEGER PRIMARY KEY, -- 역할 ID (자동증가)
     role_name VARCHAR(20) NOT NULL, -- 역할 이름 (USER, ADMIN 등)
     level INTEGER NOT NULL, -- 역할 레벨
@@ -26,11 +26,11 @@ CREATE TABLE user_role (
     delete_date TIMESTAMP, -- 삭제 일자
     delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
 );
-INSERT INTO user_role
+INSERT INTO role
 (role_id, role_name, "level", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
 VALUES(0, 'USER', 0, '2025-03-26 21:22:02.170', NULL, '2025-03-26 21:22:02.170', NULL, NULL, 'N');
 
-CREATE TABLE user_login_type (
+CREATE TABLE login_type (
     login_type_id INTEGER PRIMARY KEY, -- 로그인 방식 ID (자동증가)
     type_name VARCHAR(20) NOT NULL, -- 로그인 방식 (EMAIL, GOOGLE, KAKAO 등)
     create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
@@ -40,14 +40,14 @@ CREATE TABLE user_login_type (
     delete_date TIMESTAMP, -- 삭제 일자
     delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
 );
-INSERT INTO user_login_type
+INSERT INTO login_type
 (login_type_id, type_name, create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
 VALUES(0, 'EMAIL', '2025-03-26 21:21:26.599', NULL, '2025-03-26 21:21:26.599', NULL, NULL, 'N');
 
 
 CREATE TABLE "user" (
     user_id BIGSERIAL PRIMARY KEY, -- 기본 PK (자동증가)
-    email VARCHAR(100) NOT NULL, -- 이메일
+    email VARCHAR(100) UNIQUE NULL, -- 이메일
     user_uuid VARCHAR(100) NOT NULL, -- 외부 노출용 UUID
     password VARCHAR(255), -- 비밀번호 (소셜 로그인 사용자는 null 가능)
     role_id INTEGER, -- 역할 (외래키)
@@ -57,10 +57,13 @@ CREATE TABLE "user" (
     profile_image_url VARCHAR(255), -- 프로필 이미지 URL
     birth_date DATE, -- 생년월일
     gender CHAR(1), -- 성별 (M, F)
+    height DECIMAL(5,2) NULL, -- 키 (cm) ⭐ 추가됨
+    weight DECIMAL(5,2) NULL, -- 몸무게 (kg)
     login_type_id INTEGER, -- 로그인 방식 (외래키)
     login_id VARCHAR(255), -- 로그인 ID (소셜로그인: provider에서 제공하는 고유 ID)
     is_email_verified CHAR(1) DEFAULT 'N', -- 이메일 인증 여부
     company_id INTEGER, -- 소속된 조직 (외래키)
+    description VARCHAR(500) NULL, --  소개 (새로 추가됨)
     create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
     create_user_id BIGINT, -- 생성 ID
     updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
@@ -68,8 +71,8 @@ CREATE TABLE "user" (
     delete_date TIMESTAMP, -- 삭제 일자
     delete_yn CHAR(1) DEFAULT 'N', -- 삭제여부 (Y/N)
     CONSTRAINT user_unique UNIQUE (email),
-    FOREIGN KEY (role_id) REFERENCES user_role(role_id) ON DELETE SET NULL,
-    FOREIGN KEY (login_type_id) REFERENCES user_login_type(login_type_id) ON DELETE SET NULL,
+    FOREIGN KEY (role_id) REFERENCES role(role_id) ON DELETE SET NULL,
+    FOREIGN KEY (login_type_id) REFERENCES login_type(login_type_id) ON DELETE SET NULL,
     FOREIGN KEY (company_id) REFERENCES company(company_id) ON DELETE SET NULL
 );
 
@@ -85,4 +88,92 @@ CREATE TABLE user_email_verification (
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE
 );
 
+CREATE TABLE species (
+    species_id INTEGER PRIMARY KEY,  --  PK
+    name VARCHAR(30) NOT NULL,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
+);
+INSERT INTO species
+(species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(0, '기타', '2025-04-03 15:53:26.735', NULL, '2025-04-03 15:53:26.735', NULL, NULL, 'N');
+(species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(1, '개', '2025-04-03 15:53:26.735', NULL, '2025-04-03 15:53:26.735', NULL, NULL, 'N');
+INSERT INTO species
+(species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(2, '고양이', '2025-04-03 15:53:44.369', NULL, '2025-04-03 15:53:44.369', NULL, NULL, 'N');
+
+
+CREATE TABLE breed (
+    breed_id INTEGER PRIMARY KEY,  -- PK
+    species_id BIGINT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N', -- 삭제여부 (Y/N)
+    FOREIGN KEY (species_id) REFERENCES species(species_id)
+);
+INSERT INTO breed
+(breed_id, species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(0, 0, '기타', '2025-04-03 15:54:03.287', NULL, '2025-04-03 15:54:03.287', NULL, NULL, 'N');
+(breed_id, species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(1, 1, '푸들', '2025-04-03 15:54:03.287', NULL, '2025-04-03 15:54:03.287', NULL, NULL, 'N');
+INSERT INTO breed
+(breed_id, species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(2, 1, '말티즈', '2025-04-03 15:54:27.935', NULL, '2025-04-03 15:54:27.935', NULL, NULL, 'N');
+INSERT INTO breed
+(breed_id, species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(3, 2, '먼치킨', '2025-04-03 15:54:38.679', NULL, '2025-04-03 15:54:38.679', NULL, NULL, 'N');
+INSERT INTO breed
+(breed_id, species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(4, 2, '페르시안', '2025-04-03 15:54:56.013', NULL, '2025-04-03 15:54:56.013', NULL, NULL, 'N');
+
+
+CREATE TABLE ownership (
+    ownership_id INTEGER PRIMARY KEY,
+    ownership_name VARCHAR(20) NOT NULL,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N' -- 삭제여부 (Y/N)
+);
+
+INSERT INTO ownership
+(ownership_id, ownership_name, create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
+VALUES(1, '주인 있음', '2025-04-03 15:55:24.005', NULL, '2025-04-03 15:55:24.005', NULL, NULL, 'N');
+
+CREATE TABLE pet (
+    pet_id BIGSERIAL PRIMARY KEY,  -- 자동 증가 PK
+    breed_id BIGINT NOT NULL, -- 종이 없는 경우 custom_breed
+    custom_breed VARCHAR(50) NULL, -- 종이 없는 경우  사용자가 입력하는 품종명 (예: 시골개, 믹스견 등)
+    ownership_id BIGINT NOT NULL, -- 주인여부
+    user_id BIGINT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    birth_date DATE, -- 생년월일
+    gender CHAR(1), -- 성별 (M, F)
+    weight DECIMAL(5,2) NULL, -- 몸무게 (kg)
+    height DECIMAL(5,2) NULL, -- 키 (cm) ⭐ 추가됨
+    is_neutered CHAR(1) NULL, -- 중성화 여부
+    profile_image_url VARCHAR(255), -- 프로필
+    microchip_id VARCHAR(100) UNIQUE NULL, -- 반려동물 등록용 식별번호
+    description VARCHAR(500) NULL, -- 반려동물 소개 (새로 추가됨)
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
+    create_user_id BIGINT, -- 생성 ID
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 업데이트 일자
+    update_user_id BIGINT, -- 수정 ID
+    delete_date TIMESTAMP, -- 삭제 일자
+    delete_yn CHAR(1) DEFAULT 'N', -- 삭제여부 (Y/N)
+    FOREIGN KEY (breed_id) REFERENCES breed(breed_id),
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id),
+    FOREIGN KEY (ownership_id) REFERENCES ownership(ownership_id)
+);
 

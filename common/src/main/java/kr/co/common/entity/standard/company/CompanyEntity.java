@@ -1,4 +1,4 @@
-package kr.co.common.entity.company;
+package kr.co.common.entity.standard.company;
 
 import jakarta.persistence.*;
 import kr.co.common.entity.base.BaseEntity;

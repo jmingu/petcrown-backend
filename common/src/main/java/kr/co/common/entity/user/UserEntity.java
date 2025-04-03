@@ -2,7 +2,9 @@ package kr.co.common.entity.user;
 
 import jakarta.persistence.*;
 import kr.co.common.entity.base.BaseEntity;
-import kr.co.common.entity.company.CompanyEntity;
+import kr.co.common.entity.standard.company.CompanyEntity;
+import kr.co.common.entity.standard.logintype.LoginTypeEntity;
+import kr.co.common.entity.standard.role.RoleEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +29,7 @@ public class UserEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")  // 외래키로 Role을 참조
-    private UserRoleEntity role; // 사용자 역할 (ex. USER, ADMIN)
+    private RoleEntity role; // 사용자 역할 (ex. USER, ADMIN)
 
     private String name; // 사용자 이름
 
@@ -40,10 +42,12 @@ public class UserEntity extends BaseEntity {
     private LocalDate birthDate; // 생년월일
 
     private String gender; // 성별 (M, F)
+    private Double height; // 키
+    private Double weight; // 몸무게
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "login_type_id")  // 외래키로 LoginType을 참조
-    private UserLoginTypeEntity loginType; // 로그인 방식 (EMAIL, GOOGLE, KAKAO 등)
+    private LoginTypeEntity loginType; // 로그인 방식 (EMAIL, GOOGLE, KAKAO 등)
 
     private String loginId; // 로그인 ID (소셜로그인: provider에서 제공하는 고유 ID, 일반 회원가입: email과 동일)
 
@@ -53,8 +57,10 @@ public class UserEntity extends BaseEntity {
     @JoinColumn(name = "company_id")  // 외래키로 Company를 참조
     private CompanyEntity companyEntity; // 사용자가 소속된 조직
 
+    private String description; // 설명
+
     // 생성자에서 BaseEntity의 생성자를 호출
-    public UserEntity(Long createUserId, Long updateUserId, String deleteYn, Long userId, String email, String userUuid, String password, UserRoleEntity role, String name, String nickname, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender, UserLoginTypeEntity loginType, String loginId, String isEmailVerified, CompanyEntity companyEntity) {
+    public UserEntity(Long createUserId, Long updateUserId, String deleteYn, Long userId, String email, String userUuid, String password, RoleEntity role, String name, String nickname, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender, LoginTypeEntity loginType, String loginId, String isEmailVerified, CompanyEntity companyEntity) {
         super(createUserId, updateUserId, deleteYn);
         this.userId = userId;
         this.email = email;

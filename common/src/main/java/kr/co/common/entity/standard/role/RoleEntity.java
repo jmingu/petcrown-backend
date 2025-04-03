@@ -1,4 +1,4 @@
-package kr.co.common.entity.user;
+package kr.co.common.entity.standard.role;
 
 import jakarta.persistence.*;
 import kr.co.common.entity.base.BaseEntity;
@@ -7,14 +7,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user_login_type")
+@Table(name = "role")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-public class UserLoginTypeEntity extends BaseEntity {
+public class RoleEntity extends BaseEntity {
     @Id
-    private Integer loginTypeId; // 기본 PK
+    private Integer roleId;  // 기본 PK
 
-    private String typeName; // EMAIL, GOOGLE, KAKAO 등
+    private String roleName; // USER, ADMIN 등
+
+    private Integer level;
 
 }

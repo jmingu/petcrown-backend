@@ -1,0 +1,6 @@
+메서드 이름 규칙
+    생성 : save~
+    조회(단건) : find~
+    조회(단건) : find~All
+    수정 : update~
+    삭제 : delete~

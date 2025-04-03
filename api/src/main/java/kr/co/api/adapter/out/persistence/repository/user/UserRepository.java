@@ -1,13 +1,11 @@
 package kr.co.api.adapter.out.persistence.repository.user;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import kr.co.api.adapter.out.persistence.repository.user.jpa.JpaUserEmailVerificationRepository;
 import kr.co.api.adapter.out.persistence.repository.user.jpa.JpaUserRepository;
 import kr.co.api.application.port.out.repository.user.UserRepositoryPort;
-import kr.co.api.converter.email.EmailEntityConverter;
-import kr.co.api.converter.user.UserEntityConverter;
-import kr.co.api.domain.model.Email;
+import kr.co.api.converter.user.EmailConverter;
+import kr.co.api.converter.user.UserConverter;
+import kr.co.api.domain.model.user.Email;
 import kr.co.api.domain.model.user.User;
 import kr.co.common.entity.user.UserEmailVerificationEntity;
 import kr.co.common.entity.user.UserEntity;
@@ -21,14 +19,13 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class UserRepository implements UserRepositoryPort {
-    @PersistenceContext
-    private final EntityManager entityManager;
 
     private final JpaUserRepository jpaUserRepository;
-    private final UserEntityConverter userEntityConverter;
+    private final UserConverter userConverter;
     private final JpaUserEmailVerificationRepository jpaUserEmailVerificationRepository;
-    private final EmailEntityConverter emailEntityConverter;
+    private final EmailConverter emailConverter;
 
     /**
      * 이메일 중복 검증
@@ -39,7 +36,7 @@ public class UserRepository implements UserRepositoryPort {
 
         // userEntity가 존재하면 User로 변환하여 반환
         if (userEntity.isPresent()) {
-            User user = userEntityConverter.toDomain(userEntity.get());
+            User user = userConverter.toDomainBasic(userEntity.get());
             return user;
         }
         return null;
@@ -50,16 +47,14 @@ public class UserRepository implements UserRepositoryPort {
      */
     @Override
     @Transactional
-    public User register(User user, String encodedPassword,  Email email) {
+    public User saveUser(User user, Email email) {
         // 회원가입
-        UserEntity entity = userEntityConverter.userToEntityByUserAndPassword(user, encodedPassword);
-        UserEntity saveUser = jpaUserRepository.save(entity);
+        UserEntity saveUser = jpaUserRepository.save(userConverter.registerUserToEntity(user));
 
         // 인증코드 저장
-        UserEmailVerificationEntity userEmailVerificationEntity = emailEntityConverter.EmailToUserEmailVerificationEntity(email, saveUser);
-        jpaUserEmailVerificationRepository.save(userEmailVerificationEntity);
+        jpaUserEmailVerificationRepository.save(emailConverter.EmailToUserEmailVerificationEntity(email, saveUser));
 
-        User newUser = userEntityConverter.toDomain(saveUser);
+        User newUser = userConverter.toDomainBasic(saveUser);
 
         return newUser;
     }
@@ -73,7 +68,7 @@ public class UserRepository implements UserRepositoryPort {
 
         // userEntity가 존재하면 User로 변환하여 반환
         if (entity.isPresent()) {
-            Email email = emailEntityConverter.userEmailVerificationEntityToEmail(entity.get());
+            Email email = emailConverter.userEmailVerificationEntityToEmail(entity.get());
             return email;
         }
         return null;
@@ -95,12 +90,10 @@ public class UserRepository implements UserRepositoryPort {
     @Transactional
     @Override
     public void saveEmailVerification(Email emailObject) {
-        Long userId = emailObject.getUser().getUserId();  // userId 가져오기
+        Long userId = emailObject.getUserId();  // userId 가져오기
 
-        // 프록시 객체 생성하여 연관 관계 유지
-        UserEntity userEntity = entityManager.getReference(UserEntity.class, userId);
 
-        Optional<UserEmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findByUser_UserId(userId); // ✅ 수정
+        Optional<UserEmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findByUserId(userId);
 
         // 있으면 업데이트
         emailEntity.ifPresentOrElse(
@@ -108,11 +101,11 @@ public class UserRepository implements UserRepositoryPort {
                         entity.getEmailVerificationId(),
                         emailObject.getVerificationCode(),
                         emailObject.getExpiresDate(),
-                        userId  // ✅ userId 직접 사용 (userEntity.getUserId() 대신)
+                        emailObject.getUserId()
                 ),
                 () -> {
                     // 없으면 저장
-                    UserEmailVerificationEntity userEmailVerificationEntity = emailEntityConverter.EmailToUserEmailVerificationEntity(emailObject, userEntity);
+                    UserEmailVerificationEntity userEmailVerificationEntity = emailConverter.EmailToUserEmailVerificationEntity(emailObject, jpaUserRepository.getReferenceById(userId));
                     jpaUserEmailVerificationRepository.save(userEmailVerificationEntity);
                 }
         );

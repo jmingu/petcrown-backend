@@ -19,7 +19,7 @@ public class SwaggerConfiguration {
                 .info(new Info()
                         .title("PetCrown API")
                         .version("1.0.0")
-                        .description("반려동물 얼짱 순위 사이트 API"))
+                        .description("반려동물 순위 사이트 API"))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth")) // 보안 요구 사항 추가
                 .components(new Components().addSecuritySchemes("bearerAuth",
                         new SecurityScheme()

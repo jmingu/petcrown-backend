@@ -6,13 +6,12 @@ import kr.co.api.adapter.in.dto.user.request.*;
 import kr.co.api.application.dto.user.response.LoginResponseDto;
 import kr.co.api.application.port.in.user.UserUseCase;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.converter.user.UserDtoConverter;
+import kr.co.api.converter.user.UserConverter;
 import kr.co.api.domain.model.user.User;
 import kr.co.common.contoller.BaseController;
 import kr.co.common.entity.common.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,7 +28,7 @@ import java.security.Principal;
 public class UserRestController extends BaseController {
 
     private final UserUseCase userUseCase;
-    private final UserDtoConverter userDtoConverter;
+    private final UserConverter userConverter;
     @AuthRequired(authSkip = true)
     @PostMapping("/v1/check-email")
     @Operation(summary = "회원가입 이메일 중복 검사", description = "회원가입 이메일 중복 검사")
@@ -44,8 +43,8 @@ public class UserRestController extends BaseController {
     @Operation(summary = "회원가입", description = "회원가입")
     public ResponseEntity<CommonResponseDto> register(@RequestBody UserEmailRegistrationRequestDto requestDto) {
         log.debug("UserEmailRegistrationRequestDto ==> {}", requestDto);
-        User domain = userDtoConverter.registerRequestDtoToDomain(requestDto);
-        userUseCase.register(domain);
+        User domain = userConverter.registerRequestDtoToDomain(requestDto);
+        userUseCase.saveUser(domain);
 
         return success();
     }

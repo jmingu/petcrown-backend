@@ -13,7 +13,7 @@ public interface UserUseCase {
     /**
      * 회원가입
      */
-    void register(User user);
+    void saveUser(User user);
 
     /**
      * 이메일 인증코드 인증

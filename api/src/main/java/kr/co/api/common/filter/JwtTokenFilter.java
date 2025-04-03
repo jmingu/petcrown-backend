@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.util.JwtUtil;
+import kr.co.common.enums.CodeEnum;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.CryptoUtil;
 import lombok.RequiredArgsConstructor;
@@ -56,8 +57,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         // 토큰유효 확인
         if (jwtUtil.isExpired(getToken, jwtProperty.getSecretKey())) {
-            // todo 응답번호 다르게
-            throw new PetCrownException("Token is invalid");
+            //  응답번호 440 토큰 만료
+            throw new PetCrownException(CodeEnum.INVALID_TOKEN);
         }
 
         // 토큰의 사용자 아이디 가져오기

@@ -6,8 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.time.LocalDate;
-
 @Getter
 @ToString
 @AllArgsConstructor
@@ -32,9 +30,10 @@ public class UserEmailRegistrationRequestDto {
     @Schema(description = "핸드폰 번호", required = true, example = "01012345678")
     private String phoneNumber;
 
+    // 글자수 체크하기 위해 String로 받는다
     @Schema(description = "생년월일", required = true, example = "19990101")
     private String birthDate;
 
-    @Schema(description = "성별", required = true, example = "M")
+    @Schema(description = "성별", required = true, example = "M/F")
     private String gender;
 }
