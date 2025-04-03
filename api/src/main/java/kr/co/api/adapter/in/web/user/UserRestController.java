@@ -32,9 +32,9 @@ public class UserRestController extends BaseController {
     @AuthRequired(authSkip = true)
     @PostMapping("/v1/check-email")
     @Operation(summary = "회원가입 이메일 중복 검사", description = "회원가입 이메일 중복 검사")
-    public ResponseEntity<CommonResponseDto> checkEmail(@RequestBody EmailCheckRequestDto requestDto) {
+    public ResponseEntity<CommonResponseDto> findEmail(@RequestBody EmailCheckRequestDto requestDto) {
 
-        userUseCase.checkEmailDuplication(requestDto.getEmail());
+        userUseCase.findEmail(requestDto.getEmail());
 
         return success();
     }

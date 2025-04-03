@@ -8,7 +8,7 @@ public interface UserUseCase {
     /**
      * 이메일 중복검사
      */
-    void checkEmailDuplication(String email);
+    void findEmail(String email);
 
     /**
      * 회원가입

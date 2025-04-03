@@ -32,7 +32,7 @@ public class UserService implements UserUseCase {
      * 이메일 중복검사
      */
     @Override
-    public void checkEmailDuplication(String email) {
+    public void findEmail(String email) {
 
         // 중복 이메일 검증
         User user  = userRepositoryPort.findByEmail(email);
