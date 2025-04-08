@@ -133,4 +133,24 @@ public class UserRestController extends BaseController {
     }
 
 
+    @AuthRequired(authSkip = true)
+    @PostMapping("/v1/logout")
+    @Operation(summary = "쿠키 로그아웃", description = "쿠키 로그아웃")
+    public ResponseEntity<CommonResponseDto> logout(HttpServletResponse response){
+
+        boolean isLocal = Arrays.asList(environment.getActiveProfiles()).contains("local"); // local: true
+        boolean isSecure = !isLocal; // local: false
+
+        CookieUtil.setTokenCookies(
+                response,
+                null,
+                null,
+                isSecure,
+                0,
+                0
+        );
+
+        return success();
+    }
+
 }
