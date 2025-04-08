@@ -15,7 +15,9 @@ public class EmailConverter {
         return new UserEmailVerificationEntity(userEntity.getUserId(), userEntity.getUserId(), email.getEmailVerificationId(), userEntity, email.getVerificationCode(), email.getExpiresDate());
     }
 
-
+    /**
+     * entity -> Email변환
+     */
     public Email userEmailVerificationEntityToEmail(UserEmailVerificationEntity entity) {
         return new Email(entity.getEmailVerificationId(), null, entity.getVerificationCode(), entity.getExpiresDate());
 

@@ -1,5 +1,6 @@
 package kr.co.api.application.service.user;
 
+import kr.co.api.application.dto.user.response.UserInfoResponseDto;
 import kr.co.common.dto.EmailContentDto;
 import kr.co.api.application.dto.user.response.LoginResponseDto;
 import kr.co.api.application.port.in.user.UserUseCase;
@@ -9,7 +10,9 @@ import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.util.JwtUtil;
 import kr.co.api.domain.model.user.Email;
 import kr.co.api.domain.model.user.User;
+import kr.co.common.enums.CodeEnum;
 import kr.co.common.exception.PetCrownException;
+import kr.co.common.util.CryptoUtil;
 import kr.co.common.util.EmailUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,10 +86,19 @@ public class UserService implements UserUseCase {
     }
 
     /**
+     * 사용자 정보 조회
+     */
+    @Override
+    public UserInfoResponseDto findUser(Long userId) {
+        User user = userRepositoryPort.findUserByUserId(userId);
+        return new UserInfoResponseDto(user.getEmail(), user.getName(), user.getNickname(), user.getPhoneNumber(), user.getProfileImageUrl(), user.getBirthDate(), user.getGender());
+    }
+
+    /**
      * 이메일 인증코드 인증
      */
     @Override
-    public void verifyEmailCode(String code, String email) {
+    public void checkEmailCode(String code, String email) {
 
         // 인증코드 검증
         if (code == null) {
@@ -169,11 +181,9 @@ public class UserService implements UserUseCase {
             new PetCrownException("비빌번호 오류입니다.");
         }
 
-        // jwt 토큰 생성
-        // 엑세스토큰발행
-        String accessToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime());
+        String accessToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime(), "access"),jwtProperty.getTokenAccessDecryptKey());
         // 리프레시 토큰발행
-        String refreshToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime());
+        String refreshToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime(), "refresh"),jwtProperty.getTokenRefreshDecryptKey());
 
 
         return new LoginResponseDto(accessToken, refreshToken);
@@ -183,18 +193,48 @@ public class UserService implements UserUseCase {
      * 리프래쉬 토큰으로 엑세스 토큰 연장
      */
     @Override
-    public LoginResponseDto refreshToken(String token, Long userid) throws Exception {
+    public LoginResponseDto refreshToken(String encryptedRefreshToken) throws Exception {
 
-        User user = new User(userid);
-        // jwt 토큰 생성
+        // 토큰 자체 복호화
+        String decryptedRefreshToken = CryptoUtil.decrypt(encryptedRefreshToken, jwtProperty.getTokenRefreshDecryptKey());
+
+        // 리프래쉬 토큰인지 확인
+        String type = CryptoUtil.decrypt(jwtUtil.getUserName(decryptedRefreshToken, jwtProperty.getSecretKey(), "type"), jwtProperty.getTokenClaimsKey());
+
+        log.debug("type ==> {}", type);
+        if (!type.equals("refresh")) {
+            throw new PetCrownException("토큰오류");
+        }
+
+        // 토큰유효 확인
+        if (jwtUtil.isExpired(decryptedRefreshToken, jwtProperty.getSecretKey())) {
+            //  응답번호 440 토큰 만료
+            throw new PetCrownException(CodeEnum.INVALID_TOKEN);
+        }
+
+        // 토큰의 사용자 아이디 가져오기
+        String identifier = jwtUtil.getUserName(decryptedRefreshToken, jwtProperty.getSecretKey(), "identifier");
+
+        log.debug("identifier ==> {}", identifier);
+        Long userId = null;
+        try {
+            userId = Long.parseLong(CryptoUtil.decrypt(identifier, jwtProperty.getTokenClaimsKey()));
+        } catch (Exception e) {
+            throw new PetCrownException("토큰오류");
+        }
+
+        User user = new User(userId);
+
         // 엑세스토큰발행
-        String accessToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime());
+        String accessToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime(), "access"),jwtProperty.getTokenAccessDecryptKey());
         // 리프레시 토큰발행
-        String refreshToken = jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime());
+        String refreshToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime(), "refresh"),jwtProperty.getTokenRefreshDecryptKey());
 
         return new LoginResponseDto(accessToken, refreshToken);
 
     }
+
+
 
 
 }

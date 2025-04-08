@@ -53,8 +53,10 @@ public class UserConverter {
         );
     }
 
-
-    // 필요 없는 필드는 제외한 변환 메서드
+    /**
+     * entity -> User
+     * 필요 없는 필드는 제외한 변환 메서드
+     */
     public User toDomainBasic(UserEntity userEntity) {
         return new User(
                 userEntity.getUserId(),
@@ -74,5 +76,7 @@ public class UserConverter {
                 null // company 제외
         );
     }
+
+
 }
 

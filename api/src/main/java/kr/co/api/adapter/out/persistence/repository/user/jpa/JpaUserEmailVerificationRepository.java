@@ -17,7 +17,7 @@ public interface JpaUserEmailVerificationRepository extends JpaRepository<UserEm
      * userId만으로 엔티티 조회하는 쿼리
      */
     @Query("SELECT u FROM UserEmailVerificationEntity u WHERE u.user.userId = :userId")
-    Optional<UserEmailVerificationEntity> findByUserId(@Param("userId") Long userId);
+    Optional<UserEmailVerificationEntity> findEmailByUserId(@Param("userId") Long userId);
 
     /**
      * 유저 이메일 검증 정보 업데이트

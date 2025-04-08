@@ -5,9 +5,5 @@ spring:
 server:
   shutdown: immediate
 
-jwt:
-  secret-key: petcrown_application_real_secret_key  # 32바이트(256bit) 넘어야 한다,
-  token-decrypt-key: petcrown-token-decrypt-real--key
-  expired-time: 600 #600분
-  expired-refresh-time: 4320 #3일
+
 

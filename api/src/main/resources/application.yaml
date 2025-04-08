@@ -28,6 +28,15 @@ spring:
           writetimeout: 5000 # 클라이언트가 작업을 완료하는데 대기해야 하는 시간
     auth-code-expiration-millis: 1800000  # 30 * 60 * 1000 == 30분 이메일 인증 코드의 만료 시간(Millisecond)
 
+# JWT
+jwt:
+  secret-key: petcrown_application_real_secret_key  # JWT 암/복호화 사용, 32바이트(256bit) 넘어야 한다,
+  token-claims-key: petcrown-token--claims-real--key # JWT안에 claims 암/복호화 사용, 32바이트(256bit)
+  token-access-decrypt-key: petcrown-token-decryptaccess-key # JWT access 암/복호화 사용, 32바이트(256bit)
+  token-refresh-decrypt-key: petcrown-token-decryptrefreshkey # JWT refresh 암/복호화 사용, 32바이트(256bit)
+  expired-time: 30 #30분
+  expired-refresh-time: 4320 #3일
 
+# 로깅
 logging:
   config: classpath:logback/logback-${spring.profiles.active}.xml  # 동적 로깅 설정 파일

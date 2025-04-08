@@ -27,9 +27,10 @@ public class JwtUtil {
     /**
      * 토큰생성
      */
-    public String makeAuthToken(User user, int tokeTime) throws Exception {
+    public String makeAuthToken(User user, int tokeTime, String type) throws Exception {
         Claims claims = Jwts.claims();
-        claims.put("identifier", CryptoUtil.encrypt(user.getUserId()+"", jwtProperty.getTokenDecryptKey()));
+        claims.put("identifier", CryptoUtil.encrypt(user.getUserId()+"", jwtProperty.getTokenClaimsKey()));
+        claims.put("type", CryptoUtil.encrypt(type, jwtProperty.getTokenClaimsKey()));
 
         // 현재 날짜와 시간 가져오기
         Date currentDate = new Date();

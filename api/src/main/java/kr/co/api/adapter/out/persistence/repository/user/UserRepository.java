@@ -60,16 +60,32 @@ public class UserRepository implements UserRepositoryPort {
     }
 
     /**
-     * 이메일 인증코드 조회
+     * user id로 Email 조회
      */
     @Override
     public Email findEmailByUserId(Long userId) {
-        Optional<UserEmailVerificationEntity> entity = jpaUserEmailVerificationRepository.findByUserId(userId);
+        Optional<UserEmailVerificationEntity> entity = jpaUserEmailVerificationRepository.findEmailByUserId(userId);
 
         // userEntity가 존재하면 User로 변환하여 반환
         if (entity.isPresent()) {
             Email email = emailConverter.userEmailVerificationEntityToEmail(entity.get());
             return email;
+        }
+        return null;
+
+    }
+
+    /**
+     * user id로 User 조회
+     */
+    @Override
+    public User findUserByUserId(Long userId) {
+        Optional<UserEntity> entity = jpaUserRepository.findById(userId);
+
+        // userEntity가 존재하면 User로 변환하여 반환
+        if (entity.isPresent()) {
+            User user = userConverter.toDomainBasic(entity.get());
+            return user;
         }
         return null;
 
@@ -93,7 +109,7 @@ public class UserRepository implements UserRepositoryPort {
         Long userId = emailObject.getUserId();  // userId 가져오기
 
 
-        Optional<UserEmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findByUserId(userId);
+        Optional<UserEmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findEmailByUserId(userId);
 
         // 있으면 업데이트
         emailEntity.ifPresentOrElse(

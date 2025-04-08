@@ -1,6 +1,22 @@
 메서드 이름 규칙
-    생성 : save~
-    조회(단건) : find~
-    조회(단건) : find~All
-    수정 : update~
-    삭제 : delete~
+    DB :
+        생성 : save~
+        조회(단건) : find~
+        조회(단건) : find~All
+        수정 : update~
+        삭제 : delete~
+
+    상태 값 :
+        셋팅 : set~
+        조회 : get~
+        발송 : send~
+        수신 : receive~
+        인증/검증/확인 : check~
+
+주석 규칙
+    메서드 밖 :
+        /**
+         *
+         */
+    메서드 안 :
+        //

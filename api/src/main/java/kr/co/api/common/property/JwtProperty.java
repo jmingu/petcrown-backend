@@ -10,7 +10,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class JwtProperty {
 
     private final String secretKey;
-    private final String tokenDecryptKey;
+    private final String tokenClaimsKey;
+    private final String tokenAccessDecryptKey;
+    private final String tokenRefreshDecryptKey;
     private final int expiredTime;
     private final int expiredRefreshTime;
 }

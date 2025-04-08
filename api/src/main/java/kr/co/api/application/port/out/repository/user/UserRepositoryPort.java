@@ -16,9 +16,14 @@ public interface UserRepositoryPort {
     User saveUser(User user, Email email);
 
     /**
-     * 이메일 인증 조회
+     * user id로 Email 조회
      */
     Email findEmailByUserId(Long userId);
+
+    /**
+     * user id로 User 조회
+     */
+    User findUserByUserId(Long userId);
 
     /**
      * 사용자 인증정보 업데이트

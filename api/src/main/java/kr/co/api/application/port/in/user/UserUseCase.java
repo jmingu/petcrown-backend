@@ -1,6 +1,7 @@
 package kr.co.api.application.port.in.user;
 
 import kr.co.api.application.dto.user.response.LoginResponseDto;
+import kr.co.api.application.dto.user.response.UserInfoResponseDto;
 import kr.co.api.domain.model.user.User;
 
 public interface UserUseCase {
@@ -16,9 +17,14 @@ public interface UserUseCase {
     void saveUser(User user);
 
     /**
+     * 사용자 정보 조회
+     */
+    UserInfoResponseDto findUser(Long userId);
+
+    /**
      * 이메일 인증코드 인증
      */
-    void verifyEmailCode(String code, String email);
+    void checkEmailCode(String code, String email);
 
     /**
      * 인증코드 발송
@@ -33,5 +39,8 @@ public interface UserUseCase {
     /**
      * 리프래쉬 토큰으로 토큰 연장
      */
-    LoginResponseDto refreshToken(String refreshToken, Long userId) throws Exception;
+    LoginResponseDto refreshToken(String refreshToken) throws Exception;
+
+
+
 }
