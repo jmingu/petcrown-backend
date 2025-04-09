@@ -38,21 +38,21 @@ public class UserRestController extends BaseController {
     private final Environment environment;
 
     @AuthRequired(authSkip = true)
-    @PostMapping("/v1/check-email")
+    @GetMapping("/v1/check-email")
     @Operation(summary = "회원가입 이메일 중복 검사", description = "회원가입 이메일 중복 검사")
-    public ResponseEntity<CommonResponseDto> findEmail(@RequestBody EmailCheckRequestDto requestDto) {
+    public ResponseEntity<CommonResponseDto> findEmail(@RequestParam String email) {
 
-        userUseCase.findEmail(requestDto.getEmail());
+        userUseCase.findEmail(email);
 
         return success();
     }
 
     @AuthRequired(authSkip = true)
-    @PostMapping("/v1/check-email")
+    @GetMapping("/v1/check-nickname")
     @Operation(summary = "회원가입 닉네임 중복 검사", description = "회원가입 닉네임 중복 검사")
-    public ResponseEntity<CommonResponseDto> find(@RequestBody NicknameCheckRequestDto requestDto) {
+    public ResponseEntity<CommonResponseDto> findNickname(@RequestParam String nickname) {
 
-        userUseCase.findNickname(requestDto.getNickname());
+        userUseCase.findNickname(nickname);
 
         return success();
     }

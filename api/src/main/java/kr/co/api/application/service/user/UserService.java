@@ -36,10 +36,13 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void findEmail(String email) {
-
+        log.debug("email ==> {}", email);
+        if(email == null || email.isEmpty()){
+            throw new PetCrownException("이메일을 확인해 주세요.");
+        }
         // 중복 이메일 검증
         User user  = userRepositoryPort.findByEmail(email);
-
+        log.debug("user ==> {}", user);
         // 이메일이 이미 존재하면 예외 발생
         if (user != null) {
             throw new PetCrownException("이미 사용 중인 이메일입니다.");
@@ -52,7 +55,11 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void findNickname(String nickname) {
+        if(nickname == null || nickname.isEmpty()){
+            throw new PetCrownException("닉네임을 확인해 주세요.");
+        }
         User user = userRepositoryPort.findByNickname(nickname);
+        log.debug("user ==> {}", user);
         if (user != null) {
             throw new PetCrownException("이미 사용 중인 닉네임입니다.");
         }
