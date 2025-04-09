@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface JpaUserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByEmail(String email);
 
+    Optional<UserEntity> findByNickname(String nickname);
+
     /**
      * userId로 인증정보 업데이트
      */

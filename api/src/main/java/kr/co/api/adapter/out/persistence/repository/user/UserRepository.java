@@ -42,6 +42,18 @@ public class UserRepository implements UserRepositoryPort {
         return null;
     }
 
+    @Override
+    public User findByNickname(String nickname) {
+        Optional<UserEntity> userEntity = jpaUserRepository.findByNickname(nickname);
+
+        // userEntity가 존재하면 User로 변환하여 반환
+        if (userEntity.isPresent()) {
+            User user = userConverter.toDomainBasic(userEntity.get());
+            return user;
+        }
+        return null;
+    }
+
     /**
      * 회원가입
      */

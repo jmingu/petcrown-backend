@@ -11,6 +11,11 @@ public interface UserRepositoryPort {
     User findByEmail(String email);
 
     /**
+     * 닉네임 중복 검사
+     */
+    User findByNickname(String nickname);
+
+    /**
      * 회원가입
      */
     User saveUser(User user, Email email);

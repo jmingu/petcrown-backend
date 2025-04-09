@@ -48,6 +48,16 @@ public class UserRestController extends BaseController {
     }
 
     @AuthRequired(authSkip = true)
+    @PostMapping("/v1/check-email")
+    @Operation(summary = "회원가입 닉네임 중복 검사", description = "회원가입 닉네임 중복 검사")
+    public ResponseEntity<CommonResponseDto> find(@RequestBody NicknameCheckRequestDto requestDto) {
+
+        userUseCase.findNickname(requestDto.getNickname());
+
+        return success();
+    }
+
+    @AuthRequired(authSkip = true)
     @PostMapping("/v1")
     @Operation(summary = "회원가입", description = "회원가입")
     public ResponseEntity<CommonResponseDto> register(@RequestBody UserEmailRegistrationRequestDto requestDto) {

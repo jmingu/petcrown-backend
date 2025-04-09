@@ -12,6 +12,11 @@ public interface UserUseCase {
     void findEmail(String email);
 
     /**
+     * 닉네임 중복검사
+     */
+    void findNickname(String nickname);
+
+    /**
      * 회원가입
      */
     void saveUser(User user);

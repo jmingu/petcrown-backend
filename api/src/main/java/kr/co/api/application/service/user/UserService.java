@@ -46,6 +46,18 @@ public class UserService implements UserUseCase {
         }
 
     }
+
+    /**
+     * 닉네임 중복검사
+     */
+    @Override
+    public void findNickname(String nickname) {
+        User user = userRepositoryPort.findByNickname(nickname);
+        if (user != null) {
+            throw new PetCrownException("이미 사용 중인 닉네임입니다.");
+        }
+    }
+
     /**
      * 회원가입
      */
