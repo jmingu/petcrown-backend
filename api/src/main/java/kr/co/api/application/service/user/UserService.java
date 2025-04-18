@@ -14,6 +14,7 @@ import kr.co.common.enums.CodeEnum;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.CryptoUtil;
 import kr.co.common.util.EmailUtil;
+import kr.co.common.util.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +37,7 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void findEmail(String email) {
+        ValidationUtils.validateEmail(email);
         log.debug("email ==> {}", email);
         if(email == null || email.isEmpty()){
             throw new PetCrownException("이메일을 확인해 주세요.");
