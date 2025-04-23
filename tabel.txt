@@ -101,6 +101,7 @@ CREATE TABLE species (
 INSERT INTO species
 (species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
 VALUES(0, '기타', '2025-04-03 15:53:26.735', NULL, '2025-04-03 15:53:26.735', NULL, NULL, 'N');
+INSERT INTO species
 (species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
 VALUES(1, '개', '2025-04-03 15:53:26.735', NULL, '2025-04-03 15:53:26.735', NULL, NULL, 'N');
 INSERT INTO species
@@ -123,6 +124,7 @@ CREATE TABLE breed (
 INSERT INTO breed
 (breed_id, species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
 VALUES(0, 0, '기타', '2025-04-03 15:54:03.287', NULL, '2025-04-03 15:54:03.287', NULL, NULL, 'N');
+INSERT INTO breed
 (breed_id, species_id, "name", create_date, create_user_id, updated_date, update_user_id, delete_date, delete_yn)
 VALUES(1, 1, '푸들', '2025-04-03 15:54:03.287', NULL, '2025-04-03 15:54:03.287', NULL, NULL, 'N');
 INSERT INTO breed

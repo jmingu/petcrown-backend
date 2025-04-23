@@ -37,6 +37,7 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void findEmail(String email) {
+        // 이메일 유효성 검사
         ValidationUtils.validateEmail(email);
         log.debug("email ==> {}", email);
         if(email == null || email.isEmpty()){
