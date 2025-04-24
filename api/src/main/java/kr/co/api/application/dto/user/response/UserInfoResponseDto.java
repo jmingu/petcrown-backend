@@ -17,4 +17,5 @@ public class UserInfoResponseDto {
     private String profileImageUrl;
     private LocalDate birthDate;
     private String gender;
+    private String isEmailVerified;
 }

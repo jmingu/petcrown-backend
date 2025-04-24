@@ -3,6 +3,7 @@ package kr.co.api.domain.model.user;
 import kr.co.api.domain.model.standard.company.Company;
 import kr.co.api.domain.model.standard.logintype.LoginType;
 import kr.co.api.domain.model.standard.role.Role;
+import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.DateUtils;
 import kr.co.common.util.ValidationUtils;
@@ -47,6 +48,12 @@ public class User {
         // UUID에서 하이픈 제거
         String uuid = random.toString().replace("-", "");
 
+        // 핸드폰번호 검증
+        String[] phone = phoneNumber.split("-");
+        ValidationUtils.validateString(phone[0], 3, 3);
+        ValidationUtils.validateString(phone[1], 4, 4);
+        ValidationUtils.validateString(phone[2], 4, 4);
+
         ValidationUtils.validateString(email, 0, 0);
         ValidationUtils.validateEmail(email); // 이메일 패턴 확인
         ValidationUtils.validateString(name, 2, 10);
@@ -55,7 +62,7 @@ public class User {
         Password pwd = Password.registerPassword(password, passwordCheck);
 
         if (!"M".equals(gender) && !"F".equals(gender)) {
-            throw new PetCrownException("성별을 확인해 주세요.");
+            throw new PetCrownException(BusinessCode.GENDER_CHECK_REQUIRED);
         }
 
         // 생년월인 변환

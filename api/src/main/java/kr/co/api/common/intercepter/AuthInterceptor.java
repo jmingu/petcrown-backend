@@ -3,6 +3,8 @@ package kr.co.api.common.intercepter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.co.api.common.annotation.AuthRequired;
+import kr.co.common.enums.BusinessCode;
+import kr.co.common.enums.CodeEnum;
 import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,14 +40,14 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         // 인증 객체가 null인데 @AuthRequired가 선언이 안되어있으면 에러
         if (authentication.getPrincipal() == null && authRequired == null) {
-            throw new PetCrownException("인증이 필요합니다");
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_REQUIRED);
         }
 
         // 인증 객체가 null인데 @AuthRequired(authSkip = true)면 통과
         if (authentication.getPrincipal() == null && authRequired.authSkip() == true) {
             return true; // 인증 통과
         } else {
-            throw new PetCrownException("인증이 필요합니다");
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_REQUIRED);
         }
 
     }

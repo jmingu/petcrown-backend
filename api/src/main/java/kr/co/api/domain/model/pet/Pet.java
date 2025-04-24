@@ -4,6 +4,7 @@ import kr.co.api.domain.model.breed.Breed;
 import kr.co.api.domain.model.standard.ownership.Ownership;
 import kr.co.api.domain.model.user.Password;
 import kr.co.api.domain.model.user.User;
+import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.DateUtils;
 import kr.co.common.util.ValidationUtils;
@@ -40,7 +41,7 @@ public class Pet {
         ValidationUtils.validateString(birthDate, 8, 8);
 
             if (!"M".equals(gender) && !"F".equals(gender)) {
-                throw new PetCrownException("성별을 확인해 주세요.");
+                throw new PetCrownException(BusinessCode.GENDER_CHECK_REQUIRED);
             }
 
 

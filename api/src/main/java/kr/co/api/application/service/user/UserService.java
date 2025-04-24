@@ -10,6 +10,7 @@ import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.util.JwtUtil;
 import kr.co.api.domain.model.user.Email;
 import kr.co.api.domain.model.user.User;
+import kr.co.common.enums.BusinessCode;
 import kr.co.common.enums.CodeEnum;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.CryptoUtil;
@@ -40,15 +41,18 @@ public class UserService implements UserUseCase {
         // 이메일 유효성 검사
         ValidationUtils.validateEmail(email);
         log.debug("email ==> {}", email);
-        if(email == null || email.isEmpty()){
-            throw new PetCrownException("이메일을 확인해 주세요.");
+        if(email == null){
+            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
+        }
+        if(email.trim().isEmpty()){
+            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
         }
         // 중복 이메일 검증
         User user  = userRepositoryPort.findByEmail(email);
         log.debug("user ==> {}", user);
         // 이메일이 이미 존재하면 예외 발생
         if (user != null) {
-            throw new PetCrownException("이미 사용 중인 이메일입니다.");
+            throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
         }
 
     }
@@ -58,13 +62,16 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void findNickname(String nickname) {
-        if(nickname == null || nickname.isEmpty()){
-            throw new PetCrownException("닉네임을 확인해 주세요.");
+        if(nickname == null){
+            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
+        }
+        if(nickname.trim().isEmpty()){
+            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
         }
         User user = userRepositoryPort.findByNickname(nickname);
         log.debug("user ==> {}", user);
         if (user != null) {
-            throw new PetCrownException("이미 사용 중인 닉네임입니다.");
+            throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
         }
     }
 
@@ -78,12 +85,12 @@ public class UserService implements UserUseCase {
         User byEmail = userRepositoryPort.findByEmail(user.getEmail());
         // 이메일이 이미 존재하면 예외 발생
         if (byEmail != null) {
-            throw new PetCrownException("이미 사용 중인 이메일입니다.");
+            throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
         }
 
         // 비밀번호와 비밀번호 확인 일치 확인
         if (!user.isPasswordMatching()) {
-            throw new PetCrownException("패스워드가 일치하지 않습니다.");
+            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
         }
 
         // 비밀번호 암호화
@@ -113,7 +120,7 @@ public class UserService implements UserUseCase {
     @Override
     public UserInfoResponseDto findUser(Long userId) {
         User user = userRepositoryPort.findUserByUserId(userId);
-        return new UserInfoResponseDto(user.getEmail(), user.getName(), user.getNickname(), user.getPhoneNumber(), user.getProfileImageUrl(), user.getBirthDate(), user.getGender());
+        return new UserInfoResponseDto(user.getEmail(), user.getName(), user.getNickname(), user.getPhoneNumber(), user.getProfileImageUrl(), user.getBirthDate(), user.getGender(), user.getIsEmailVerified());
     }
 
     /**
@@ -124,7 +131,7 @@ public class UserService implements UserUseCase {
 
         // 인증코드 검증
         if (code == null) {
-            throw new PetCrownException("값이 없습니다.");
+            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
 
         // 이메일로 사용자 조회
@@ -132,23 +139,23 @@ public class UserService implements UserUseCase {
 
         // 사용자 없으면 예외 발생
         if (user == null) {
-            throw new PetCrownException("없는 유저입니다.");
+            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
         // 이메일 검증
         Email findEmail = userRepositoryPort.findEmailByUserId(user.getUserId());
         if (findEmail == null) {
-            throw new PetCrownException("없는 이메일입니다.");
+            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
         }
 
         // 만료 시간 확인
         if (findEmail.isExpired()) {
-            throw new PetCrownException("인증 코드가 만료되었습니다.");
+            throw new PetCrownException(BusinessCode.AUTH_CODE_EXPIRED);
         }
 
         // 인증 코드 확인
         if (!findEmail.isVerificationCodeValid(code)) {
-            throw new PetCrownException("인증 코드가 잘못되었습니다.");
+            throw new PetCrownException(BusinessCode.AUTH_CODE_INVALID);
         }
 
         // 사용자 인증정보 업데이트
@@ -167,7 +174,7 @@ public class UserService implements UserUseCase {
 
         // 사용자 없으면 예외 발생
         if (user == null) {
-            throw new PetCrownException("없는 유저입니다.");
+            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
         // 이메일 인증 정보 생성
@@ -194,13 +201,13 @@ public class UserService implements UserUseCase {
 
         // 사용자 존재하지 않으면 값이 없으면 예외를 던지고
         if (user == null) {
-            new PetCrownException("존재하지 않는 이메일입니다.");
+            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
         // 비밀번호 확인
         boolean matches = passwordEncoder.matches(password, user.getPassword());
         if (!matches) {
-            new PetCrownException("비빌번호 오류입니다.");
+            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
         }
 
         String accessToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime(), "access"),jwtProperty.getTokenAccessDecryptKey());
@@ -225,7 +232,7 @@ public class UserService implements UserUseCase {
 
         log.debug("type ==> {}", type);
         if (!type.equals("refresh")) {
-            throw new PetCrownException("토큰오류");
+            throw new PetCrownException(CodeEnum.INVALID_TOKEN_ERROR);
         }
 
         // 토큰유효 확인
@@ -242,7 +249,7 @@ public class UserService implements UserUseCase {
         try {
             userId = Long.parseLong(CryptoUtil.decrypt(identifier, jwtProperty.getTokenClaimsKey()));
         } catch (Exception e) {
-            throw new PetCrownException("토큰오류");
+            throw new PetCrownException(CodeEnum.INVALID_TOKEN_ERROR);
         }
 
         User user = new User(userId);

@@ -12,34 +12,38 @@ import org.springframework.http.ResponseEntity;
 @Getter
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CommonResponseDto {
     private int resultCode;
-    private String resultMessage;
+    private String resultMessageKo;
+    private String resultMessageEn;
     private Object result;
-
-    public CommonResponseDto(CodeEnum codeEnum) {
-        this.resultCode = codeEnum.getCode();
-        this.resultMessage = codeEnum.getMessage();
-    }
-
-    public CommonResponseDto(int resultCode, String resultMessage) {
-        this.resultCode = resultCode;
-        this.resultMessage = resultMessage;
-    }
-
-    public CommonResponseDto(Object result) {
-        this.resultCode = CodeEnum.SUCCESS.getCode();
-        this.resultMessage = CodeEnum.SUCCESS.getMessage();
-        this.result = result;
-    }
 
     public CommonResponseDto(CodeEnum codeEnum, Object result) {
         this.resultCode = codeEnum.getCode();
-        this.resultMessage = codeEnum.getMessage();
+        this.resultMessageKo = codeEnum.getMessageKo();
+        this.resultMessageEn = codeEnum.getMessageEn();
         this.result = result;
     }
+    public CommonResponseDto(CodeEnum codeEnum) {
+        this.resultCode = codeEnum.getCode();
+        this.resultMessageKo = codeEnum.getMessageKo();
+        this.resultMessageEn = codeEnum.getMessageEn();
+    }
+
+    public CommonResponseDto(int resultCode, String resultMessageKo, String resultMessageEn) {
+        this.resultCode = resultCode;
+        this.resultMessageKo = resultMessageKo;
+        this.resultMessageEn = resultMessageEn;
+    }
+    public CommonResponseDto(int resultCode, String resultMessageKo, String resultMessageEn,  Object result) {
+        this.resultCode = resultCode;
+        this.resultMessageKo = resultMessageKo;
+        this.resultMessageEn = resultMessageEn;
+        this.result = result;
+    }
+
+
 
 //    public static <T> ResponseEntity<CommonResponseDto<T>> success(T result) {
 //        return ResponseEntity.status(CodeEnum.SUCCESS.getCode()).body(new CommonResponseDto<>(result));

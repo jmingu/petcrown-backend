@@ -20,10 +20,6 @@ public abstract class BaseController {
                 .body(new CommonResponseDto(CodeEnum.ERROR));
     }
 
-    protected ResponseEntity<CommonResponseDto> error(int resultCode, String resultMessage) {
-        return ResponseEntity.status(resultCode)
-                .body(new CommonResponseDto(resultCode, resultMessage));
-    }
 
     protected ResponseEntity<CommonResponseDto> error(CodeEnum codeEnum) {
         return ResponseEntity.status(codeEnum.getCode())
