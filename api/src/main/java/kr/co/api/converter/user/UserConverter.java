@@ -49,6 +49,7 @@ public class UserConverter {
                 jpaLoginTypeRepository.getReferenceById(0),
                 user.getLoginId(),
                 user.getIsEmailVerified(),
+                user.getIsPhoneNumberVerified(),
                 jpaCompanyRepository.getReferenceById(0)
         );
     }
@@ -73,6 +74,7 @@ public class UserConverter {
                 null, // loginType 제외
                 userEntity.getLoginId(),
                 userEntity.getIsEmailVerified(),
+                userEntity.getIsPhoneNumberVerified(),
                 null // company 제외
         );
     }

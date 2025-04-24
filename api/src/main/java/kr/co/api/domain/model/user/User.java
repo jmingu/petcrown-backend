@@ -32,6 +32,7 @@ public class User {
     private LoginType loginType; // 로그인 타입
     private String loginId;
     private String isEmailVerified;
+    private String isPhoneNumberVerified;
     private Company company; // 소속된 회사
 
 
@@ -69,7 +70,7 @@ public class User {
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
 
         // 도메인 객체로 반환
-        return new User(null, email, uuid, name, nickname, pwd, null, phoneNumber, null, localDate ,gender, null, null, "N", null);
+        return new User(null, email, uuid, name, nickname, pwd, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
     }
 
     // 패스워드 getter
@@ -91,7 +92,7 @@ public class User {
                 this.userId, this.email, this.userUuid, this.name, this.nickname,
                 new Password(encodedPassword),  // 암호화된 비밀번호 적용
                 this.role, this.phoneNumber, this.profileImageUrl, this.birthDate,
-                this.gender, this.loginType, this.loginId, this.isEmailVerified, this.company
+                this.gender, this.loginType, this.loginId, this.isEmailVerified, this.isPhoneNumberVerified, this.company
         );
     }
 

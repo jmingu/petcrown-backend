@@ -52,6 +52,7 @@ public class UserEntity extends BaseEntity {
     private String loginId; // 로그인 ID (소셜로그인: provider에서 제공하는 고유 ID, 일반 회원가입: email과 동일)
 
     private String isEmailVerified; // 이메일 인증 여부
+    private String isPhoneNumberVerified; // 핸드폰 인증 여부
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")  // 외래키로 Company를 참조
@@ -60,7 +61,7 @@ public class UserEntity extends BaseEntity {
     private String description; // 설명
 
     // 생성자에서 BaseEntity의 생성자를 호출
-    public UserEntity(Long createUserId, Long updateUserId, String deleteYn, Long userId, String email, String userUuid, String password, RoleEntity role, String name, String nickname, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender, LoginTypeEntity loginType, String loginId, String isEmailVerified, CompanyEntity companyEntity) {
+    public UserEntity(Long createUserId, Long updateUserId, String deleteYn, Long userId, String email, String userUuid, String password, RoleEntity role, String name, String nickname, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender, LoginTypeEntity loginType, String loginId, String isEmailVerified, String isPhoneNumberVerified, CompanyEntity companyEntity) {
         super(createUserId, updateUserId, deleteYn);
         this.userId = userId;
         this.email = email;
@@ -76,6 +77,7 @@ public class UserEntity extends BaseEntity {
         this.loginType = loginType;
         this.loginId = loginId;
         this.isEmailVerified = isEmailVerified;
+        this.isPhoneNumberVerified = isPhoneNumberVerified;
         this.companyEntity = companyEntity;
     }
 

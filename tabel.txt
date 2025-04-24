@@ -62,6 +62,7 @@ CREATE TABLE "user" (
     login_type_id INTEGER, -- 로그인 방식 (외래키)
     login_id VARCHAR(255), -- 로그인 ID (소셜로그인: provider에서 제공하는 고유 ID)
     is_email_verified CHAR(1) DEFAULT 'N', -- 이메일 인증 여부
+    is_phone_number_verified CHAR(1) DEFAULT 'N', -- 이메일 인증 여부
     company_id INTEGER, -- 소속된 조직 (외래키)
     description VARCHAR(500) NULL, --  소개 (새로 추가됨)
     create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 일자
