@@ -64,7 +64,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             // 쿠키에 담긴 암호화된 accessToken 복호화
             accessToken = CryptoUtil.decrypt(encryptedAccessToken, jwtProperty.getTokenAccessDecryptKey());
         } catch (Exception e) {
-            throw new PetCrownException(CodeEnum.TOKEN_DECRYPTION_FAILED);
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
         // 엑세스 토큰인지 확인
@@ -73,10 +73,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             type = CryptoUtil.decrypt(jwtUtil.getUserName(accessToken, jwtProperty.getSecretKey(), "type"), jwtProperty.getTokenClaimsKey());
             log.debug("type ==> {}", type);
             if (!type.equals("access")) {
-                throw new PetCrownException(CodeEnum.INVALID_TOKEN_ERROR);
+                throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
             }
         } catch (Exception e) {
-            throw new PetCrownException(CodeEnum.TOKEN_DECRYPTION_FAILED);
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
 
@@ -94,7 +94,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         try {
             userId = CryptoUtil.decrypt(identifier, jwtProperty.getTokenClaimsKey());
         } catch (Exception e) {
-            throw new PetCrownException(CodeEnum.INVALID_TOKEN_ERROR);
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
         log.debug("userId ==> {}", userId);

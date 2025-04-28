@@ -40,14 +40,14 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         // 인증 객체가 null인데 @AuthRequired가 선언이 안되어있으면 에러
         if (authentication.getPrincipal() == null && authRequired == null) {
-            throw new PetCrownException(CodeEnum.AUTHENTICATION_REQUIRED);
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
         // 인증 객체가 null인데 @AuthRequired(authSkip = true)면 통과
         if (authentication.getPrincipal() == null && authRequired.authSkip() == true) {
             return true; // 인증 통과
         } else {
-            throw new PetCrownException(CodeEnum.AUTHENTICATION_REQUIRED);
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
     }

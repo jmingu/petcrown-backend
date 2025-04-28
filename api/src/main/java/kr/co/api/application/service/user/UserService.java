@@ -232,13 +232,13 @@ public class UserService implements UserUseCase {
 
         log.debug("type ==> {}", type);
         if (!type.equals("refresh")) {
-            throw new PetCrownException(CodeEnum.INVALID_TOKEN_ERROR);
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
         // 토큰유효 확인
         if (jwtUtil.isExpired(decryptedRefreshToken, jwtProperty.getSecretKey())) {
-            //  응답번호 440 토큰 만료
-            throw new PetCrownException(CodeEnum.INVALID_TOKEN);
+            //  리프레쉬 만료면 응답번호 441
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
         // 토큰의 사용자 아이디 가져오기
@@ -249,7 +249,7 @@ public class UserService implements UserUseCase {
         try {
             userId = Long.parseLong(CryptoUtil.decrypt(identifier, jwtProperty.getTokenClaimsKey()));
         } catch (Exception e) {
-            throw new PetCrownException(CodeEnum.INVALID_TOKEN_ERROR);
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
         User user = new User(userId);
