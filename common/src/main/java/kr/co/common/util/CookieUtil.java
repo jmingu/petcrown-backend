@@ -32,7 +32,7 @@ public class CookieUtil {
 
 
         Cookie accessTokenCookie = new Cookie("A_ID", accessToken);
-        accessTokenCookie.setHttpOnly(true);
+        accessTokenCookie.setHttpOnly(false); // false로 설정하여 JS에서 접근 가능하도록 함 로그인으로 판단
         accessTokenCookie.setSecure(isSecure);
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(accessTokenAge);
