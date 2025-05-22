@@ -67,6 +67,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
+        // 토큰유효 확인
+        if (jwtUtil.isExpired(accessToken, jwtProperty.getSecretKey())) {
+            //  응답번호 440 토큰 만료
+            throw new PetCrownException(CodeEnum.INVALID_TOKEN);
+        }
+
         // 엑세스 토큰인지 확인
         String type = null;
         try {
@@ -79,12 +85,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
-
-        // 토큰유효 확인
-        if (jwtUtil.isExpired(accessToken, jwtProperty.getSecretKey())) {
-            //  응답번호 440 토큰 만료
-            throw new PetCrownException(CodeEnum.INVALID_TOKEN);
-        }
 
         // 토큰의 사용자 아이디 가져오기
         String identifier = jwtUtil.getUserName(accessToken, jwtProperty.getSecretKey(), "identifier");
