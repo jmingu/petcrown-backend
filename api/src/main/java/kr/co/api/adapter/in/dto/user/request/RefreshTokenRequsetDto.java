@@ -6,7 +6,11 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class refreshTokenRequsetDto {
+public class RefreshTokenRequsetDto {
+
+    @Schema(description = "엑세스 토큰", required = true, example = "accessToken")
+    private String accessToken;
+
     @Schema(description = "리프래쉬 토큰", required = true, example = "refreshToken")
     private String refreshToken;
 

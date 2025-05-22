@@ -18,8 +18,11 @@ import kr.co.common.util.EmailUtil;
 import kr.co.common.util.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class UserService implements UserUseCase {
     private final PasswordEncoder passwordEncoder;
     private final JwtProperty jwtProperty;
     private final JwtUtil jwtUtil;
+    private final Environment environment;
 
 
     /**
@@ -222,22 +226,39 @@ public class UserService implements UserUseCase {
      * 리프래쉬 토큰으로 엑세스 토큰 연장
      */
     @Override
-    public LoginResponseDto refreshToken(String encryptedRefreshToken) throws Exception {
+    public LoginResponseDto refreshToken(String accessToken, String refreshToken) throws Exception {
+        boolean isLocal = Arrays.asList(environment.getActiveProfiles()).contains("local"); // local: true
 
-        // 토큰 자체 복호화
-        String decryptedRefreshToken = CryptoUtil.decrypt(encryptedRefreshToken, jwtProperty.getTokenRefreshDecryptKey());
+        // 로컬일 땐 엑세스 토큰 검증 안함
+        if(!isLocal){
+
+        }
+
+        // 엑세스 토큰 복호화
+        String decryptedAccessToken = CryptoUtil.decrypt(accessToken, jwtProperty.getTokenAccessDecryptKey());
+
+        // 엑세스 토큰 유효 확인(true면 만료)
+        if (!jwtUtil.isExpired(decryptedAccessToken, jwtProperty.getSecretKey())) {
+
+            // 엑세스 토큰 만료아니면 에러
+            // 만료된 엑세스토큰이여야만 리프래쉬 토큰을 발급할 수 있다.
+            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
+        }
+
+        // 리프래쉬 토큰 복호화
+        String decryptedRefreshToken = CryptoUtil.decrypt(refreshToken, jwtProperty.getTokenRefreshDecryptKey());
+
+        // 토큰유효 확인
+        if (jwtUtil.isExpired(decryptedRefreshToken, jwtProperty.getSecretKey())) {
+            //  리프레쉬 만료면 응답번호 440
+            throw new PetCrownException(CodeEnum.INVALID_TOKEN);
+        }
 
         // 리프래쉬 토큰인지 확인
         String type = CryptoUtil.decrypt(jwtUtil.getUserName(decryptedRefreshToken, jwtProperty.getSecretKey(), "type"), jwtProperty.getTokenClaimsKey());
 
         log.debug("type ==> {}", type);
         if (!type.equals("refresh")) {
-            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
-        }
-
-        // 토큰유효 확인
-        if (jwtUtil.isExpired(decryptedRefreshToken, jwtProperty.getSecretKey())) {
-            //  리프레쉬 만료면 응답번호 441
             throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
@@ -255,11 +276,11 @@ public class UserService implements UserUseCase {
         User user = new User(userId);
 
         // 엑세스토큰발행
-        String accessToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime(), "access"),jwtProperty.getTokenAccessDecryptKey());
+        String responseAccessToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime(), "access"),jwtProperty.getTokenAccessDecryptKey());
         // 리프레시 토큰발행
-        String refreshToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime(), "refresh"),jwtProperty.getTokenRefreshDecryptKey());
+        String responseRefreshToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime(), "refresh"),jwtProperty.getTokenRefreshDecryptKey());
 
-        return new LoginResponseDto(accessToken, refreshToken);
+        return new LoginResponseDto(responseAccessToken, responseRefreshToken);
 
     }
 

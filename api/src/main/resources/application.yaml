@@ -34,8 +34,8 @@ jwt:
   token-claims-key: petcrown-token--claims-real--key # JWT안에 claims 암/복호화 사용, 32바이트(256bit)
   token-access-decrypt-key: petcrown-token-decryptaccess-key # JWT access 암/복호화 사용, 32바이트(256bit)
   token-refresh-decrypt-key: petcrown-token-decryptrefreshkey # JWT refresh 암/복호화 사용, 32바이트(256bit)
-  expired-time: 30 #30분
-  expired-refresh-time: 4320 #3일
+  expired-time: 30 # 30 = 30분 30
+  expired-refresh-time: 4320 # 4320 = 3일
 
 # 로깅
 logging:

@@ -44,19 +44,19 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 인증이 증명된 헤더 (사용 안 함 -> 쿠키 기반으로 수정)
-        // final String authorization = request.getHeader("Authorization");
-
-        // 쿠키에서 access token 추출
-        String encryptedAccessToken = CookieUtil.getCookieValue(request.getCookies(), "A_ID");
+        // 인증이 증명된 헤더
+         final String authorization = request.getHeader("Authorization");
 
         // 만료되었거나 없는 경우 controller의 어노테이션에서 판단(로그인 필요없는 url 또는 쿠키 만료)
-        if (encryptedAccessToken == null || encryptedAccessToken.isBlank()) {
+        if (authorization == null || authorization.isBlank()) {
 
             securityContextHolderInfo(request, null, null, null);
             filterChain.doFilter(request, response);
             return;
         }
+
+        // 토큰 가져오기 (Bearer를 뺸다)
+        String encryptedAccessToken = authorization.split(" ")[1].trim();
 
 
         String accessToken;

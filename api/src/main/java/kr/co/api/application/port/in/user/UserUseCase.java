@@ -44,7 +44,7 @@ public interface UserUseCase {
     /**
      * 리프래쉬 토큰으로 토큰 연장
      */
-    LoginResponseDto refreshToken(String refreshToken) throws Exception;
+    LoginResponseDto refreshToken(String accessToken, String refreshToken) throws Exception;
 
 
 

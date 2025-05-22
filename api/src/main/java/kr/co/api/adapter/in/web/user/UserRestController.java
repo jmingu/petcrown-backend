@@ -2,8 +2,6 @@ package kr.co.api.adapter.in.web.user;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.co.api.adapter.in.dto.user.request.*;
 import kr.co.api.application.dto.user.response.LoginResponseDto;
@@ -34,7 +32,6 @@ public class UserRestController extends BaseController {
 
     private final UserUseCase userUseCase;
     private final UserConverter userConverter;
-    private final JwtProperty jwtProperty;
     private final Environment environment;
 
     @AuthRequired(authSkip = true)
@@ -99,47 +96,23 @@ public class UserRestController extends BaseController {
 
     @AuthRequired(authSkip = true)
     @PostMapping("/v1/login")
-    @Operation(summary = "쿠키 로그인", description = "쿠키 로그인")
-    public ResponseEntity<CommonResponseDto> login(@RequestBody LoginRequsetDto requestDto, HttpServletResponse response) throws Exception {
+    @Operation(summary = "로그인", description = "쿠키 로그인")
+    public ResponseEntity<CommonResponseDto> login(@RequestBody LoginRequsetDto requestDto) throws Exception {
 
         LoginResponseDto responseDto = userUseCase.login(requestDto.getEmail(), requestDto.getPassword());
 
-        boolean isLocal = Arrays.asList(environment.getActiveProfiles()).contains("local"); // local: true
-        boolean isSecure = !isLocal; // local: false
 
-        CookieUtil.setTokenCookies(
-                response,
-                responseDto.getAccessToken(),
-                responseDto.getRefreshToken(),
-                isSecure,
-                jwtProperty.getExpiredTime() * 60,
-                jwtProperty.getExpiredRefreshTime() * 60
-        );
-
-        return success();
+        return success(responseDto);
     }
 
     @AuthRequired(authSkip = true)
     @PostMapping("/v1/refresh-token")
     @Operation(summary = "리프래쉬 토큰으로 토큰 연장", description = "리프래쉬 토큰으로 토큰 연장")
-    public ResponseEntity<CommonResponseDto> refreshToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String encryptedRefreshToken = CookieUtil.getCookieValue(request.getCookies(), "R_ID");
+    public ResponseEntity<CommonResponseDto> refreshToken(@RequestBody RefreshTokenRequsetDto dto) throws Exception {
 
-        LoginResponseDto responseDto = userUseCase.refreshToken(encryptedRefreshToken);
+        LoginResponseDto responseDto = userUseCase.refreshToken(dto.getAccessToken(), dto.getRefreshToken());
 
-        boolean isLocal = Arrays.asList(environment.getActiveProfiles()).contains("local"); // local: true
-        boolean isSecure = !isLocal; // local: false
-
-        CookieUtil.setTokenCookies(
-                response,
-                responseDto.getAccessToken(),
-                responseDto.getRefreshToken(),
-                isSecure,
-                jwtProperty.getExpiredTime() * 60,
-                jwtProperty.getExpiredRefreshTime() * 60
-        );
-
-        return success();
+        return success(responseDto);
     }
 
 
