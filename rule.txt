@@ -10,6 +10,7 @@
         셋팅 : set~
         조회 : get~
         발송 : send~
+        수정 : change~
         수신 : receive~
         인증/검증/확인 : check~
 

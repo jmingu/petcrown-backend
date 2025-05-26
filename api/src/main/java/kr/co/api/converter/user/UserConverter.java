@@ -1,6 +1,7 @@
 package kr.co.api.converter.user;
 
 import kr.co.api.adapter.in.dto.user.request.UserEmailRegistrationRequestDto;
+import kr.co.api.adapter.in.dto.user.request.UserInfoChangeRequestDto;
 import kr.co.api.adapter.out.persistence.repository.standard.company.jpa.JpaCompanyRepository;
 import kr.co.api.adapter.out.persistence.repository.standard.logintype.jpa.JpaLoginTypeRepository;
 import kr.co.api.adapter.out.persistence.repository.standard.role.jpa.JpaRoleRepository;
@@ -25,10 +26,16 @@ public class UserConverter {
     private final JpaLoginTypeRepository jpaLoginTypeRepository;
     private final JpaCompanyRepository jpaCompanyRepository;
 
+    /**
+     * 회원가입 요청 DTO를 도메인 객체로 변환
+     */
     public User registerRequestDtoToDomain(UserEmailRegistrationRequestDto dto) {
         return User.createUserByEmail(dto.getEmail(), dto.getName(), dto.getNickname(), dto.getPassword(), dto.getPasswordCheck(), dto.getPhoneNumber(), dto.getBirthDate() ,dto.getGender());
     }
 
+    /**
+     * User 도메인 객체를 UserEntity로 변환
+     */
     public UserEntity registerUserToEntity(User user) {
 
         return new UserEntity(
@@ -79,6 +86,12 @@ public class UserConverter {
         );
     }
 
+    /**
+     * 사용자 정보변경 요청 DTO를 도메인 객체로 변환
+     */
+    public User changeUserRequestDtoToDomain(UserInfoChangeRequestDto dto, Long userId) {
+        return User.changeUser(userId, dto.getName(), dto.getNickname(), dto.getPassword(), dto.getPasswordCheck(), dto.getPhoneNumber(), dto.getBirthDate(), dto.getGender());
 
+    }
 }
 

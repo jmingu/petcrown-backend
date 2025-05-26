@@ -105,6 +105,18 @@ public class UserRestController extends BaseController {
         return success(responseDto);
     }
 
+    @PutMapping("/v1")
+    @Operation(summary = "정보 변경", description = "정보변경")
+    public ResponseEntity<CommonResponseDto> changeUserInfo(@RequestBody UserInfoChangeRequestDto requestDto, Principal principal) {
+
+        Long userId = Long.parseLong(principal.getName());
+        log.debug("UserEmailRegistrationRequestDto ==> {}", requestDto);
+        User domain = userConverter.changeUserRequestDtoToDomain(requestDto, userId);
+        userUseCase.changeUserInfo(domain);
+
+        return success();
+    }
+
     @AuthRequired(authSkip = true)
     @PostMapping("/v1/refresh-token")
     @Operation(summary = "리프래쉬 토큰으로 토큰 연장", description = "리프래쉬 토큰으로 토큰 연장")

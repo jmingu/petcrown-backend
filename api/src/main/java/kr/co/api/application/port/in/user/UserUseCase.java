@@ -46,6 +46,10 @@ public interface UserUseCase {
      */
     LoginResponseDto refreshToken(String accessToken, String refreshToken) throws Exception;
 
+    /**
+     * 사용자 정보 변경
+     */
+    void changeUserInfo(User user);
 
 
 }

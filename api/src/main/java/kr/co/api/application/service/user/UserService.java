@@ -284,7 +284,13 @@ public class UserService implements UserUseCase {
 
     }
 
+    /**
+     * 사용자 정보 변경
+     */
+    @Override
+    public void changeUserInfo(User user) {
 
+    }
 
 
 }
