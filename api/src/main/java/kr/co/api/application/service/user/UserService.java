@@ -85,6 +85,13 @@ public class UserService implements UserUseCase {
     @Override
     public void saveUser(User user) {
 
+        // 닉네임 유효성 검사
+        User nicknameUser = userRepositoryPort.findByNickname(user.getNickname());
+        log.debug("user ==> {}", user);
+        if (nicknameUser != null) {
+            throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
+        }
+
         // 중복 이메일 검증
         User byEmail = userRepositoryPort.findByEmail(user.getEmail());
         // 이메일이 이미 존재하면 예외 발생
@@ -227,12 +234,6 @@ public class UserService implements UserUseCase {
      */
     @Override
     public LoginResponseDto refreshToken(String accessToken, String refreshToken) throws Exception {
-        boolean isLocal = Arrays.asList(environment.getActiveProfiles()).contains("local"); // local: true
-
-        // 로컬일 땐 엑세스 토큰 검증 안함
-        if(!isLocal){
-
-        }
 
         // 엑세스 토큰 복호화
         String decryptedAccessToken = CryptoUtil.decrypt(accessToken, jwtProperty.getTokenAccessDecryptKey());
@@ -289,6 +290,27 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void changeUserInfo(User user) {
+
+        // 유저 아이디가 없으면 예외 발생
+        if (user.getUserId() == null) {
+            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
+        }
+
+        // 닉네임 유효성 검사
+        User nicknameUser = userRepositoryPort.findByNickname(user.getNickname());
+        log.debug("user ==> {}", user);
+        if (nicknameUser != null) {
+            throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
+        }
+
+        // 유저 아이디로 사용자 조회
+        User existingUser = userRepositoryPort.findUserByUserId(user.getUserId());
+        // 사용자 없으면 예외 발생
+        if (existingUser == null) {
+            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
+        }
+
+        userRepositoryPort.changeUserInfo(user);
 
     }
 

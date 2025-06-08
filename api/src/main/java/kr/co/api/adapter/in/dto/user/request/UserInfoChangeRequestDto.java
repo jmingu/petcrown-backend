@@ -19,12 +19,6 @@ public class UserInfoChangeRequestDto {
     @Schema(description = "닉네임", required = true, example = "닉네임")
     private String nickname;
 
-    @Schema(description = "비밀번호", required = true, example = "P@ssw0rd123")
-    private String password;
-
-    @Schema(description = "비밀번호 확인", required = true, example = "P@ssw0rd123")
-    private String passwordCheck;
-
     @Schema(description = "핸드폰 번호", required = true, example = "01012345678")
     private String phoneNumber;
 

@@ -78,7 +78,7 @@ public class User {
     /**
      * 정보변경 유저 생성
      */
-    public static User changeUser(Long userId ,String name, String nickname, String password, String passwordCheck, String phoneNumber, String birthDate, String gender) {
+    public static User changeUser(Long userId ,String name, String nickname, String phoneNumber, String birthDate, String gender) {
 
         // 유저 아이디가 없으면 예외 발생
         if (userId == null) {
@@ -99,7 +99,6 @@ public class User {
         ValidationUtils.validateString(name, 2, 10);
         ValidationUtils.validateString(nickname, 1, 10);
         ValidationUtils.validateString(birthDate, 8, 8);
-        Password pwd = Password.registerPassword(password, passwordCheck);
 
         if (!"M".equals(gender) && !"F".equals(gender)) {
             throw new PetCrownException(BusinessCode.GENDER_CHECK_REQUIRED);
@@ -109,7 +108,7 @@ public class User {
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
 
         // 도메인 객체로 반환
-        return new User(userId, null, uuid, name, nickname, pwd, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
+        return new User(userId, null, uuid, name, nickname, null, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
     }
 
     // 패스워드 getter

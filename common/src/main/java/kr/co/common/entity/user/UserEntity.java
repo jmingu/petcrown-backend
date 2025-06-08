@@ -81,5 +81,15 @@ public class UserEntity extends BaseEntity {
         this.companyEntity = companyEntity;
     }
 
-
+    /**
+     * 사용자 정보 변경용 생성자
+     */
+    public UserEntity(String name, String nickname, String phoneNumber, LocalDate birthDate, String gender) {
+        super();
+        this.name = name;
+        this.nickname = nickname;
+        this.phoneNumber = phoneNumber;
+        this.birthDate = birthDate;
+        this.gender = gender;
+    }
 }
