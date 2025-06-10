@@ -97,24 +97,25 @@ public class UserConverter {
     /**
      * 사용자 정보 변경용
      */
-    public UserEntity changeUserInfoToEntity(User user, UserEntity userEntity) {
-        return new UserEntity(
-                user.getUserId(),
-                user.getEmail(),
-                user.getUserUuid(),
-                user.getPassword() != null ? user.getPassword().getValue() : userEntity.getPassword(), // 비밀번호는 변경된 경우에만 업데이트
-                jpaRoleRepository.getReferenceById(userEntity.getRole().getRoleId()), // 역할은 변경하지 않음
-                user.getName(),
-                user.getNickname(),
-                user.getPhoneNumber(),
-                user.getProfileImageUrl(),
-                user.getBirthDate(),
-                user.getGender(),
-                jpaLoginTypeRepository.getReferenceById(userEntity.getLoginType().getLoginTypeId()), // 로그인 타입은 변경하지 않음
-                user.getLoginId(),
-                userEntity.getIsEmailVerified(), // 이메일 인증 여부는 변경하지 않음
-                userEntity.getIsPhoneNumberVerified(), // 핸드폰 인증 여부는 변경하지 않음
-                jpaCompanyRepository.getReferenceById(userEntity.getCompanyEntity().getCompanyId()) // 회사 정보는 변경하지 않음
-        );
+//    public UserEntity changeUserInfoToEntity(User user, UserEntity userEntity) {
+//        return new UserEntity(
+//                user.getUserId(),
+//                user.getEmail(),
+//                user.getUserUuid(),
+//                user.getPassword() != null ? user.getPassword().getValue() : userEntity.getPassword(), // 비밀번호는 변경된 경우에만 업데이트
+//                jpaRoleRepository.getReferenceById(userEntity.getRole().getRoleId()), // 역할은 변경하지 않음
+//                user.getName(),
+//                user.getNickname(),
+//                user.getPhoneNumber(),
+//                user.getProfileImageUrl(),
+//                user.getBirthDate(),
+//                user.getGender(),
+//                jpaLoginTypeRepository.getReferenceById(userEntity.getLoginType().getLoginTypeId()), // 로그인 타입은 변경하지 않음
+//                user.getLoginId(),
+//                userEntity.getIsEmailVerified(), // 이메일 인증 여부는 변경하지 않음
+//                userEntity.getIsPhoneNumberVerified(), // 핸드폰 인증 여부는 변경하지 않음
+//                jpaCompanyRepository.getReferenceById(userEntity.getCompanyEntity().getCompanyId()) // 회사 정보는 변경하지 않음
+//        );
+//    }
 }
 

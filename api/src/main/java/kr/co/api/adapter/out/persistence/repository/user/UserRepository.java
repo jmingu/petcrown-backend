@@ -142,18 +142,27 @@ public class UserRepository implements UserRepositoryPort {
     /**
      * 사용자 정보 변경
      */
+    @Transactional
     @Override
     public User changeUserInfo(User user) {
 
         // 사용자 조회
-        Optional<UserEntity> userEntity = jpaUserRepository.findById(user.getUserId());
-        if (userEntity.isPresent()) {
-            // 사용자 정보가 존재하면 변경
-            UserEntity changeUserEntity = jpaUserRepository.save(userConverter.changeUserInfoToEntity(user, userEntity.get()));
-            return userConverter.toDomainBasic(changeUserEntity);
+        Optional<UserEntity> userEntityOptional = jpaUserRepository.findById(user.getUserId());
+
+        if (userEntityOptional.isPresent()) {
+            UserEntity userEntity = userEntityOptional.get();  // <== 한 번만 get()
+
+            userEntity.changeUser(
+                    user.getName(),
+                    user.getNickname(),
+                    user.getPhoneNumber(),
+                    user.getBirthDate(),
+                    user.getGender()
+            );
+
+            return userConverter.toDomainBasic(userEntity);
         } else {
-            // 사용자 정보가 존재하지 null 반환 또는 예외 처리
-            return null; //
+            return null;
         }
     }
 

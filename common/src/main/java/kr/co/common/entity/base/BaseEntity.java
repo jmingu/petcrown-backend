@@ -38,4 +38,9 @@ public abstract class BaseEntity {
         this.updateUserId = updateUserId;
         this.deleteYn = deleteYn;
     }
+
+    public BaseEntity(LocalDateTime updatedDate, Long updateUserId) {
+        this.updatedDate = updatedDate;
+        this.updateUserId = updateUserId;
+    }
 }

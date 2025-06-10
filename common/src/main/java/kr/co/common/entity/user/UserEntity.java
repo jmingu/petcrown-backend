@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user")
@@ -84,8 +85,19 @@ public class UserEntity extends BaseEntity {
     /**
      * 사용자 정보 변경용 생성자
      */
-    public UserEntity(String name, String nickname, String phoneNumber, LocalDate birthDate, String gender) {
-        super();
+    public UserEntity(Long userId, String name, String nickname, String phoneNumber, LocalDate birthDate, String gender) {
+        super(LocalDateTime.now(), userId);
+        this.name = name;
+        this.nickname = nickname;
+        this.phoneNumber = phoneNumber;
+        this.birthDate = birthDate;
+        this.gender = gender;
+    }
+
+    /**
+     * 사용자 정보 변경용 메서드
+     */
+    public void changeUser(String name, String nickname, String phoneNumber, LocalDate birthDate, String gender) {
         this.name = name;
         this.nickname = nickname;
         this.phoneNumber = phoneNumber;
