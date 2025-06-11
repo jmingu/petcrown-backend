@@ -160,7 +160,7 @@ public class UserRepository implements UserRepositoryPort {
                     user.getGender()
             );
 
-            return userConverter.toDomainBasic(userEntity);
+            return user;
         } else {
             return null;
         }

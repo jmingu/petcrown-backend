@@ -303,14 +303,11 @@ public class UserService implements UserUseCase {
             throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
         }
 
-        // 유저 아이디로 사용자 조회
-        User existingUser = userRepositoryPort.findUserByUserId(user.getUserId());
-        // 사용자 없으면 예외 발생
+        // 유저 아이디로 사용자 조회 및 변경
+        User existingUser = userRepositoryPort.changeUserInfo(user);
         if (existingUser == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
-
-        userRepositoryPort.changeUserInfo(user);
 
     }
 
