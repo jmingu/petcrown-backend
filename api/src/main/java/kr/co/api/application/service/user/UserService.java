@@ -296,18 +296,12 @@ public class UserService implements UserUseCase {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
-        // 닉네임 유효성 검사
-        User nicknameUser = userRepositoryPort.findByNickname(user.getNickname());
-        log.debug("user ==> {}", user);
-        if (nicknameUser != null) {
-            throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
-        }
-
         // 유저 아이디로 사용자 조회 및 변경
         User existingUser = userRepositoryPort.changeUserInfo(user);
         if (existingUser == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
+
 
     }
 
