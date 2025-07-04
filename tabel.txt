@@ -77,7 +77,7 @@ CREATE TABLE "user" (
     FOREIGN KEY (company_id) REFERENCES company(company_id) ON DELETE SET NULL
 );
 
-CREATE TABLE user_email_verification (
+CREATE TABLE email_verification (
     email_verification_id BIGSERIAL PRIMARY KEY,  -- 자동 증가 PK
     user_id BIGINT NULL,  -- user 테이블의 PK (FK)
     verification_code VARCHAR(6) NOT NULL,  -- 인증 코드

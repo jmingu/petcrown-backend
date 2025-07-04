@@ -11,12 +11,10 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user")
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED) // protected 생성자 추가
 @Getter
 @DynamicUpdate
 public class UserEntity extends BaseEntity {
@@ -63,8 +61,9 @@ public class UserEntity extends BaseEntity {
 
     private String description; // 설명
 
-    // 생성자에서 BaseEntity의 생성자를 호출
-    public UserEntity(Long createUserId, Long updateUserId, String deleteYn, Long userId, String email, String userUuid, String password, RoleEntity role, String name, String nickname, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender, LoginTypeEntity loginType, String loginId, String isEmailVerified, String isPhoneNumberVerified, CompanyEntity companyEntity) {
+
+
+    private UserEntity(Long createUserId, Long updateUserId, String deleteYn, Long userId, String email, String userUuid, String password, RoleEntity role, String name, String nickname, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender,  Double height,  Double weight, LoginTypeEntity loginType, String loginId, String isEmailVerified, String isPhoneNumberVerified, CompanyEntity companyEntity, String description) {
         super(createUserId, updateUserId, deleteYn);
         this.userId = userId;
         this.email = email;
@@ -77,24 +76,23 @@ public class UserEntity extends BaseEntity {
         this.profileImageUrl = profileImageUrl;
         this.birthDate = birthDate;
         this.gender = gender;
+        this.height = height; // 초기값 설정
+        this.weight = weight; // 초기값 설정
         this.loginType = loginType;
         this.loginId = loginId;
         this.isEmailVerified = isEmailVerified;
         this.isPhoneNumberVerified = isPhoneNumberVerified;
         this.companyEntity = companyEntity;
+        this.description = description;
     }
 
     /**
-     * 사용자 정보 변경용 생성자
+     * 사용자 엔티티 생성용 메서드
      */
-    public UserEntity(Long userId, String name, String nickname, String phoneNumber, LocalDate birthDate, String gender) {
-        super(LocalDateTime.now(), userId);
-        this.name = name;
-        this.nickname = nickname;
-        this.phoneNumber = phoneNumber;
-        this.birthDate = birthDate;
-        this.gender = gender;
+    public static UserEntity createUserEntity(Long userId, String email, String userUuid, String password, RoleEntity role, String name, String nickname, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender,  Double height,  Double weight, LoginTypeEntity loginType, String loginId, String isEmailVerified, String isPhoneNumberVerified, CompanyEntity companyEntity, String description){
+        return new UserEntity(userId, userId, "N", userId, email, userUuid, password, role, name, nickname, phoneNumber, profileImageUrl, birthDate, gender, height, weight, loginType, loginId, isEmailVerified, isPhoneNumberVerified, companyEntity, description);
     }
+
 
     /**
      * 사용자 정보 변경용 메서드

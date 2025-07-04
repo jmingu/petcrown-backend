@@ -2,7 +2,6 @@ package kr.co.common.entity.pet;
 
 import jakarta.persistence.*;
 import kr.co.common.entity.base.BaseEntity;
-import kr.co.common.entity.breed.BreedEntity;
 import kr.co.common.entity.standard.ownership.OwnershipEntity;
 import kr.co.common.entity.user.UserEntity;
 import lombok.AllArgsConstructor;
@@ -14,8 +13,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "pet")
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED) // protected 생성자 추가
 @Getter
 @Slf4j
 public class PetEntity extends BaseEntity {
@@ -56,9 +54,9 @@ public class PetEntity extends BaseEntity {
 
     private String description;
 
-    public PetEntity(Long createUserId, Long updateUserId, Long petId, BreedEntity breed, String customBreed, OwnershipEntity ownership, UserEntity user, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String profileImageUrl, String microchipId, String description) {
+    private PetEntity(Long createUserId, Long updateUserId, Long petId, BreedEntity breed, String customBreed, OwnershipEntity ownership, UserEntity user, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String profileImageUrl, String microchipId, String description) {
 
-        super(createUserId, updateUserId);
+        super(createUserId, updateUserId, "N");
         this.petId = petId;
         this.breed = breed;
         this.customBreed = customBreed;
@@ -73,5 +71,29 @@ public class PetEntity extends BaseEntity {
         this.profileImageUrl = profileImageUrl;
         this.microchipId = microchipId;
         this.description = description;
+    }
+
+    /**
+     * PetEntity를 생성하는 메서드
+     */
+    public static PetEntity createPetEntity(Long petId, BreedEntity breed, String customBreed, OwnershipEntity ownership, UserEntity user, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String profileImageUrl, String microchipId, String description) {
+        return new PetEntity(
+                user.getUserId(),
+                user.getUserId(),
+                petId,
+                breed,
+                customBreed,
+                ownership,
+                user,
+                name,
+                birthDate,
+                gender,
+                weight,
+                height,
+                isNeutered,
+                profileImageUrl,
+                microchipId,
+                description
+        );
     }
 }

@@ -7,16 +7,17 @@ import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.DateUtils;
 import kr.co.common.util.ValidationUtils;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
     private Long userId;
     private String email;
@@ -85,11 +86,6 @@ public class User {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
 
-        // UUID를 랜덤으로 생성
-        UUID random = UUID.randomUUID();
-        // UUID에서 하이픈 제거
-        String uuid = random.toString().replace("-", "");
-
         // 핸드폰번호 검증
         String[] phone = phoneNumber.split("-");
         ValidationUtils.validateString(phone[0], 3, 3);
@@ -108,7 +104,19 @@ public class User {
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
 
         // 도메인 객체로 반환
-        return new User(userId, null, uuid, name, nickname, null, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
+        return new User(userId, null, null, name, nickname, null, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
+    }
+
+    /**
+     * 모든 필드로 생성하는 메서드
+     */
+    public static User getUserAllFiled(Long userId, String email, String userUuid, String name, String nickname,
+            Password password,Role role, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender,
+            LoginType loginType, String loginId, String isEmailVerified, String isPhoneNumberVerified, Company company
+    ) {
+        return new User( userId, email,userUuid,name,nickname,password,role,phoneNumber,profileImageUrl,
+                birthDate,gender,loginType,loginId,isEmailVerified,isPhoneNumberVerified,company
+        );
     }
 
     // 패스워드 getter

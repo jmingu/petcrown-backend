@@ -28,7 +28,13 @@ public enum BusinessCode {
     EMAIL_NOT_FOUND(3107, "없는 이메일입니다", "Email not found"),
     AUTH_CODE_EXPIRED(3108, "인증 코드가 만료되었습니다", "Authentication code expired"),
     AUTH_CODE_INVALID(3109, "인증 코드가 잘못되었습니다", "Invalid authentication code"),
-    GENDER_CHECK_REQUIRED(3110, "성별을 확인해 주세요", "Please check the gender");
+    GENDER_CHECK_REQUIRED(3110, "성별을 확인해 주세요", "Please check the gender"),
+
+    // 펫관련(3200~)
+    PET_NOT_FOUND(3200, "펫을 찾을 수 없습니다", "Pet Not Found"),
+    // 내 소유 펫 아님
+    PET_NOT_OWNED(3201, "해당 펫은 내 소유가 아닙니다", "This pet is not owned by me");
+
 
 
 

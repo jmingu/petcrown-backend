@@ -9,14 +9,22 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 @Builder
 public class Email {
     private Long emailVerificationId;
     private User user;
     private String verificationCode;   // 인증 코드
     private LocalDateTime expiresDate;  // 만료 시간
+
+    /**
+     * 모든 필드로 생성하는 메서드
+     */
+    public static Email getEmailAllFiled(Long emailVerificationId, User user, String verificationCode, LocalDateTime expiresDate) {
+        return new Email(emailVerificationId, user, verificationCode, expiresDate);
+    }
+
 
     public Email(User user) {
         this.user = user;

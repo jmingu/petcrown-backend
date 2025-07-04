@@ -1,8 +1,7 @@
 package kr.co.api.adapter.out.email;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import kr.co.api.application.port.out.email.EmailSenderPort;
+import kr.co.api.application.port.out.repository.user.EmailSenderPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

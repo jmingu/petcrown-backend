@@ -21,12 +21,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class UserService implements UserUseCase {
 
     private final UserRepositoryPort userRepositoryPort;
@@ -34,7 +36,6 @@ public class UserService implements UserUseCase {
     private final PasswordEncoder passwordEncoder;
     private final JwtProperty jwtProperty;
     private final JwtUtil jwtUtil;
-    private final Environment environment;
 
 
     /**
@@ -42,18 +43,23 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void findEmail(String email) {
-        // 이메일 유효성 검사
-        ValidationUtils.validateEmail(email);
-        log.debug("email ==> {}", email);
+
         if(email == null){
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
+
         if(email.trim().isEmpty()){
             throw new PetCrownException(BusinessCode.EMPTY_VALUE);
         }
+
+        // 이메일 유효성 검사
+        ValidationUtils.validateEmail(email);
+        log.debug("email ==> {}", email);
+
         // 중복 이메일 검증
         User user  = userRepositoryPort.findByEmail(email);
         log.debug("user ==> {}", user);
+
         // 이메일이 이미 존재하면 예외 발생
         if (user != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
@@ -66,14 +72,19 @@ public class UserService implements UserUseCase {
      */
     @Override
     public void findNickname(String nickname) {
+
         if(nickname == null){
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
+
         if(nickname.trim().isEmpty()){
             throw new PetCrownException(BusinessCode.EMPTY_VALUE);
         }
+
         User user = userRepositoryPort.findByNickname(nickname);
+
         log.debug("user ==> {}", user);
+
         if (user != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
         }
@@ -82,6 +93,7 @@ public class UserService implements UserUseCase {
     /**
      * 회원가입
      */
+    @Transactional
     @Override
     public void saveUser(User user) {
 
@@ -137,6 +149,7 @@ public class UserService implements UserUseCase {
     /**
      * 이메일 인증코드 인증
      */
+    @Transactional
     @Override
     public void checkEmailCode(String code, String email) {
 
@@ -178,6 +191,7 @@ public class UserService implements UserUseCase {
     /**
      * 인증코드 발송
      */
+    @Transactional
     @Override
     public void sendVerificationCode(String email) {
         // 이메일로 사용자 조회
@@ -288,6 +302,7 @@ public class UserService implements UserUseCase {
     /**
      * 사용자 정보 변경
      */
+    @Transactional
     @Override
     public void changeUserInfo(User user) {
 

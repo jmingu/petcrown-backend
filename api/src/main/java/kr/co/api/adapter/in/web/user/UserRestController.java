@@ -2,26 +2,21 @@ package kr.co.api.adapter.in.web.user;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import kr.co.api.adapter.in.dto.user.request.*;
 import kr.co.api.application.dto.user.response.LoginResponseDto;
 import kr.co.api.application.dto.user.response.UserInfoResponseDto;
 import kr.co.api.application.port.in.user.UserUseCase;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.common.property.JwtProperty;
-import kr.co.api.converter.user.UserConverter;
+import kr.co.api.converter.user.UserDtoDomainConverter;
 import kr.co.api.domain.model.user.User;
 import kr.co.common.contoller.BaseController;
 import kr.co.common.entity.common.CommonResponseDto;
-import kr.co.common.util.CookieUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.Arrays;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,8 +26,7 @@ import java.util.Arrays;
 public class UserRestController extends BaseController {
 
     private final UserUseCase userUseCase;
-    private final UserConverter userConverter;
-    private final Environment environment;
+    private final UserDtoDomainConverter userConverter;
 
     @AuthRequired(authSkip = true)
     @GetMapping("/v1/check-email")
@@ -128,24 +122,5 @@ public class UserRestController extends BaseController {
     }
 
 
-    @AuthRequired(authSkip = true)
-    @PostMapping("/v1/logout")
-    @Operation(summary = "쿠키 로그아웃", description = "쿠키 로그아웃")
-    public ResponseEntity<CommonResponseDto> logout(HttpServletResponse response){
-
-        boolean isLocal = Arrays.asList(environment.getActiveProfiles()).contains("local"); // local: true
-        boolean isSecure = !isLocal; // local: false
-
-        CookieUtil.setTokenCookies(
-                response,
-                null,
-                null,
-                isSecure,
-                0,
-                0
-        );
-
-        return success();
-    }
 
 }

@@ -3,29 +3,28 @@ package kr.co.api.adapter.out.persistence.repository.user;
 import kr.co.api.adapter.out.persistence.repository.user.jpa.JpaUserEmailVerificationRepository;
 import kr.co.api.adapter.out.persistence.repository.user.jpa.JpaUserRepository;
 import kr.co.api.application.port.out.repository.user.UserRepositoryPort;
-import kr.co.api.converter.user.EmailConverter;
-import kr.co.api.converter.user.UserConverter;
+import kr.co.api.converter.user.EmailDomainEntityConverter;
+import kr.co.api.converter.user.UserDomainEntityConverter;
 import kr.co.api.domain.model.user.Email;
 import kr.co.api.domain.model.user.User;
-import kr.co.common.entity.user.UserEmailVerificationEntity;
+import kr.co.common.entity.user.EmailVerificationEntity;
 import kr.co.common.entity.user.UserEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
+
 public class UserRepository implements UserRepositoryPort {
 
     private final JpaUserRepository jpaUserRepository;
-    private final UserConverter userConverter;
+    private final UserDomainEntityConverter userConverter;
     private final JpaUserEmailVerificationRepository jpaUserEmailVerificationRepository;
-    private final EmailConverter emailConverter;
+    private final EmailDomainEntityConverter emailConverter;
 
     /**
      * 이메일 중복 검증
@@ -58,7 +57,6 @@ public class UserRepository implements UserRepositoryPort {
      * 회원가입
      */
     @Override
-    @Transactional
     public User saveUser(User user, Email email) {
         // 회원가입
         UserEntity saveUser = jpaUserRepository.save(userConverter.registerUserToEntity(user));
@@ -76,7 +74,7 @@ public class UserRepository implements UserRepositoryPort {
      */
     @Override
     public Email findEmailByUserId(Long userId) {
-        Optional<UserEmailVerificationEntity> entity = jpaUserEmailVerificationRepository.findEmailByUserId(userId);
+        Optional<EmailVerificationEntity> entity = jpaUserEmailVerificationRepository.findEmailByUserId(userId);
 
         // userEntity가 존재하면 User로 변환하여 반환
         if (entity.isPresent()) {
@@ -106,7 +104,7 @@ public class UserRepository implements UserRepositoryPort {
     /**
      * 사용자 인증정보 업데이트
      */
-    @Transactional
+
     @Override
     public void updateEmailVerificationStatus(Long userId, String isEmailVerified) {
         jpaUserRepository.updateEmailVerificationStatus(userId, isEmailVerified);
@@ -115,13 +113,13 @@ public class UserRepository implements UserRepositoryPort {
     /**
      * 이메일 인증 저장
      */
-    @Transactional
+
     @Override
     public void saveEmailVerification(Email emailObject) {
         Long userId = emailObject.getUserId();  // userId 가져오기
 
 
-        Optional<UserEmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findEmailByUserId(userId);
+        Optional<EmailVerificationEntity> emailEntity = jpaUserEmailVerificationRepository.findEmailByUserId(userId);
 
         // 있으면 업데이트
         emailEntity.ifPresentOrElse(
@@ -133,8 +131,8 @@ public class UserRepository implements UserRepositoryPort {
                 ),
                 () -> {
                     // 없으면 저장
-                    UserEmailVerificationEntity userEmailVerificationEntity = emailConverter.EmailToUserEmailVerificationEntity(emailObject, jpaUserRepository.getReferenceById(userId));
-                    jpaUserEmailVerificationRepository.save(userEmailVerificationEntity);
+                    EmailVerificationEntity emailVerificationEntity = emailConverter.EmailToUserEmailVerificationEntity(emailObject, jpaUserRepository.getReferenceById(userId));
+                    jpaUserEmailVerificationRepository.save(emailVerificationEntity);
                 }
         );
     }
@@ -142,7 +140,7 @@ public class UserRepository implements UserRepositoryPort {
     /**
      * 사용자 정보 변경
      */
-    @Transactional
+
     @Override
     public User changeUserInfo(User user) {
 

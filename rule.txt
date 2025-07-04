@@ -1,14 +1,16 @@
 메서드 이름 규칙
-    DB :
+    DB(Repository) 관련 :
         생성 : save~
         조회(단건) : find~
-        조회(단건) : find~All
+        조회(다건) : findAll~
         수정 : update~
         삭제 : delete~
 
     상태 값 :
-        셋팅 : set~
+        최초생성 : create~
+        값 셋팅 : set~
         조회 : get~
+        삭제 : remove~
         발송 : send~
         수정 : change~
         수신 : receive~

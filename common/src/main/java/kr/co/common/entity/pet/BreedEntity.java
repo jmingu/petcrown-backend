@@ -1,4 +1,4 @@
-package kr.co.common.entity.breed;
+package kr.co.common.entity.pet;
 
 import jakarta.persistence.*;
 import kr.co.common.entity.base.BaseEntity;

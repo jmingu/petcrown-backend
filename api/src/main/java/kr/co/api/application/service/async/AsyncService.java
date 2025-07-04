@@ -1,6 +1,6 @@
 package kr.co.api.application.service.async;
 
-import kr.co.api.application.port.out.email.EmailSenderPort;
+import kr.co.api.application.port.out.repository.user.EmailSenderPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

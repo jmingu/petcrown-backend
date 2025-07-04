@@ -1,13 +1,15 @@
-package kr.co.api.adapter.in.dto.pet;
+package kr.co.api.adapter.in.dto.pet.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.ToString;
 
 @AllArgsConstructor
 @Getter
+@ToString
 public class PetRegistrationRequestDto {
-    @Schema(description = "종류", required = true, example = "0")
+    @Schema(description = "종류", required = false, example = "0")
     private Integer breedId;
 
     @Schema(description = "종류 기타면 작성", required = false, example = "푸들30%, 말티즈20%")
@@ -26,13 +28,13 @@ public class PetRegistrationRequestDto {
     @Schema(description = "프로필 이미지 주소", required = true, example = "https://~")
     private String profileImageUrl;
 
-    @Schema(description = "소개", required = true, example = "말을 잘 듣는다.")
+    @Schema(description = "소개", required = false, example = "말을 잘 듣는다.")
     private String description;
 
-    @Schema(description = "내장칩 번호", required = true, example = "123456")
+    @Schema(description = "내장칩 번호", required = false, example = "123456")
     private String microchipId;
 
-    @Schema(description = "키우는 상태", required = true, example = "1")
+    @Schema(description = "키우는 상태", required = false, example = "1")
     private Integer ownershipId;
 
 }
