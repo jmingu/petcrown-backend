@@ -48,8 +48,7 @@ public class Pet {
         // 생년월인 변환
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
 
-
-        return new Pet(null, Breed.getBreedAllFiled(breedId, null, null), customBreed, new Ownership(ownershipId), new User(userId), name, localDate, gender, null, null,
+        return new Pet(null, Breed.getBreedAllFiled(breedId, null, null), customBreed, new Ownership(ownershipId), User.createUserById(userId), name, localDate, gender, null, null,
                 null, profileImageUrl, microchipId, description);
     }
 
@@ -63,12 +62,6 @@ public class Pet {
                 isNeutered, profileImageUrl, microchipId, description);
     }
 
-    public Integer getBreedId() {
-        return this.breed.getBreedId();
-    }
-    public Integer getOwnershipId() {
-        return this.ownership.getOwnershipId();
-    }
     public Long getUserId() {
         return this.user.getUserId();
     }

@@ -26,5 +26,4 @@ public interface JpaUserEmailVerificationRepository extends JpaRepository<EmailV
     void updateVerificationInfo(@Param("emailVerificationId") Long emailVerificationId, @Param("verificationCode")String verificationCode, @Param("expiresDate")LocalDateTime expiresDate, @Param("userId") Long userId);
 
 
-
 }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface JpaPetRepository extends JpaRepository<PetEntity, Long> {
 
@@ -20,9 +21,23 @@ public interface JpaPetRepository extends JpaRepository<PetEntity, Long> {
             "FROM PetEntity p " +
             "JOIN p.breed b " +
             "JOIN b.species s " +
-            "WHERE p.user.userId = :userId AND p.deleteYn = 'N'" +
-            " ORDER BY p.petId ASC")
+            "WHERE p.user.userId = :userId AND p.deleteYn = 'N' " +
+            "ORDER BY p.petId ASC"
+    )
     List<MyPetResponseDto> findByUser_UserIdAndDeleteYn(Long userId, String deleteYn);
+
+    /**
+     * 펫 단일 조회
+     */
+    Optional<PetEntity> findByPetIdAndDeleteYn(Long petId, String deleteYn);
+
+    /**
+     * 펫 단일 조회 (펫 정보와 사용자 정보만 포함)
+     */
+    @Query("SELECT p FROM PetEntity p " +
+            "JOIN FETCH p.user u " +
+            "WHERE p.petId = :petId AND p.deleteYn = :deleteYn")
+    Optional<PetEntity> findByPetIdWithUserOnly(Long petId, String deleteYn);
 
     /**
      * 펫 정보 변경
@@ -38,6 +53,7 @@ public interface JpaPetRepository extends JpaRepository<PetEntity, Long> {
             "WHERE p.petId = :petId"
     )
     void updateMyPet(String name , String gender, LocalDate birthDate, Integer breedId, Long userId, Long petId);
+
 
     /**
      * 나의 펫 삭제

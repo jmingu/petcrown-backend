@@ -19,6 +19,19 @@ public class Email {
     private LocalDateTime expiresDate;  // 만료 시간
 
     /**
+     * 회원가입 시 이메일 생성자 메서드
+     */
+    public static Email crateEmail(User user) {
+
+        // 6자리 인증 코드 생성
+        String verificationCode = String.format("%06d", (int)(Math.random() * 1000000));
+        // 인증시간 10분
+        LocalDateTime expiresDate = LocalDateTime.now().plusMinutes(10);
+
+        return new Email(null, user, verificationCode, expiresDate);
+    }
+
+    /**
      * 모든 필드로 생성하는 메서드
      */
     public static Email getEmailAllFiled(Long emailVerificationId, User user, String verificationCode, LocalDateTime expiresDate) {
@@ -47,13 +60,7 @@ public class Email {
         return expiresDate != null && expiresDate.isBefore(LocalDateTime.now());
     }
 
-    // 인증코드 및 인증시간 생성
-    public void generateVerificationCode() {
-        // 6자리 인증 코드 생성
-        this.verificationCode = String.format("%06d", (int)(Math.random() * 1000000));
-        // 인증시간 10분
-        this.expiresDate = LocalDateTime.now().plusMinutes(10);
-    }
+
 
 
 }

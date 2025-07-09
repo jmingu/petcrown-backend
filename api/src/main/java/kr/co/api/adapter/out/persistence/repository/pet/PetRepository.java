@@ -43,15 +43,15 @@ public class PetRepository implements PetRepositoryPort {
     }
 
     /**
-     * 펫 단일 조회
+     * 펫 단일 조회(펫 정보와 사용자 정보만 포함)
      */
     @Override
     public Pet findPetById(Long petId) {
-        Optional<PetEntity> entity = jpaPetRepository.findById(petId);
+        Optional<PetEntity> entity = jpaPetRepository.findByPetIdWithUserOnly(petId, "N");
         // 펫이 존재하는지 확인
         if (entity.isPresent()) {
             PetEntity petEntity = entity.get();
-            Pet pet = petConverter.toDomainPet(petEntity);
+            Pet pet = petConverter.toDomainPetWithUserOnly(petEntity);
 
             return pet;
         }

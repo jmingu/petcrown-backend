@@ -43,7 +43,7 @@ public interface UserRepositoryPort {
     /**
      * 사용자 정보 변경
      */
-    User changeUserInfo(User user);
+    void changeUserInfo(User user);
 
 
 

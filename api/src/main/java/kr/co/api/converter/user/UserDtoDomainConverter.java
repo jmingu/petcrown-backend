@@ -3,12 +3,15 @@ package kr.co.api.converter.user;
 import kr.co.api.adapter.in.dto.user.request.UserEmailRegistrationRequestDto;
 import kr.co.api.adapter.in.dto.user.request.UserInfoChangeRequestDto;
 import kr.co.api.domain.model.user.User;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class UserDtoDomainConverter {
+
 
     /**
      * 회원가입 요청 DTO를 도메인 객체로 변환

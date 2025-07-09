@@ -7,24 +7,23 @@ import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.DateUtils;
 import kr.co.common.util.ValidationUtils;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
 @AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
+
     private Long userId;
     private String email;
     private String userUuid;
     private String name;
     private String nickname;
-    private Password password;
+    private String password;
     private Role role; // 사용자 역할
     private String phoneNumber;
     private String profileImageUrl;
@@ -37,11 +36,15 @@ public class User {
     private Company company; // 소속된 회사
 
 
-    // id로 유저 생성
-    public User(Long userId) {
-        this.userId = userId;
+    /**
+     * UserId로 유저 생성
+     */
+    public static User createUserById(Long userId) {
+        if (userId == null) {
+            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
+        }
+        return new User(userId, null, null, null, null, null, null, null, null, null, null, null, null, null, null,null);
     }
-
     /**
      * 이메일을 통해 회원가입하는 유저 생성
      */
@@ -63,17 +66,36 @@ public class User {
         ValidationUtils.validateString(name, 2, 10);
         ValidationUtils.validateString(nickname, 1, 10);
         ValidationUtils.validateString(birthDate, 8, 8);
-        Password pwd = Password.registerPassword(password, passwordCheck);
 
+
+        // 성별 검증
         if (!"M".equals(gender) && !"F".equals(gender)) {
             throw new PetCrownException(BusinessCode.GENDER_CHECK_REQUIRED);
+        }
+
+        // 패스워드 검증
+        ValidationUtils.validateString(password, 4, 15);
+        ValidationUtils.validateString(passwordCheck, 4, 15);
+        // 패스워드와 패스워드 체크가 일치하는지 확인
+        if(password.equals(passwordCheck) == false) {
+            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
         }
 
         // 생년월인 변환
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
 
         // 도메인 객체로 반환
-        return new User(null, email, uuid, name, nickname, pwd, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
+        return new User(null, email, uuid, name, nickname, password, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
+    }
+
+    /**
+     * 비밀번호 암호화
+     */
+    public void encodedPassword(String encodedPassword) {
+        if(encodedPassword == null) {
+            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
+        }
+        this.password = encodedPassword;
     }
 
     /**
@@ -96,6 +118,7 @@ public class User {
         ValidationUtils.validateString(nickname, 1, 10);
         ValidationUtils.validateString(birthDate, 8, 8);
 
+        // 성별 검증
         if (!"M".equals(gender) && !"F".equals(gender)) {
             throw new PetCrownException(BusinessCode.GENDER_CHECK_REQUIRED);
         }
@@ -111,7 +134,7 @@ public class User {
      * 모든 필드로 생성하는 메서드
      */
     public static User getUserAllFiled(Long userId, String email, String userUuid, String name, String nickname,
-            Password password,Role role, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender,
+            String password,Role role, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender,
             LoginType loginType, String loginId, String isEmailVerified, String isPhoneNumberVerified, Company company
     ) {
         return new User( userId, email,userUuid,name,nickname,password,role,phoneNumber,profileImageUrl,
@@ -119,28 +142,6 @@ public class User {
         );
     }
 
-    // 패스워드 getter
-    public String getPassword() {
-        if (password == null) {
-            return null;
-        }
-        return password.getPassword();
-    }
-
-    // 비밀번호 일치 확인
-    public boolean isPasswordMatching() {
-        return this.password.isPasswordMatching();
-    }
-
-    // 비밀번호 암호화 후 재 생성
-    public User encodePassword(String encodedPassword) {
-        return new User(
-                this.userId, this.email, this.userUuid, this.name, this.nickname,
-                new Password(encodedPassword),  // 암호화된 비밀번호 적용
-                this.role, this.phoneNumber, this.profileImageUrl, this.birthDate,
-                this.gender, this.loginType, this.loginId, this.isEmailVerified, this.isPhoneNumberVerified, this.company
-        );
-    }
 
 
 }

@@ -33,7 +33,14 @@ public enum BusinessCode {
     // 펫관련(3200~)
     PET_NOT_FOUND(3200, "펫을 찾을 수 없습니다", "Pet Not Found"),
     // 내 소유 펫 아님
-    PET_NOT_OWNED(3201, "해당 펫은 내 소유가 아닙니다", "This pet is not owned by me");
+    PET_NOT_OWNED(3201, "해당 펫은 내 소유가 아닙니다", "This pet is not owned by me"),
+
+    // 투표관련 (3300~)
+    VOTE_NOT_FOUND(3300, "투표를 찾을 수 없습니다", "Vote Not Found"),
+    // 이번달 이미 등록된 투표
+    VOTE_ALREADY_REGISTERED(3301, "이번 달에 이미 등록된 투표입니다", "Vote already registered for this month"),
+    DUPLICATE_VOTE(3103, "이미 존재하는 투표입니다", "Duplicate Vote");
+
 
 
 

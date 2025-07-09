@@ -1,8 +1,7 @@
 package kr.co.api.application.service.user;
 
-import kr.co.api.application.dto.user.response.UserInfoResponseDto;
-import kr.co.common.dto.EmailContentDto;
 import kr.co.api.application.dto.user.response.LoginResponseDto;
+import kr.co.api.application.dto.user.response.UserInfoResponseDto;
 import kr.co.api.application.port.in.user.UserUseCase;
 import kr.co.api.application.port.out.repository.user.UserRepositoryPort;
 import kr.co.api.application.service.async.AsyncService;
@@ -10,6 +9,7 @@ import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.util.JwtUtil;
 import kr.co.api.domain.model.user.Email;
 import kr.co.api.domain.model.user.User;
+import kr.co.common.dto.EmailContentDto;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.enums.CodeEnum;
 import kr.co.common.exception.PetCrownException;
@@ -18,12 +18,9 @@ import kr.co.common.util.EmailUtil;
 import kr.co.common.util.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
@@ -111,27 +108,19 @@ public class UserService implements UserUseCase {
             throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
         }
 
-        // 비밀번호와 비밀번호 확인 일치 확인
-        if (!user.isPasswordMatching()) {
-            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
-        }
-
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(user.getPassword());
-
-        // 비밀번호 인코딩 후 유저 재 생성
-        User encodePasswordUser = user.encodePassword(encodedPassword);
+        // 인코딩 후 비밀번호 설정
+        user.encodedPassword(encodedPassword);
 
         // 이메일 생성
-        Email email = new Email(user);
+        Email email = Email.crateEmail(user);
 
-        // 인증코드 생성
-        email.generateVerificationCode();
+        // 이메일 내용 생성
         EmailContentDto emailContentDto = EmailUtil.generateEmailContent(email.getVerificationCode());
 
-
         // 회원가입 및 인증코드 저장
-        User registerUser = userRepositoryPort.saveUser(encodePasswordUser, email);
+        User registerUser = userRepositoryPort.saveUser(user, email);
 
         // 이메일 전송(비동기)
         asyncService.sendEmailAsync(registerUser.getEmail(), emailContentDto.getTitle(), emailContentDto.getContent());
@@ -203,8 +192,8 @@ public class UserService implements UserUseCase {
         }
 
         // 이메일 인증 정보 생성
-        Email emailObject = new Email(user);
-        emailObject.generateVerificationCode();
+        Email emailObject = Email.crateEmail(user);
+        // 이메일 내용 생성
         EmailContentDto emailContentDto = EmailUtil.generateEmailContent(emailObject.getVerificationCode());
 
         // 검증 업데이트/등록
@@ -238,7 +227,6 @@ public class UserService implements UserUseCase {
         String accessToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime(), "access"),jwtProperty.getTokenAccessDecryptKey());
         // 리프레시 토큰발행
         String refreshToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredRefreshTime(), "refresh"),jwtProperty.getTokenRefreshDecryptKey());
-
 
         return new LoginResponseDto(accessToken, refreshToken);
     }
@@ -288,7 +276,7 @@ public class UserService implements UserUseCase {
             throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
         }
 
-        User user = new User(userId);
+        User user = User.createUserById(userId);
 
         // 엑세스토큰발행
         String responseAccessToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(user, jwtProperty.getExpiredTime(), "access"),jwtProperty.getTokenAccessDecryptKey());
@@ -311,11 +299,14 @@ public class UserService implements UserUseCase {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
-        // 유저 아이디로 사용자 조회 및 변경
-        User existingUser = userRepositoryPort.changeUserInfo(user);
-        if (existingUser == null) {
+        // 유저 아이디가 없으면 예외 발생
+        User userByUserId = userRepositoryPort.findUserByUserId(user.getUserId());
+        if (userByUserId == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
+
+        // 유저 아이디로 사용자 변경
+        userRepositoryPort.changeUserInfo(user);
 
 
     }

@@ -6,7 +6,6 @@ import kr.co.api.adapter.out.persistence.repository.standard.role.jpa.JpaRoleRep
 import kr.co.api.converter.standard.company.CompanyEntityConverter;
 import kr.co.api.converter.standard.logintype.LoginTypeEntityConverter;
 import kr.co.api.converter.standard.role.RoleEntityConverter;
-import kr.co.api.domain.model.user.Password;
 import kr.co.api.domain.model.user.User;
 import kr.co.common.entity.user.UserEntity;
 import lombok.RequiredArgsConstructor;
@@ -66,7 +65,7 @@ public class UserDomainEntityConverter {
                 userEntity.getUserUuid(),
                 userEntity.getName(),
                 userEntity.getNickname(),
-                new Password(userEntity.getPassword()),
+                userEntity.getPassword(),
                 null,
                 userEntity.getPhoneNumber(),
                 userEntity.getProfileImageUrl(),

@@ -53,6 +53,33 @@ public class PetDomainEntityConverter {
     }
 
     /**
+     * Pet 도메인 모델을 PetEntity로 변환합니다.
+     * 이 메서드는 참조하는 User제외한 객체는 null로 변환합니다.
+     */
+    public PetEntity toEntityWithUser(Pet pet) {
+        if (pet == null) {
+            return null;
+        }
+
+        return PetEntity.createPetEntity(
+                pet.getPetId(),
+                null,
+                pet.getCustomBreed(),
+                null,
+                jpaUserRepository.getReferenceById(pet.getUserId()),
+                pet.getName(),
+                pet.getBirthDate(),
+                pet.getGender(),
+                pet.getWeight(),
+                pet.getHeight(),
+                pet.getIsNeutered(),
+                pet.getProfileImageUrl(),
+                pet.getMicrochipId(),
+                pet.getDescription()
+        );
+    }
+
+    /**
      * BreedEntity를 Breed 도메인 모델로 변환합니다.
      */
     public Breed toDomainBreed(BreedEntity breedEntity) {

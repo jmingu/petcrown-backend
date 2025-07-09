@@ -41,6 +41,9 @@ public class UserRepository implements UserRepositoryPort {
         return null;
     }
 
+    /**
+     * 닉네임 중복 검증
+     */
     @Override
     public User findByNickname(String nickname) {
         Optional<UserEntity> userEntity = jpaUserRepository.findByNickname(nickname);
@@ -140,28 +143,16 @@ public class UserRepository implements UserRepositoryPort {
     /**
      * 사용자 정보 변경
      */
-
     @Override
-    public User changeUserInfo(User user) {
+    public void changeUserInfo(User user) {
 
-        // 사용자 조회
-        Optional<UserEntity> userEntityOptional = jpaUserRepository.findById(user.getUserId());
-
-        if (userEntityOptional.isPresent()) {
-            UserEntity userEntity = userEntityOptional.get();  // <== 한 번만 get()
-
-            userEntity.changeUser(
-                    user.getName(),
-                    user.getNickname(),
-                    user.getPhoneNumber(),
-                    user.getBirthDate(),
-                    user.getGender()
-            );
-
-            return user;
-        } else {
-            return null;
-        }
+        jpaUserRepository.updateUserInfo(
+                user.getUserId(),
+                user.getName(),
+                user.getNickname(),
+                user.getPhoneNumber(),
+                user.getBirthDate(),
+                user.getGender());
     }
 
 }

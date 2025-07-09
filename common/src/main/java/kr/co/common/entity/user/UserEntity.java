@@ -5,10 +5,8 @@ import kr.co.common.entity.base.BaseEntity;
 import kr.co.common.entity.standard.company.CompanyEntity;
 import kr.co.common.entity.standard.logintype.LoginTypeEntity;
 import kr.co.common.entity.standard.role.RoleEntity;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDate;
 
@@ -16,7 +14,6 @@ import java.time.LocalDate;
 @Table(name = "user")
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED) // protected 생성자 추가
 @Getter
-@DynamicUpdate
 public class UserEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
