@@ -39,7 +39,9 @@ public enum BusinessCode {
     VOTE_NOT_FOUND(3300, "투표를 찾을 수 없습니다", "Vote Not Found"),
     // 이번달 이미 등록된 투표
     VOTE_ALREADY_REGISTERED(3301, "이번 달에 이미 등록된 투표입니다", "Vote already registered for this month"),
-    DUPLICATE_VOTE(3103, "이미 존재하는 투표입니다", "Duplicate Vote");
+    DUPLICATE_VOTE(3103, "이미 존재하는 투표입니다", "Duplicate Vote"),
+    // 투표가 등록되어있어 삭제를 못한다
+    VOTE_CANNOT_DELETE(3302, "투표가 등록되어 있어 삭제할 수 없습니다", "Cannot delete vote as it is already registered");
 
 
 

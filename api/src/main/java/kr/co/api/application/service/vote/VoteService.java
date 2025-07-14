@@ -1,5 +1,6 @@
 package kr.co.api.application.service.vote;
 
+import kr.co.api.application.dto.vote.response.VotePetResponseDto;
 import kr.co.api.application.port.in.vote.VoteUseCase;
 import kr.co.api.application.port.out.repository.pet.PetRepositoryPort;
 import kr.co.api.application.port.out.repository.vote.VoteRepositoryPort;
@@ -8,6 +9,10 @@ import kr.co.api.domain.model.vote.Vote;
 import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,4 +68,45 @@ public class VoteService implements VoteUseCase {
 
 
     }
+
+    /**
+     * 투표 리스트 조회
+     */
+    @Override
+    public Page<VotePetResponseDto> getVote(int page, int size) {
+        // 현재 날짜에 해당하는 달의 1일
+        LocalDate voteMonth = LocalDate.now().withDayOfMonth(1);
+        log.debug("voteMonth: {}", voteMonth);
+
+        Pageable pageable = PageRequest.of((page-1), size, Sort.by(Sort.Direction.DESC, "voteId"));
+
+        // 투표 조회
+        Page<VotePetResponseDto> vote = voteRepositoryPort.findVote(pageable);
+
+        return vote;
+
+    }
+
+    /**
+     * 투표 상세 조회
+     */
+    @Override
+    public VotePetResponseDto getVoteDetail(Long voteId) {
+
+
+        VotePetResponseDto voteDetailDto = voteRepositoryPort.findVoteDetail(voteId);
+        if (voteDetailDto == null) {
+            throw new PetCrownException(VOTE_NOT_FOUND);
+        }
+        // 현재 일자와 비교해서 아니면 에러 발생
+        // 현재 날짜에 해당하는 달의 1일
+        LocalDate voteMonth = LocalDate.now().withDayOfMonth(1);
+        if (!voteDetailDto.getVoteMonth().equals(voteMonth)) {
+            throw new PetCrownException(VOTE_NOT_FOUND);
+        }
+
+        return null;
+    }
+
+
 }
