@@ -180,3 +180,34 @@ CREATE TABLE pet (
     FOREIGN KEY (ownership_id) REFERENCES ownership(ownership_id)
 );
 
+CREATE TABLE vote (
+	vote_id bigserial NOT NULL,
+	create_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	create_user_id int8 NULL,
+	updated_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	update_user_id int8 NULL,
+	delete_date timestamp NULL,
+	delete_yn bpchar(1) DEFAULT 'N'::bpchar NULL,
+	pet_id int8 NOT NULL,
+	daily_vote_count int4 NULL,
+	weekly_vote_count int4 NULL,
+	monthly_vote_count int4 NULL,
+	vote_month date NOT NULL,
+	profile_image_url varchar(255) NOT NULL,
+	CONSTRAINT vote_pk PRIMARY KEY (vote_id),
+	CONSTRAINT vote_pet_fk FOREIGN KEY (pet_id) REFERENCES public.pet(pet_id)
+);
+
+CREATE TABLE vote_history (
+	vote_history_id bigserial NOT NULL,
+	create_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	user_id int8 NULL,
+	vote_id int8 NOT NULL,
+	history_date date NOT NULL,
+	CONSTRAINT vote_history_pk PRIMARY KEY (vote_history_id),
+	CONSTRAINT vote_history_unique UNIQUE (history_date, user_id, vote_id),
+	CONSTRAINT vote_history_user_fk FOREIGN KEY (user_id) REFERENCES public."user"(user_id),
+	CONSTRAINT vote_history_vote_fk FOREIGN KEY (vote_id) REFERENCES public.vote(vote_id)
+);
+
+
