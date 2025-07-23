@@ -13,7 +13,7 @@ public enum CodeEnum {
     AUTHENTICATION_ERROR(441, "인증 에러", "Authentication error"), // 인증 에러, 재로그인으로 이동 안내
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR.value(), "서버 에러", "Internal Server Error"),;
 
-    private int code;
+    private final int code;
     private final String messageKo;
     private final String messageEn;
 }

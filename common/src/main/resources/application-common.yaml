@@ -5,5 +5,21 @@ spring:
 server:
   shutdown: immediate
 
+file:
+  path:
+    my-pet-image: 'C:'
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  shutdown: immediate
+
+file:
+  path:
+    pet-image: pet/image/local
+
 
 

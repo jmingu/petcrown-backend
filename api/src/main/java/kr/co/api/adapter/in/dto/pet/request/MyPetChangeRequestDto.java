@@ -29,9 +29,6 @@ public class MyPetChangeRequestDto {
     @Schema(description = "성별", required = true, example = "M")
     private String gender;
 
-    @Schema(description = "프로필 이미지 주소", required = true, example = "https://~")
-    private String profileImageUrl;
-
     @Schema(description = "소개", required = false, example = "말을 잘 듣는다.")
     private String description;
 

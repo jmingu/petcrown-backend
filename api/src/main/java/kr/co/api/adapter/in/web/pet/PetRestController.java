@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.List;
@@ -33,13 +34,19 @@ public class PetRestController extends BaseController{
 
     @PostMapping("/v1")
     @Operation(summary = "나의 펫 등록", description = "나의 펫 등록")
-    public ResponseEntity<CommonResponseDto> setPet(@RequestBody PetRegistrationRequestDto dto, Principal principal) {
+    public ResponseEntity<CommonResponseDto> createPet(
 
+            @RequestPart("image") MultipartFile image,
+            @RequestPart("data") PetRegistrationRequestDto data,
+            Principal principal
+    ) {
+        log.debug("PetRegistrationRequestDto ==> {}", data);
+        log.debug("Image file name: {}", image.getOriginalFilename());
         Long userId = Long.parseLong(principal.getName());
 
-        Pet pet = petDtoDomainConverter.registerPetDtoToDomain(dto, userId);
+        Pet pet = petDtoDomainConverter.registerPetDtoToDomain(data, userId);
 
-        petUseCase.savePet(pet);
+        petUseCase.savePet(pet, image);
 
         return success();
     }

@@ -36,7 +36,7 @@ public class Pet {
      * 펫을 생성하는 메서드
      */
     public static Pet SetPetObject(Integer breedId, String customBreed, Integer ownershipId, Long userId, String name, String birthDate,
-                              String gender,String profileImageUrl, String microchipId, String description) {
+                              String gender, String microchipId, String description) {
 
         ValidationUtils.validateString(name, 1, 20);
         ValidationUtils.validateString(birthDate, 8, 8);
@@ -49,7 +49,7 @@ public class Pet {
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
 
         return new Pet(null, Breed.getBreedAllFiled(breedId, null, null), customBreed, new Ownership(ownershipId), User.createUserById(userId), name, localDate, gender, null, null,
-                null, profileImageUrl, microchipId, description);
+                null, null, microchipId, description);
     }
 
     /**

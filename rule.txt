@@ -14,6 +14,7 @@
         발송 : send~
         수정 : change~
         수신 : receive~
+        파일 업로드 : upload~
         인증/검증/확인 : check~
 
 주석 규칙

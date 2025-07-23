@@ -2,6 +2,7 @@ package kr.co.api.application.port.in.pet;
 
 import kr.co.api.application.dto.pet.response.MyPetResponseDto;
 import kr.co.api.domain.model.pet.Pet;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ public interface PetUseCase {
     /**
      * 펫 등록
      */
-    void savePet(Pet pet);
+    void savePet(Pet pet, MultipartFile image);
 
     /**
      * 펫 조회

@@ -4,13 +4,17 @@ import kr.co.api.application.dto.pet.response.MyPetResponseDto;
 import kr.co.api.application.port.in.pet.PetUseCase;
 import kr.co.api.application.port.out.repository.pet.PetRepositoryPort;
 import kr.co.api.application.port.out.repository.vote.VoteRepositoryPort;
+import kr.co.api.application.service.common.FileService;
 import kr.co.api.domain.model.pet.Pet;
 import kr.co.api.domain.model.vote.Vote;
+import kr.co.common.enums.FilePathEnum;
 import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,13 +30,22 @@ public class PetService implements PetUseCase {
     private final PetRepositoryPort petRepositoryPort;
     private final VoteRepositoryPort voteRepositoryPort;
 
+    private final FileService fileService;
+
+
     /**
      * 펫 등록
      */
     @Transactional
     @Override
-    public void savePet(Pet pet) {
-        petRepositoryPort.savePet(pet);
+    public void savePet(Pet pet, MultipartFile image) {
+
+        List<String> imagePathList = fileService.uploadImageList(FilePathEnum.MY_PET_IMAGE.getFilePath(), List.of(image));
+        Pet petAllFiled = Pet.getPetAllFiled(pet.getPetId(), pet.getBreed(), pet.getCustomBreed(), pet.getOwnership(), pet.getUser(),
+                pet.getName(), pet.getBirthDate(), pet.getGender(), pet.getWeight(), pet.getHeight(), pet.getIsNeutered(), imagePathList.get(0), pet.getMicrochipId(), pet.getDescription()
+        );
+
+        petRepositoryPort.savePet(petAllFiled);
     }
 
     /**

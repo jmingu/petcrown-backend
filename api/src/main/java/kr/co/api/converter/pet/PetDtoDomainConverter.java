@@ -23,7 +23,7 @@ public class PetDtoDomainConverter {
         if (dto == null || userId == null) {
             throw new PetCrownException(MISSING_REQUIRED_VALUE);
         }
-        return Pet.SetPetObject(dto.getBreedId(), dto.getCustomBreed(), dto.getOwnershipId(), userId, dto.getName(), dto.getBirthDate(), dto.getGender(), dto.getProfileImageUrl(), dto.getMicrochipId(), dto.getDescription());
+        return Pet.SetPetObject(dto.getBreedId(), dto.getCustomBreed(), dto.getOwnershipId(), userId, dto.getName(), dto.getBirthDate(), dto.getGender(), dto.getMicrochipId(), dto.getDescription());
     }
 
     /**
@@ -33,7 +33,7 @@ public class PetDtoDomainConverter {
         if (dto == null || userId == null) {
             throw new PetCrownException(MISSING_REQUIRED_VALUE);
         }
-        return Pet.SetPetObject(dto.getBreedId(), dto.getCustomBreed(), dto.getOwnershipId(), userId, dto.getName(), dto.getBirthDate(), dto.getGender(), dto.getProfileImageUrl(), dto.getMicrochipId(), dto.getDescription());
+        return Pet.SetPetObject(dto.getBreedId(), dto.getCustomBreed(), dto.getOwnershipId(), userId, dto.getName(), dto.getBirthDate(), dto.getGender(), dto.getMicrochipId(), dto.getDescription());
 
     }
 }

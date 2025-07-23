@@ -6,15 +6,11 @@ import kr.co.api.adapter.in.dto.vote.request.VoteRegistrationRequestDto;
 import kr.co.api.application.dto.vote.response.VotePetResponseDto;
 import kr.co.api.application.port.in.vote.VoteUseCase;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.domain.model.pet.Pet;
 import kr.co.common.contoller.BaseController;
 import kr.co.common.entity.common.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
