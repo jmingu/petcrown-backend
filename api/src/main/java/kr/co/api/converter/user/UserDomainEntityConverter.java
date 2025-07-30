@@ -7,6 +7,7 @@ import kr.co.api.converter.standard.company.CompanyEntityConverter;
 import kr.co.api.converter.standard.logintype.LoginTypeEntityConverter;
 import kr.co.api.converter.standard.role.RoleEntityConverter;
 import kr.co.api.domain.model.user.User;
+import kr.co.api.domain.model.user.vo.*;
 import kr.co.common.entity.user.UserEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,53 +30,69 @@ public class UserDomainEntityConverter {
     /**
      * User 도메인 객체를 UserEntity로 변환
      */
-    public UserEntity registerUserToEntity(User user) {
-
+    public UserEntity toEntity(User user) {
         return UserEntity.createUserEntity(
                 user.getUserId(),
-                user.getEmail(),
+                user.getEmailValue(),
                 user.getUserUuid(),
                 user.getPassword(),
-                jpaRoleRepository.getReferenceById(0),
-                user.getName(),
-                user.getNickname(),
-                user.getPhoneNumber(),
+                user.getRole() != null ? jpaRoleRepository.getReferenceById(0) : null,
+                user.getNameValue(),
+                user.getNicknameValue(),
+                user.getPhoneNumberValue(),
                 user.getProfileImageUrl(),
                 user.getBirthDate(),
-                user.getGender(),
+                user.getGenderValue(),
                 null,
                 null,
-                jpaLoginTypeRepository.getReferenceById(0),
+                user.getLoginType() != null ? jpaLoginTypeRepository.getReferenceById(0) : null,
                 user.getLoginId(),
                 user.getIsEmailVerified(),
                 user.getIsPhoneNumberVerified(),
-                jpaCompanyRepository.getReferenceById(0),
+                user.getCompany() != null ? jpaCompanyRepository.getReferenceById(0) : null,
                 null
         );
     }
+    
+    /**
+     * User 도메인 객체를 UserEntity로 변환 (기존 호환성)
+     */
+    public UserEntity registerUserToEntity(User user) {
+        return toEntity(user);
+    }
 
     /**
-     * entity -> User
-     * 필요 없는 필드는 제외한 변환 메서드
+     * UserEntity를 User 도메인 객체로 변환
      */
-    public User toDomainBasic(UserEntity userEntity) {
+    public User toDomain(UserEntity userEntity) {
+        if (userEntity == null) {
+            return null;
+        }
+        
         return User.getUserAllFiled(
                 userEntity.getUserId(),
-                userEntity.getEmail(),
+                userEntity.getEmail() != null ? new Email(userEntity.getEmail()) : null,
                 userEntity.getUserUuid(),
-                userEntity.getName(),
-                userEntity.getNickname(),
+                userEntity.getName() != null ? new UserName(userEntity.getName()) : null,
+                userEntity.getNickname() != null ? new Nickname(userEntity.getNickname()) : null,
                 userEntity.getPassword(),
-                null,
-                userEntity.getPhoneNumber(),
+                userEntity.getRole() != null ? roleEntityConverter.toDomain(userEntity.getRole()) : null,
+                userEntity.getPhoneNumber() != null ? new PhoneNumber(userEntity.getPhoneNumber()) : null,
                 userEntity.getProfileImageUrl(),
                 userEntity.getBirthDate(),
-                userEntity.getGender(),
-                null,
+                userEntity.getGender() != null ? new Gender(userEntity.getGender()) : null,
+                userEntity.getLoginType() != null ? loginTypeEntityConverter.toDomain(userEntity.getLoginType()) : null,
                 userEntity.getLoginId(),
                 userEntity.getIsEmailVerified(),
                 userEntity.getIsPhoneNumberVerified(),
-                null
+                userEntity.getCompany() != null ? companyEntityConverter.toDomain(userEntity.getCompany()) : null
         );
+    }
+    
+    /**
+     * entity -> User (기존 호환성)
+     */
+    public User toDomainBasic(UserEntity userEntity) {
+        return toDomain(userEntity);
     }
 }

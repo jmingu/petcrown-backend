@@ -96,4 +96,15 @@ public class PetEntity extends BaseEntity {
                 description
         );
     }
+    
+    /**
+     * 펫 정보 업데이트 메서드 (헥사고날 어댑터용)
+     */
+    public void updatePetInfo(String name, String gender, Double weight, Double height, String description) {
+        this.name = name;
+        this.gender = gender;
+        this.weight = weight;
+        this.height = height;
+        this.description = description;
+    }
 }

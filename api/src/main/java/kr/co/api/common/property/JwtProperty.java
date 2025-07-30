@@ -15,4 +15,18 @@ public class JwtProperty {
     private final String tokenRefreshDecryptKey;
     private final int expiredTime;
     private final int expiredRefreshTime;
+    
+    /**
+     * Access Token 만료 시간 (분 단위)
+     */
+    public int getAccessTokenTime() {
+        return expiredTime;
+    }
+    
+    /**
+     * Refresh Token 만료 시간 (분 단위)  
+     */
+    public int getRefreshTokenTime() {
+        return expiredRefreshTime;
+    }
 }

@@ -9,13 +9,14 @@ import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.util.JwtUtil;
 import kr.co.api.domain.model.user.Email;
 import kr.co.api.domain.model.user.User;
+import kr.co.api.domain.model.user.vo.*;
+import kr.co.api.domain.service.UserDomainService;
 import kr.co.common.dto.EmailContentDto;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.enums.CodeEnum;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.CryptoUtil;
 import kr.co.common.util.EmailUtil;
-import kr.co.common.util.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,21 +34,17 @@ public class UserService implements UserUseCase {
     private final PasswordEncoder passwordEncoder;
     private final JwtProperty jwtProperty;
     private final JwtUtil jwtUtil;
+    private final UserDomainService userDomainService;
 
 
     /**
      * 이메일 중복검사
      */
     @Override
-    public void findEmail(String email) {
-
-        if(email == null){
-            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
-        }
-
-        if(email.trim().isEmpty()){
-            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
-        }
+    public void findEmail(String emailValue) {
+        
+        // Value Object로 변환 (유효성 검증 포함)
+        kr.co.api.domain.model.user.vo.Email email = new kr.co.api.domain.model.user.vo.Email(emailValue);
 
         // 이메일 유효성 검사
         ValidationUtils.validateEmail(email);

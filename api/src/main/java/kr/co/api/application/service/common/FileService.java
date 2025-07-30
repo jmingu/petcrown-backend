@@ -4,6 +4,7 @@ import kr.co.api.application.port.in.common.FileUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class FileService implements FileUseCase {
 
     @Value("${file.path.my-pet-image}")
     private String baseFilePath;
+    private final Environment environment;
 
     /**
      * 이미지 업로드
@@ -30,6 +33,25 @@ public class FileService implements FileUseCase {
      */
     @Override
     public List<String> uploadImageList(String filePath, List<MultipartFile> imageList) {
+
+        String os = System.getProperty("os.name").toLowerCase();
+        String[] activeProfiles = environment.getActiveProfiles();
+
+        boolean isLocalEnv = false;
+
+        // local을 개발환경일땐 baseFilePath를 시스템에 맞게 변경
+        for (String profile : activeProfiles) {
+            if (profile.equalsIgnoreCase("local")) {
+                isLocalEnv = true;
+                break;
+            }
+        }
+        if(isLocalEnv) {
+            if (os.contains("mac")) { // macOS 환경
+                baseFilePath = "/Users";
+            }
+        }
+
 
         String fullPath = (baseFilePath + filePath)
                 .replace("/", File.separator)
@@ -59,7 +81,8 @@ public class FileService implements FileUseCase {
                 // 현재 날짜와 시간으로 파일 이름 생성
                 String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
                 String originalFilename = image.getOriginalFilename();
-                String newFilename = timestamp + "_" + originalFilename;
+                String uuid = UUID.randomUUID().toString().substring(0, 8);
+                String newFilename = timestamp + "_" + uuid + "_" + originalFilename;
 
                 // 파일 저장
                 File destinationFile = new File(fullPath, newFilename);

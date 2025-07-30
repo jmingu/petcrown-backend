@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Getter
 public class UserInfoResponseDto {
+    private Long userId;
     private String email;
     private String name;
     private String nickname;

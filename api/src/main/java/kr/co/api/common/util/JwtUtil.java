@@ -86,5 +86,52 @@ public class JwtUtil {
     public String getUserName(String token, String key, String value) {
         return extractClaims(token, key).get(value, String.class); //body에서 userId가져오기
     }
+    
+    /**
+     * Access Token 생성 (UserManagementService용)
+     */
+    public String generateAccessToken(Long userId, String email) {
+        try {
+            User user = User.createUserById(userId);
+            return makeAuthToken(user, jwtProperty.getAccessTokenTime(), "ACCESS");
+        } catch (Exception e) {
+            log.error("Failed to generate access token for userId: {}", userId, e);
+            throw new RuntimeException("Access token generation failed", e);
+        }
+    }
+    
+    /**
+     * Refresh Token 생성 (UserManagementService용)
+     */
+    public String generateRefreshToken(Long userId) {
+        try {
+            User user = User.createUserById(userId);
+            return makeAuthToken(user, jwtProperty.getRefreshTokenTime(), "REFRESH");
+        } catch (Exception e) {
+            log.error("Failed to generate refresh token for userId: {}", userId, e);
+            throw new RuntimeException("Refresh token generation failed", e);
+        }
+    }
+    
+    /**
+     * 토큰 유효성 검증 (UserManagementService용)
+     */
+    public boolean validateToken(String token) {
+        return !isExpired(token, jwtProperty.getSecretKey());
+    }
+    
+    /**
+     * 토큰에서 userId 추출 (UserManagementService용)
+     */
+    public Long getUserIdFromToken(String token) {
+        try {
+            String encryptedUserId = getUserName(token, jwtProperty.getSecretKey(), "identifier");
+            String decryptedUserId = CryptoUtil.decrypt(encryptedUserId, jwtProperty.getTokenClaimsKey());
+            return Long.parseLong(decryptedUserId);
+        } catch (Exception e) {
+            log.error("Failed to extract userId from token", e);
+            throw new RuntimeException("Token parsing failed", e);
+        }
+    }
 
 }

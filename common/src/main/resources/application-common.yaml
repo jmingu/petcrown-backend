@@ -7,7 +7,7 @@ server:
 
 file:
   path:
-    my-pet-image: 'C:'
+    my-pet-image: 'C:\petcrown'
 
 ---
 spring:

@@ -3,15 +3,15 @@ package kr.co.api.domain.model.user;
 import kr.co.api.domain.model.standard.company.Company;
 import kr.co.api.domain.model.standard.logintype.LoginType;
 import kr.co.api.domain.model.standard.role.Role;
+import kr.co.api.domain.model.user.vo.*;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.DateUtils;
-import kr.co.common.util.ValidationUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.UUID;
 
 @Getter
@@ -19,21 +19,21 @@ import java.util.UUID;
 public class User {
 
     private Long userId;
-    private String email;
+    private Email email;
     private String userUuid;
-    private String name;
-    private String nickname;
+    private UserName name;
+    private Nickname nickname;
     private String password;
-    private Role role; // 사용자 역할
-    private String phoneNumber;
+    private Role role;
+    private PhoneNumber phoneNumber;
     private String profileImageUrl;
     private LocalDate birthDate;
-    private String gender;
-    private LoginType loginType; // 로그인 타입
+    private Gender gender;
+    private LoginType loginType;
     private String loginId;
     private String isEmailVerified;
     private String isPhoneNumberVerified;
-    private Company company; // 소속된 회사
+    private Company company;
 
 
     /**
@@ -43,49 +43,30 @@ public class User {
         if (userId == null) {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
-        return new User(userId, null, null, null, null, null, null, null, null, null, null, null, null, null, null,null);
+        return new User(userId, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
     /**
      * 이메일을 통해 회원가입하는 유저 생성
      */
-    public static User createUserByEmail(String email, String name, String nickname, String password, String passwordCheck, String phoneNumber, String birthDate, String gender) {
-
-        // UUID를 랜덤으로 생성
-        UUID random = UUID.randomUUID();
-        // UUID에서 하이픈 제거
-        String uuid = random.toString().replace("-", "");
-
-        // 핸드폰번호 검증
-        String[] phone = phoneNumber.split("-");
-        ValidationUtils.validateString(phone[0], 3, 3);
-        ValidationUtils.validateString(phone[1], 4, 4);
-        ValidationUtils.validateString(phone[2], 4, 4);
-
-        ValidationUtils.validateString(email, 0, 0);
-        ValidationUtils.validateEmail(email); // 이메일 패턴 확인
-        ValidationUtils.validateString(name, 2, 10);
-        ValidationUtils.validateString(nickname, 1, 10);
-        ValidationUtils.validateString(birthDate, 8, 8);
-
-
-        // 성별 검증
-        if (!"M".equals(gender) && !"F".equals(gender)) {
-            throw new PetCrownException(BusinessCode.GENDER_CHECK_REQUIRED);
-        }
-
+    public static User createUserByEmail(String emailValue, String nameValue, String nicknameValue, String password, String passwordCheck, String phoneNumberValue, String birthDate, String genderValue) {
+        
+        // Value Objects 생성 (유효성 검증 포함)
+        Email email = new Email(emailValue);
+        UserName name = new UserName(nameValue);
+        Nickname nickname = new Nickname(nicknameValue);
+        PhoneNumber phoneNumber = new PhoneNumber(phoneNumberValue);
+        Gender gender = new Gender(genderValue);
+        
+        // UUID 생성
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        
         // 패스워드 검증
-        ValidationUtils.validateString(password, 4, 15);
-        ValidationUtils.validateString(passwordCheck, 4, 15);
-        // 패스워드와 패스워드 체크가 일치하는지 확인
-        if(password.equals(passwordCheck) == false) {
-            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
-        }
-
-        // 생년월인 변환
+        validatePassword(password, passwordCheck);
+        
+        // 생년월일 변환
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
-
-        // 도메인 객체로 반환
-        return new User(null, email, uuid, name, nickname, password, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
+        
+        return new User(null, email, uuid, name, nickname, password, null, phoneNumber, null, localDate, gender, null, null, "N", "N", null);
     }
 
     /**
@@ -97,49 +78,150 @@ public class User {
         }
         this.password = encodedPassword;
     }
+    
+    /**
+     * 패스워드 검증
+     */
+    private static void validatePassword(String password, String passwordCheck) {
+        if (password == null || password.length() < 4 || password.length() > 15) {
+            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
+        }
+        if (passwordCheck == null || passwordCheck.length() < 4 || passwordCheck.length() > 15) {
+            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
+        }
+        if (!password.equals(passwordCheck)) {
+            throw new PetCrownException(BusinessCode.INVALID_PASSWORD);
+        }
+    }
 
     /**
      * 정보변경 유저 생성
      */
-    public static User changeUser(Long userId ,String name, String nickname, String phoneNumber, String birthDate, String gender) {
-
-        // 유저 아이디가 없으면 예외 발생
+    public static User changeUser(Long userId, String nameValue, String nicknameValue, String phoneNumberValue, String birthDate, String genderValue) {
+        
         if (userId == null) {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
-
-        // 핸드폰번호 검증
-        String[] phone = phoneNumber.split("-");
-        ValidationUtils.validateString(phone[0], 3, 3);
-        ValidationUtils.validateString(phone[1], 4, 4);
-        ValidationUtils.validateString(phone[2], 4, 4);
-
-        ValidationUtils.validateString(name, 2, 10);
-        ValidationUtils.validateString(nickname, 1, 10);
-        ValidationUtils.validateString(birthDate, 8, 8);
-
-        // 성별 검증
-        if (!"M".equals(gender) && !"F".equals(gender)) {
-            throw new PetCrownException(BusinessCode.GENDER_CHECK_REQUIRED);
-        }
-
-        // 생년월인 변환
+        
+        // Value Objects 생성 (유효성 검증 포함)
+        UserName name = new UserName(nameValue);
+        Nickname nickname = new Nickname(nicknameValue);
+        PhoneNumber phoneNumber = new PhoneNumber(phoneNumberValue);
+        Gender gender = new Gender(genderValue);
+        
+        // 생년월일 변환
         LocalDate localDate = DateUtils.convertToLocalDate(birthDate, "yyyyMMdd");
-
-        // 도메인 객체로 반환
-        return new User(userId, null, null, name, nickname, null, null, phoneNumber, null, localDate ,gender, null, null, "N", "N",null);
+        
+        return new User(userId, null, null, name, nickname, null, null, phoneNumber, null, localDate, gender, null, null, "N", "N", null);
     }
 
     /**
      * 모든 필드로 생성하는 메서드
      */
-    public static User getUserAllFiled(Long userId, String email, String userUuid, String name, String nickname,
-            String password,Role role, String phoneNumber, String profileImageUrl, LocalDate birthDate, String gender,
+    public static User getUserAllFiled(Long userId, Email email, String userUuid, UserName name, Nickname nickname,
+            String password, Role role, PhoneNumber phoneNumber, String profileImageUrl, LocalDate birthDate, Gender gender,
             LoginType loginType, String loginId, String isEmailVerified, String isPhoneNumberVerified, Company company
     ) {
-        return new User( userId, email,userUuid,name,nickname,password,role,phoneNumber,profileImageUrl,
-                birthDate,gender,loginType,loginId,isEmailVerified,isPhoneNumberVerified,company
-        );
+        return new User(userId, email, userUuid, name, nickname, password, role, phoneNumber, profileImageUrl,
+                birthDate, gender, loginType, loginId, isEmailVerified, isPhoneNumberVerified, company);
+    }
+    
+    /**
+     * 사용자 나이 계산
+     */
+    public int getAge() {
+        if (birthDate == null) {
+            return 0;
+        }
+        return Period.between(birthDate, LocalDate.now()).getYears();
+    }
+    
+    /**
+     * 성인 여부 확인
+     */
+    public boolean isAdult() {
+        return getAge() >= 18;
+    }
+    
+    /**
+     * 이메일 인증 여부 확인
+     */
+    public boolean isEmailVerified() {
+        return "Y".equals(isEmailVerified);
+    }
+    
+    /**
+     * 전화번호 인증 여부 확인
+     */
+    public boolean isPhoneNumberVerified() {
+        return "Y".equals(isPhoneNumberVerified);
+    }
+    
+    /**
+     * 이메일 인증 완료 처리
+     */
+    public void verifyEmail() {
+        this.isEmailVerified = "Y";
+    }
+    
+    /**
+     * 전화번호 인증 완료 처리
+     */
+    public void verifyPhoneNumber() {
+        this.isPhoneNumberVerified = "Y";
+    }
+    
+    /**
+     * 사용자 정보 업데이트
+     */
+    public void updateUserInfo(UserName name, Nickname nickname, PhoneNumber phoneNumber, Gender gender, LocalDate birthDate) {
+        this.name = name;
+        this.nickname = nickname;
+        this.phoneNumber = phoneNumber;
+        this.gender = gender;
+        this.birthDate = birthDate;
+    }
+    
+    /**
+     * 프로필 이미지 업데이트
+     */
+    public void updateProfileImage(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+    
+    /**
+     * 이메일 값 반환 (기존 호환성을 위해)
+     */
+    public String getEmailValue() {
+        return email != null ? email.getValue() : null;
+    }
+    
+    /**
+     * 이름 값 반환 (기존 호환성을 위해)
+     */
+    public String getNameValue() {
+        return name != null ? name.getValue() : null;
+    }
+    
+    /**
+     * 닉네임 값 반환 (기존 호환성을 위해)
+     */
+    public String getNicknameValue() {
+        return nickname != null ? nickname.getValue() : null;
+    }
+    
+    /**
+     * 전화번호 값 반환 (기존 호환성을 위해)
+     */
+    public String getPhoneNumberValue() {
+        return phoneNumber != null ? phoneNumber.getValue() : null;
+    }
+    
+    /**
+     * 성별 값 반환 (기존 호환성을 위해)
+     */
+    public String getGenderValue() {
+        return gender != null ? gender.getCode() : null;
     }
 
 

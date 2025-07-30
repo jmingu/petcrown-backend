@@ -101,4 +101,15 @@ public class UserEntity extends BaseEntity {
         this.birthDate = birthDate;
         this.gender = gender;
     }
+    
+    /**
+     * 사용자 정보 업데이트 메서드 (헥사고날 어댑터용)
+     */
+    public void updateUserInfo(String name, String nickname, String phoneNumber, LocalDate birthDate, String gender) {
+        this.name = name;
+        this.nickname = nickname;
+        this.phoneNumber = phoneNumber;
+        this.birthDate = birthDate;
+        this.gender = gender;
+    }
 }

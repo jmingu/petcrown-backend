@@ -6,12 +6,14 @@ import kr.co.api.application.port.out.repository.pet.PetRepositoryPort;
 import kr.co.api.application.port.out.repository.vote.VoteRepositoryPort;
 import kr.co.api.application.service.common.FileService;
 import kr.co.api.domain.model.pet.Pet;
+import kr.co.api.domain.model.user.User;
 import kr.co.api.domain.model.vote.Vote;
+import kr.co.api.domain.service.PetDomainService;
+import kr.co.api.domain.service.VoteDomainService;
 import kr.co.common.enums.FilePathEnum;
 import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,8 +31,9 @@ public class PetService implements PetUseCase {
 
     private final PetRepositoryPort petRepositoryPort;
     private final VoteRepositoryPort voteRepositoryPort;
-
     private final FileService fileService;
+    private final PetDomainService petDomainService;
+    private final VoteDomainService voteDomainService;
 
 
     /**
@@ -39,13 +42,23 @@ public class PetService implements PetUseCase {
     @Transactional
     @Override
     public void savePet(Pet pet, MultipartFile image) {
-
+        
+        // 도메인 비지니스 로직 검증
+        petDomainService.validatePetRegistration(pet, pet.getUser());
+        
+        // 이미지 업로드
         List<String> imagePathList = fileService.uploadImageList(FilePathEnum.MY_PET_IMAGE.getFilePath(), List.of(image));
-        Pet petAllFiled = Pet.getPetAllFiled(pet.getPetId(), pet.getBreed(), pet.getCustomBreed(), pet.getOwnership(), pet.getUser(),
-                pet.getName(), pet.getBirthDate(), pet.getGender(), pet.getWeight(), pet.getHeight(), pet.getIsNeutered(), imagePathList.get(0), pet.getMicrochipId(), pet.getDescription()
+        
+        // 이미지 URL을 포함한 Pet 객체 생성
+        Pet petWithImage = Pet.getPetAllFiled(
+            pet.getPetId(), pet.getBreed(), pet.getCustomBreed(), pet.getOwnership(), pet.getUser(),
+            pet.getName(), pet.getBirthDate(), pet.getGender(), pet.getWeight(), pet.getHeight(), 
+            pet.getIsNeutered(), imagePathList.get(0), pet.getMicrochipId(), pet.getDescription()
         );
-
-        petRepositoryPort.savePet(petAllFiled);
+        
+        petRepositoryPort.savePet(petWithImage);
+        
+        log.info("Pet registered successfully: petId={}, userId={}", petWithImage.getPetId(), petWithImage.getUserId());
     }
 
     /**
@@ -61,12 +74,18 @@ public class PetService implements PetUseCase {
      */
     @Override
     public MyPetResponseDto getPetById(Long petId, Long userId) {
-        // 펫이 존재하는지 확인
         Pet pet = petRepositoryPort.findPetById(petId);
         if (pet == null) {
             throw new PetCrownException(PET_NOT_FOUND);
         }
-
+        
+        // 도메인 비지니스 로직: 접근 권한 확인
+        User requestUser = User.createUserById(userId);
+        if (!petDomainService.canUserModifyPet(pet, requestUser)) {
+            throw new PetCrownException(PET_NOT_OWNED);
+        }
+        
+        // TODO: Pet 엔티티를 MyPetResponseDto로 변환하는 로직 추가 필요
         return null;
     }
 
@@ -77,22 +96,21 @@ public class PetService implements PetUseCase {
     @Transactional
     @Override
     public void changeMyPet(Long petId, Pet changePet, Long userId) {
-
-        // 펫이 존재하는지 확인
-        Pet pet = petRepositoryPort.findPetById(petId);
-        if (pet == null) {
+        
+        Pet existingPet = petRepositoryPort.findPetById(petId);
+        if (existingPet == null) {
             throw new PetCrownException(PET_NOT_FOUND);
         }
-
-        // 내 소유 펫인지 확인
-        if (!pet.getUserId().equals(userId)) {
-            throw new PetCrownException(PET_NOT_OWNED);
-        }
-
-        // 변경된 정보로 펫 업데이트
+        
+        User requestUser = User.createUserById(userId);
+        
+        // 도메인 비지니스 로직 검증
+        petDomainService.validatePetUpdate(existingPet, changePet, requestUser);
+        
+        // 업데이트 수행
         petRepositoryPort.updateMyPet(changePet, petId, userId);
-
-
+        
+        log.info("Pet updated successfully: petId={}, userId={}", petId, userId);
     }
 
     /**
@@ -101,29 +119,30 @@ public class PetService implements PetUseCase {
     @Transactional
     @Override
     public void removeMyPet(Long petId, Long userId) {
-        // 펫이 존재하는지 확인
+        
         Pet pet = petRepositoryPort.findPetById(petId);
         if (pet == null) {
             throw new PetCrownException(PET_NOT_FOUND);
         }
-
-        // 내 소유 펫인지 확인
-        if (!pet.getUserId().equals(userId)) {
+        
+        User requestUser = User.createUserById(userId);
+        
+        // 도메인 비지니스 로직: 삭제 권한 확인
+        if (!petDomainService.canDeletePet(pet, requestUser)) {
             throw new PetCrownException(PET_NOT_OWNED);
         }
-
-        // 현재 날짜에 해당하는 달의 1일
-        LocalDate voteMonth = LocalDate.now().withDayOfMonth(1);
-        // 이번달 투표가 이미 등록되었는지 확인
-        Vote voteByPetIdAndVoteMonth = voteRepositoryPort.findVoteByPetIdAndVoteMonth(petId, voteMonth);
-        if (voteByPetIdAndVoteMonth != null) {
-            // 이미 등록된 투표가 있다면 예외 처리
+        
+        // 도메인 비지니스 로직: 투표와 관련된 삭제 제약 확인
+        LocalDate currentVoteMonth = voteDomainService.getCurrentVoteMonth();
+        Vote existingVote = voteRepositoryPort.findVoteByPetIdAndVoteMonth(petId, currentVoteMonth);
+        
+        if (existingVote != null && !voteDomainService.canDeletePetWithVote(pet, currentVoteMonth)) {
             throw new PetCrownException(VOTE_CANNOT_DELETE);
         }
-
-
-        // 펫 삭제
+        
         petRepositoryPort.deleteMyPet(petId, userId);
+        
+        log.info("Pet deleted successfully: petId={}, userId={}", petId, userId);
     }
 
 

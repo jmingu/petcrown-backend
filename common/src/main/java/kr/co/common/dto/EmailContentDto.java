@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @Getter
 public class EmailContentDto {
 
-    private String title;
-    private String content;
-
+    private String to;
+    private String subject;
+    private String body;
 
 }

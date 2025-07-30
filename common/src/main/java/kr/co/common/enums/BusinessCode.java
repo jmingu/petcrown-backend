@@ -39,9 +39,18 @@ public enum BusinessCode {
     VOTE_NOT_FOUND(3300, "투표를 찾을 수 없습니다", "Vote Not Found"),
     // 이번달 이미 등록된 투표
     VOTE_ALREADY_REGISTERED(3301, "이번 달에 이미 등록된 투표입니다", "Vote already registered for this month"),
-    DUPLICATE_VOTE(3103, "이미 존재하는 투표입니다", "Duplicate Vote"),
+    DUPLICATE_VOTE(3303, "이미 존재하는 투표입니다", "Duplicate Vote"),
     // 투표가 등록되어있어 삭제를 못한다
-    VOTE_CANNOT_DELETE(3302, "투표가 등록되어 있어 삭제할 수 없습니다", "Cannot delete vote as it is already registered");
+    VOTE_CANNOT_DELETE(3302, "투표가 등록되어 있어 삭제할 수 없습니다", "Cannot delete vote as it is already registered"),
+    
+    // 추가 비즈니스 코드들
+    INVALID_PHONE_NUMBER(3111, "잘못된 전화번호 형식입니다", "Invalid phone number format"),
+    INVALID_WEIGHT_RANGE(3202, "몸무게는 0.1kg 이상 200kg 이하여야 합니다", "Weight must be between 0.1kg and 200kg"),
+    INVALID_HEIGHT_RANGE(3203, "키는 1cm 이상 200cm 이하여야 합니다", "Height must be between 1cm and 200cm"),
+    INVALID_BIRTH_DATE(3204, "생년월일이 잘못되었습니다", "Invalid birth date"),
+    INVALID_PET_OWNER(3205, "펫 소유자가 일치하지 않습니다", "Pet owner does not match"),
+    INVALID_USER_UPDATE(3112, "사용자 업데이트가 잘못되었습니다", "Invalid user update"),
+    INVALID_VOTE_MONTH(3304, "잘못된 투표 월입니다", "Invalid vote month");
 
 
 
