@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.pet.mapper.PetMapper">
+
+    <!-- 펫 등록 -->
+    <insert id="insertPet" useGeneratedKeys="true" keyProperty="dto.petId">
+        /*
+        PetMapper.xml
+        insertPet
+        펫 등록
+        */
+        INSERT INTO pet (
+            breed_id, custom_breed, ownership_id, user_id, name, birth_date,
+            gender, weight, height, is_neutered, profile_image_url, microchip_id, description,
+            create_date, create_user_id, update_date, update_user_id
+        ) VALUES (
+            #{dto.breedId}, #{dto.customBreed}, #{dto.ownershipId}, #{dto.userId}, 
+            #{dto.name}, #{dto.birthDate}, #{dto.gender}, null, null, 'N',
+            #{imageUrl}, #{dto.microchipId}, #{dto.description},
+            CURRENT_TIMESTAMP, #{dto.userId}, CURRENT_TIMESTAMP, #{dto.userId},
+        )
+        RETURNING pet_id
+    </insert>
+
+    <!-- 펫 등록 (Entity 기반) -->
+    <insert id="insertPetEntity" useGeneratedKeys="true" keyProperty="entity.petId">
+        /*
+        PetMapper.xml
+        insertPetEntity
+        펫 등록 (Entity 기반)
+        */
+        INSERT INTO pet (
+            breed_id, custom_breed, ownership_id, user_id, name, birth_date,
+            gender, weight, height, is_neutered, microchip_id, description,
+            create_date, create_user_id, update_date, update_user_id
+        ) VALUES (
+            #{entity.breedId}, #{entity.customBreed}, #{entity.ownershipId}, #{entity.userId},
+            #{entity.name}, #{entity.birthDate}, #{entity.gender}, #{entity.weight}, #{entity.height}, #{entity.isNeutered},
+            #{entity.microchipId}, #{entity.description},
+            #{entity.createDate}, #{entity.createUserId}, #{entity.updateDate}, #{entity.updateUserId}
+        )
+        RETURNING pet_id
+    </insert>
+
+    <!-- 사용자별 펫 목록 조회 -->
+    <select id="selectPetListByUserId" resultType="kr.co.api.pet.dto.command.PetInfoDto">
+        /*
+        PetMapper.xml
+        selectPetListByUserId
+        사용자별 펫 목록 조회
+        */
+        SELECT
+            p.pet_id as petId,
+            p.user_id as userId,
+            p.name as name,
+            b.breed_id,
+            b.name as breedName,
+            s.species_id,
+            s.name AS speciesName,
+            p.custom_breed as customBreed,
+            p.gender as gender,
+            p.birth_date as birthDate,
+            p.description as description,
+            p.microchip_id as microchipId,
+            o.ownership_id,
+            o.ownership_name as ownershipName,
+            f.file_url as imageUrl,
+            p.create_date as createDate
+        FROM pet p
+        LEFT JOIN breed b ON p.breed_id = b.breed_id
+        LEFT JOIN species s ON b.species_id = s.species_id
+        LEFT JOIN ownership o ON p.ownership_id = o.ownership_id
+        LEFT JOIN file_info f ON f.ref_table = 'pet' AND f.ref_id = p.pet_id AND f.file_type = 'IMAGE' AND f.delete_date IS NULL
+        WHERE p.user_id = #{userId}
+        AND p.delete_date IS NULL
+        ORDER BY p.create_date DESC
+    </select>
+
+    <!-- 펫 단일 조회 -->
+    <select id="selectPetById" resultType="kr.co.api.pet.dto.command.PetInfoDto">
+        /*
+        PetMapper.xml
+        selectPetById
+        펫 단일 조회
+        */
+        SELECT
+            p.pet_id as petId,
+            p.user_id as userId,
+            p.name as name,
+            b.breed_id,
+            b.name as breedName,
+            s.species_id,
+            s.name AS speciesName,
+            p.custom_breed as customBreed,
+            p.gender as gender,
+            p.birth_date as birthDate,
+            p.description as description,
+            p.microchip_id as microchipId,
+            o.ownership_id,
+            o.ownership_name as ownershipName,
+            f.file_url as imageUrl,
+            p.create_date as createDate
+        FROM pet p
+         LEFT JOIN breed b ON p.breed_id = b.breed_id
+         LEFT JOIN species s ON b.species_id = s.species_id
+         LEFT JOIN ownership o ON p.ownership_id = o.ownership_id
+         LEFT JOIN file_info f ON f.ref_table = 'pet' AND f.ref_id = p.pet_id AND f.file_type = 'IMAGE' AND f.delete_date IS NULL
+        WHERE p.pet_id = #{petId}
+          AND p.delete_date IS NULL
+        ORDER BY p.create_date DESC
+    </select>
+
+    <!-- 펫 정보 수정 -->
+    <update id="updatePet">
+        /*
+        PetMapper.xml
+        updatePet
+        펫 정보 수정
+        */
+        UPDATE pet SET
+            breed_id = #{dto.breedId},
+            custom_breed = #{dto.customBreed},
+            ownership_id = #{dto.ownershipId},
+            name = #{dto.name},
+            birth_date = #{dto.birthDate},
+            gender = #{dto.gender},
+            description = #{dto.description},
+            microchip_id = #{dto.microchipId},
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{dto.userId}
+        WHERE pet_id = #{dto.petId}
+        AND user_id = #{dto.userId}
+        AND delete_date IS NULL
+    </update>
+
+    <!-- 펫 정보 수정 (Entity 기반) -->
+    <update id="updatePetEntity">
+        /*
+        PetMapper.xml
+        updatePetEntity
+        펫 정보 수정 (Entity 기반)
+        */
+        UPDATE pet SET
+            breed_id = #{entity.breedId},
+            custom_breed = #{entity.customBreed},
+            ownership_id = #{entity.ownershipId},
+            name = #{entity.name},
+            birth_date = #{entity.birthDate},
+            gender = #{entity.gender},
+            weight = #{entity.weight},
+            height = #{entity.height},
+            is_neutered = #{entity.isNeutered},
+            microchip_id = #{entity.microchipId},
+            description = #{entity.description},
+            update_date = #{entity.updateDate},
+            update_user_id = #{entity.updateUserId}
+        WHERE pet_id = #{entity.petId}
+        AND user_id = #{entity.userId}
+        AND delete_date IS NULL
+    </update>
+
+    <!-- 펫 삭제 (논리삭제) -->
+    <update id="deletePet">
+        /*
+        PetMapper.xml
+        deletePet
+        펫 삭제 (논리삭제)
+        */
+        UPDATE pet SET
+            delete_user_id = #{userId},
+            delete_date = CURRENT_TIMESTAMP,
+            update_user_id = #{userId}
+        WHERE pet_id = #{petId}
+    </update>
+
+    <!-- 종 목록 조회 -->
+    <select id="selectAllSpecies" resultType="kr.co.api.pet.dto.command.SpeciesInfoDto">
+        /*
+        PetMapper.xml
+        selectAllSpecies
+        종 목록 조회 (species_id != 0)
+        */
+        SELECT
+            species_id as speciesId,
+            name
+        FROM species
+        ORDER BY species_id
+    </select>
+
+    <!-- 품종 목록 조회 -->
+    <select id="selectBreedsBySpeciesId" resultType="kr.co.api.pet.dto.command.BreedInfoDto">
+        /*
+        PetMapper.xml
+        selectBreedsBySpeciesId
+        품종 목록 조회 (특정 종)
+        */
+        SELECT
+            breed_id as breedId,
+            name
+        FROM breed
+        WHERE species_id = #{speciesId}
+        ORDER BY name
+    </select>
+
+</mapper>

@@ -1,10 +1,14 @@
 package kr.co.common.util;
 
+import kr.co.common.exception.PetCrownException;
+
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
+
+import static kr.co.common.enums.BusinessCode.MISSING_REQUIRED_VALUE;
 
 public class CryptoUtil {
 
@@ -12,6 +16,10 @@ public class CryptoUtil {
 
     // 암호화
     public static String encrypt(String value, String key) throws Exception {
+        if(value == null || key == null){
+            throw new PetCrownException(MISSING_REQUIRED_VALUE);
+        }
+
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES"));
         byte[] encrypted = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
@@ -21,6 +29,9 @@ public class CryptoUtil {
 
     // 복호화
     public static String decrypt(String value, String key) throws Exception {
+        if(value == null || key == null){
+            throw new PetCrownException(MISSING_REQUIRED_VALUE);
+        }
 
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES"));

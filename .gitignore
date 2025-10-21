@@ -35,3 +35,18 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 환경 변수 파일들 ###
+.env
+.env.local
+.env.production
+.env.development
+
+### 암호화 비밀 파일들 ###
+secrets.local.md
+secrets.*.md
+README-SECRETS.md
+
+### IDE 설정 파일들 ###
+.vscode/launch.json
+.vscode/settings.json

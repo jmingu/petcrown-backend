@@ -1,40 +1,34 @@
 package kr.co.common.entity.pet;
 
-import jakarta.persistence.*;
-import kr.co.common.entity.base.BaseEntity;
-import kr.co.common.entity.standard.ownership.OwnershipEntity;
-import kr.co.common.entity.user.UserEntity;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "pet")
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED) // protected 생성자 추가
+@NoArgsConstructor(access = AccessLevel.PRIVATE) // protected 생성자 추가
 @Getter
 @Slf4j
-public class PetEntity extends BaseEntity {
+public class PetEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long petId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "breed_id")
-    private BreedEntity breed;
+    // BaseEntity 공통 필드들
+    private LocalDateTime createDate;
+    private Long createUserId;
+    private LocalDateTime updateDate;
+    private Long updateUserId;
+    private LocalDateTime deleteDate;
+    private Long deleteUserId;
+
+    private Integer breedId;
 
     private String customBreed;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ownership_id", nullable = false)
-    private OwnershipEntity ownership;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    private Integer ownershipId;
+    private Long userId;
 
     private String name;
 
@@ -48,27 +42,29 @@ public class PetEntity extends BaseEntity {
 
     private String isNeutered;
 
-    private String profileImageUrl;
-
     private String microchipId;
 
     private String description;
 
-    private PetEntity(Long createUserId, Long updateUserId, Long petId, BreedEntity breed, String customBreed, OwnershipEntity ownership, UserEntity user, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String profileImageUrl, String microchipId, String description) {
-
-        super(createUserId, updateUserId, "N");
+    private PetEntity(Long createUserId, Long updateUserId, Long petId, Integer breedId, String customBreed, Integer ownershipId, Long userId, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String microchipId, String description) {
+        LocalDateTime now = LocalDateTime.now();
+        this.createDate = now;
+        this.createUserId = createUserId;
+        this.updateDate = now;
+        this.updateUserId = updateUserId;
+        this.deleteDate = null;
+        this.deleteUserId = null;
         this.petId = petId;
-        this.breed = breed;
+        this.breedId = breedId;
         this.customBreed = customBreed;
-        this.ownership = ownership;
-        this.user = user;
+        this.ownershipId = ownershipId;
+        this.userId = userId;
         this.name = name;
         this.birthDate = birthDate;
         this.gender = gender;
         this.weight = weight;
         this.height = height;
         this.isNeutered = isNeutered;
-        this.profileImageUrl = profileImageUrl;
         this.microchipId = microchipId;
         this.description = description;
     }
@@ -76,22 +72,21 @@ public class PetEntity extends BaseEntity {
     /**
      * PetEntity를 생성하는 메서드
      */
-    public static PetEntity createPetEntity(Long petId, BreedEntity breed, String customBreed, OwnershipEntity ownership, UserEntity user, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String profileImageUrl, String microchipId, String description) {
+    public static PetEntity createPetEntity(Long petId, Integer breedId, String customBreed, Integer ownershipId, Long userId, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String microchipId, String description) {
         return new PetEntity(
-                user.getUserId(),
-                user.getUserId(),
+                userId,
+                userId,
                 petId,
-                breed,
+                breedId,
                 customBreed,
-                ownership,
-                user,
+                ownershipId,
+                userId,
                 name,
                 birthDate,
                 gender,
                 weight,
                 height,
                 isNeutered,
-                profileImageUrl,
                 microchipId,
                 description
         );
@@ -106,5 +101,29 @@ public class PetEntity extends BaseEntity {
         this.weight = weight;
         this.height = height;
         this.description = description;
+    }
+    
+    /**
+     * 펫 업데이트용 Entity 생성
+     */
+    public static PetEntity createPetEntityForUpdate(Long petId, Integer breedId, String customBreed, Integer ownershipId, Long userId, String name, LocalDate birthDate, String gender, Double weight, Double height, String isNeutered, String microchipId, String description) {
+        LocalDateTime now = LocalDateTime.now();
+        PetEntity entity = new PetEntity();
+        entity.petId = petId;
+        entity.breedId = breedId;
+        entity.customBreed = customBreed;
+        entity.ownershipId = ownershipId;
+        entity.userId = userId;
+        entity.name = name;
+        entity.birthDate = birthDate;
+        entity.gender = gender;
+        entity.weight = weight;
+        entity.height = height;
+        entity.isNeutered = isNeutered;
+        entity.microchipId = microchipId;
+        entity.description = description;
+        entity.updateDate = now;
+        entity.updateUserId = userId;
+        return entity;
     }
 }

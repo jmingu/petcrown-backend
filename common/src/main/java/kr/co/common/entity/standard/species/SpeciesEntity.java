@@ -1,22 +1,27 @@
 package kr.co.common.entity.standard.species;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import kr.co.common.entity.base.BaseEntity;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "species")
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
-public class SpeciesEntity extends BaseEntity {
-    @Id
+public class SpeciesEntity {
     private Integer speciesId;
 
+    // BaseEntity 공통 필드들
+    private LocalDateTime createDate;
+    private Long createUserId;
+    private LocalDateTime updateDate;
+    private Long updateUserId;
+    private LocalDateTime deleteDate;
+    private Long deleteUserId;
+
     private String name;
+
+
+
 
 }

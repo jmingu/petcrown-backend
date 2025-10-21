@@ -1,22 +1,28 @@
 package kr.co.common.entity.standard.ownership;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import kr.co.common.entity.base.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "ownership")
-@AllArgsConstructor
+import java.time.LocalDateTime;
+
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
-public class OwnershipEntity extends BaseEntity {
-    @Id
+public class OwnershipEntity {
     private Integer ownershipId;
 
+    // BaseEntity 공통 필드들
+    private LocalDateTime createDate;
+    private Long createUserId;
+    private LocalDateTime updateDate;
+    private Long updateUserId;
+    private LocalDateTime deleteDate;
+    private Long deleteUserId;
+
     private String ownershipName;
+
+
+
 
 }

@@ -1,25 +1,30 @@
 package kr.co.common.entity.pet;
 
-import jakarta.persistence.*;
-import kr.co.common.entity.base.BaseEntity;
+import java.time.LocalDateTime;
 import kr.co.common.entity.standard.species.SpeciesEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "breed")
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
-public class BreedEntity extends BaseEntity {
-    @Id
+public class BreedEntity {
     private Integer breedId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "species_id")
-    private SpeciesEntity species;
+    // BaseEntity 공통 필드들
+    private LocalDateTime createDate;
+    private Long createUserId;
+    private LocalDateTime updateDate;
+    private Long updateUserId;
+    private LocalDateTime deleteDate;
+    private Long deleteUserId;
+
+    private Integer speciesId;
 
     private String name;
+
+
+
 
 }

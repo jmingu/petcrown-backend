@@ -35,7 +35,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtProperty jwtProperty;
     private final JwtUtil jwtUtil;
     private static final List<String> EXCLUDED_PATHS = List.of(
-            "/swagger-ui/", "/v3/api-docs", "/service-worker.js"
+            "/swagger-ui/", "/v3/api-docs", "/service-worker.js", "/encrypt"
     );
 
     @Override
@@ -49,7 +49,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         // 인증이 증명된 헤더
          final String authorization = request.getHeader("Authorization");
-
+        log.debug("authorization => {}", authorization);
         // 만료되었거나 없는 경우 controller의 어노테이션에서 판단(로그인 필요없는 url 또는 쿠키 만료)
         if (authorization == null || authorization.isBlank()) {
 

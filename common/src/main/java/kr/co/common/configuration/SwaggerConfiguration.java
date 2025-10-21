@@ -39,7 +39,7 @@ public class SwaggerConfiguration {
     public GroupedOpenApi group1() {
         return GroupedOpenApi.builder()
                 .group("유저관련")
-                .packagesToScan("kr.co.api.adapter.in.web.user")
+                .packagesToScan("kr.co.api.user")
 //                .pathsToMatch("/demo/**")
                 .build();
     }
@@ -48,7 +48,24 @@ public class SwaggerConfiguration {
     public GroupedOpenApi group2() {
         return GroupedOpenApi.builder()
                 .group("펫관련")
-                .packagesToScan("kr.co.api.adapter.in.web.pet")
+                .packagesToScan("kr.co.api.pet")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi group3() {
+        return GroupedOpenApi.builder()
+                .group("투표관련")
+                .packagesToScan("kr.co.api.vote")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi encryptionGroup() {
+        return GroupedOpenApi.builder()
+                .group("암호화 (개발용)")
+                .packagesToScan("kr.co.api.common.controller")
+                .pathsToMatch("/encrypt/**")
                 .build();
     }
 }

@@ -4,18 +4,16 @@ server:
   port: 8080
 spring:
   profiles:
-    active:
-      - local
+    active: local
     include:
       - db
       - common
-
-# 메일
+# 메일 (임시로 평문 - 암호화 후 변경 예정)
   mail:
     host: smtp.gmail.com  # Gmail의 SMTP 서버 호스트
     port: 587 # Gmail SMTP 서버는 587번 포트를 사용
-    username: kjkj173173@gmail.com
-    password: bqgj adiu dbkn nmby # 구글 앱 비밀번호
+    username: ENC(vr/J5J9z3fU0IPMGFjOH16u0n2gpS2ZJBbDd+/oGZG4dA+g5XOOP/UyhJbu1nw2uHAuGDlhmdWgMo1rP/6QRsQ==)
+    password: ENC(ytFTZN4qKh7qt09ewh7sZwXUEyJiSoSzJ37g9jiMth9cxslK/Dk6S5gCdN6aLkbNY0+O/Wsi0Uepp/n/0zYJuA==)
     properties:
       mail:
         smtp:
@@ -28,15 +26,30 @@ spring:
           writetimeout: 5000 # 클라이언트가 작업을 완료하는데 대기해야 하는 시간
     auth-code-expiration-millis: 1800000  # 30 * 60 * 1000 == 30분 이메일 인증 코드의 만료 시간(Millisecond)
 
-# JWT
+# JWT (임시로 평문 - 암호화 후 변경 예정)
 jwt:
-  secret-key: petcrown_application_real_secret_key  # JWT 암/복호화 사용, 32바이트(256bit) 넘어야 한다,
-  token-claims-key: petcrown-token--claims-real--key # JWT안에 claims 암/복호화 사용, 32바이트(256bit)
-  token-access-decrypt-key: petcrown-token-decryptaccess-key # JWT access 암/복호화 사용, 32바이트(256bit)
-  token-refresh-decrypt-key: petcrown-token-decryptrefreshkey # JWT refresh 암/복호화 사용, 32바이트(256bit)
-  expired-time: 30 # 30 = 30분 30
+  secret-key: ENC(ASROcAx5EmcuapZPlhHhlti/2mju7EcvAyjgi1Ov4uaqcu2h8AxvUO8KpKyW2SSWsjt2O8i4naQxR5oFI85Z6MasSCJKBtbILTX9c2b3s2s=)
+  token-claims-key: ENC(c5uKGCtRxJZ2UAJ/Ff5RLKW40H2tffd2QSyrIi9aEJPSGo4vy/7p2lI95lffdxWclaoWJnOgdsR6MXHb3VE3V8k/3NZYCO21P6eU/UKxS0g=)
+  token-access-decrypt-key: ENC(U7dHxkq0vJB+X2/9zQPRwV29SbcaG7lKgW0dX64XCd2Bcwm8dRZELU4vBerLUYLZSc/aMcPvgqFT/mlEQyLkWa5qvquotpwN1qzZSUFcUK4=)
+  token-refresh-decrypt-key: ENC(CpLsBGqIymaCzhIrgyPTHLjj6SYCvTqf9d3hBNYGcyjY0RfUc09F4D5u0Ie4nsc5lzPXnFCUqILHCBiGeC6l0HJtw2LjytOTP8inMqz56a0=)
+  expired-time: 1 # 30 = 30분 30
   expired-refresh-time: 4320 # 4320 = 3일
+
+petcrown:
+  encryption:
+    key : ENC(CGKaOS2fx096pFD2i6SgdxHc2lUXGHmoRk/pHTyDMD0CgwtKiZn5zmkcnJgMwvD3cWKPLVYp0tJgiaFCM1MkBT2zTwYvq2QFlvKzDSkYQac=)
 
 # 로깅
 logging:
   config: classpath:logback/logback-${spring.profiles.active}.xml  # 동적 로깅 설정 파일
+  level:
+    kr.co.api.user.repository.mybatis: DEBUG
+
+# MyBatis
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/**/*.xml
+  type-aliases-package: kr.co.common.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: NULL
+

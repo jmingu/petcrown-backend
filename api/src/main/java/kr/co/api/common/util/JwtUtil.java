@@ -6,7 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import kr.co.api.common.property.JwtProperty;
-import kr.co.api.domain.model.user.User;
+import kr.co.api.user.domain.model.User;
 import kr.co.common.util.CryptoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +27,9 @@ public class JwtUtil {
     /**
      * 토큰생성
      */
-    public String makeAuthToken(User user, int tokeTime, String type) throws Exception {
+    public String makeAuthToken(Long userId, int tokeTime, String type) throws Exception {
         Claims claims = Jwts.claims();
-        claims.put("identifier", CryptoUtil.encrypt(user.getUserId()+"", jwtProperty.getTokenClaimsKey()));
+        claims.put("identifier", CryptoUtil.encrypt(userId+"", jwtProperty.getTokenClaimsKey()));
         claims.put("type", CryptoUtil.encrypt(type, jwtProperty.getTokenClaimsKey()));
 
         // 현재 날짜와 시간 가져오기
@@ -61,6 +61,7 @@ public class JwtUtil {
 
     /**
      * 토큰 검증
+     * 토큰이 만료되었을 경우 true 반환
      */
     public boolean isExpired(String token, String key) {
         try {
@@ -68,7 +69,8 @@ public class JwtUtil {
             // 토큰 시간확인
             Date expiredDate = Jwts.parserBuilder().setSigningKey(getKey(key)).build().parseClaimsJws(token).getBody().getExpiration(); //body에서 유효시간;
             log.debug("expiredDate ==> {}", expiredDate);
-            return expiredDate.before(new Date()); // 현재시간보다 더 전인가
+            // 만료 시간이 현재보다 전이면 만료됨
+            return expiredDate.before(new Date());
         } catch (ExpiredJwtException e) {
             // 토큰이 만료되었을 경우 true 반환
             return true;
@@ -87,51 +89,51 @@ public class JwtUtil {
         return extractClaims(token, key).get(value, String.class); //body에서 userId가져오기
     }
     
-    /**
-     * Access Token 생성 (UserManagementService용)
-     */
-    public String generateAccessToken(Long userId, String email) {
-        try {
-            User user = User.createUserById(userId);
-            return makeAuthToken(user, jwtProperty.getAccessTokenTime(), "ACCESS");
-        } catch (Exception e) {
-            log.error("Failed to generate access token for userId: {}", userId, e);
-            throw new RuntimeException("Access token generation failed", e);
-        }
-    }
-    
-    /**
-     * Refresh Token 생성 (UserManagementService용)
-     */
-    public String generateRefreshToken(Long userId) {
-        try {
-            User user = User.createUserById(userId);
-            return makeAuthToken(user, jwtProperty.getRefreshTokenTime(), "REFRESH");
-        } catch (Exception e) {
-            log.error("Failed to generate refresh token for userId: {}", userId, e);
-            throw new RuntimeException("Refresh token generation failed", e);
-        }
-    }
-    
-    /**
-     * 토큰 유효성 검증 (UserManagementService용)
-     */
-    public boolean validateToken(String token) {
-        return !isExpired(token, jwtProperty.getSecretKey());
-    }
-    
-    /**
-     * 토큰에서 userId 추출 (UserManagementService용)
-     */
-    public Long getUserIdFromToken(String token) {
-        try {
-            String encryptedUserId = getUserName(token, jwtProperty.getSecretKey(), "identifier");
-            String decryptedUserId = CryptoUtil.decrypt(encryptedUserId, jwtProperty.getTokenClaimsKey());
-            return Long.parseLong(decryptedUserId);
-        } catch (Exception e) {
-            log.error("Failed to extract userId from token", e);
-            throw new RuntimeException("Token parsing failed", e);
-        }
-    }
+//    /**
+//     * Access Token 생성 (UserManagementService용)
+//     */
+//    public String generateAccessToken(Long userId, String email) {
+//        try {
+//            User user = User.ofId(userId);
+//            return makeAuthToken(user, jwtProperty.getAccessTokenTime(), "ACCESS");
+//        } catch (Exception e) {
+//            log.error("Failed to generate access token for userId: {}", userId, e);
+//            throw new RuntimeException("Access token generation failed", e);
+//        }
+//    }
+//
+//    /**
+//     * Refresh Token 생성 (UserManagementService용)
+//     */
+//    public String generateRefreshToken(Long userId) {
+//        try {
+//            User user = User.ofId(userId);
+//            return makeAuthToken(user, jwtProperty.getRefreshTokenTime(), "REFRESH");
+//        } catch (Exception e) {
+//            log.error("Failed to generate refresh token for userId: {}", userId, e);
+//            throw new RuntimeException("Refresh token generation failed", e);
+//        }
+//    }
+//
+//    /**
+//     * 토큰 유효성 검증 (UserManagementService용)
+//     */
+//    public boolean validateToken(String token) {
+//        return !isExpired(token, jwtProperty.getSecretKey());
+//    }
+//
+//    /**
+//     * 토큰에서 userId 추출 (UserManagementService용)
+//     */
+//    public Long getUserIdFromToken(String token) {
+//        try {
+//            String encryptedUserId = getUserName(token, jwtProperty.getSecretKey(), "identifier");
+//            String decryptedUserId = CryptoUtil.decrypt(encryptedUserId, jwtProperty.getTokenClaimsKey());
+//            return Long.parseLong(decryptedUserId);
+//        } catch (Exception e) {
+//            log.error("Failed to extract userId from token", e);
+//            throw new RuntimeException("Token parsing failed", e);
+//        }
+//    }
 
 }

@@ -2,23 +2,12 @@ spring:
   config:
     activate:
       on-profile: local
-  jpa:
-    database: postgresql
-    hibernate:
-      dialect: org.hibernate.dialect.PostgreSQLDialect
-    #      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        default_schema: public
-    show-sql: true
-    open-in-view: false
   datasource:
     hikari:
       maximum-pool-size: 4
-    url: jdbc:postgresql://localhost:5432/petcrown_dev
-    username: postgres
-    password: '0000'
+    url: ENC(PT7N9LcUq2V7k5iV1UJTxLaaeryJci1JPwLzqph4SBv5r05nJ6F2vKNPFTSdfMqZxznUC7XXsjOyyRflPwguW0buBjQb698nSGEKtrIFCn8=)
+    username: ENC(GAfviJePfF397IVOKCav/8reMS9PsX3fr1XBRRdnfypCd5yMU7pyfI1In4+Kga7Y)
+    password: ENC(/YcEmV+aGIl12DpxPPpsGSWPGzeXDqxcyvTdP/ygWEJlnnilEo9dCri7kEDsViHw)
     plaform: postgres
     driver-class-name: org.postgresql.Driver
 
@@ -26,7 +15,7 @@ spring:
 spring:
   config:
     activate:
-      on-profile: prod-db
+      on-profile: prod
   jpa:
     database: postgresql
     hibernate:

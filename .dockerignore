@@ -1,0 +1,46 @@
+# Gradle
+.gradle
+build
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Logs
+logs
+*.log
+
+# Temp files
+tmp
+temp
+*.tmp
+*.bak
+*.swp
+
+# Documentation
+*.md
+docs
+
+# Environment files
+.env
+.env.*
+
+# Build output (we only need the final jar)
+*/build/
+*/out/
+
+# Test files
+*/src/test/

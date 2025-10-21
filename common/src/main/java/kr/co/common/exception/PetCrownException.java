@@ -33,13 +33,25 @@ public class PetCrownException extends RuntimeException {
 
 
     /**
-     * INVALID_LENGTH에만 사용
+     * INVALID_LENGTH에 사용
+     * 길이 유효성 검증을 위해
      */
     public PetCrownException(BusinessCode businessCode, int min, int max) {
         super(businessCode.getMessageKo());
         this.resultCode = businessCode.getCode();
         this.resultMessageKo = businessCode.getFormattedMessageKo(min, max);
         this.resultMessageEn = businessCode.getFormattedMessageEn(min, max);
+    }
+
+    /**
+     * INVALID_VALUE_LENGTH에 사용
+     * 길이 유효성 검증을 위해
+     */
+    public PetCrownException(BusinessCode businessCode, String koName, String enName, int min, int max) {
+        super(businessCode.getMessageKo());
+        this.resultCode = businessCode.getCode();
+        this.resultMessageKo = businessCode.getFormattedMessageKo(koName, min, max);
+        this.resultMessageEn = businessCode.getFormattedMessageEn(enName, min, max);
     }
 
 

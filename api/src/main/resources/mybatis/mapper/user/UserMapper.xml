@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.user.mapper.UserMapper">
+
+    <select id="selectByNickname" resultType="kr.co.common.entity.user.UserEntity">
+        /*
+        UserMapper.xml
+        selectByNickname
+        닉네임으로 사용자 존재 여부 확인
+        */
+        SELECT
+            u.*,
+            f.file_url as profileImageUrl
+        FROM "user" u
+        LEFT JOIN file_info f ON f.ref_table = 'user' AND f.ref_id = u.user_id AND f.file_type = 'IMAGE' AND f.delete_date IS NULL
+        WHERE u.nickname = #{nickname}
+        AND u.delete_date IS NULL
+    </select>
+
+    <select id="selectByEmail" resultType="kr.co.common.entity.user.UserEntity">
+        /*
+        UserMapper.xml
+        selectByEmail
+        이메일로 사용자 조회
+        */
+        SELECT
+            u.*,
+            f.file_url as profileImageUrl
+        FROM "user" u
+        LEFT JOIN file_info f ON f.ref_table = 'user' AND f.ref_id = u.user_id AND f.file_type = 'IMAGE' AND f.delete_date IS NULL
+        WHERE u.email = #{email}
+        AND u.delete_date IS NULL
+    </select>
+
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="userId">
+        /*
+        UserMapper.xml
+        insertUser
+        사용자 저장
+        */
+        INSERT INTO "user" (
+            email, user_uuid, password, role_id, name, nickname, phone_number,
+            birth_date, gender, height, weight, login_type,
+            login_id, is_email_verified, company_id, description,
+            create_date, create_user_id, update_date, update_user_id, is_phone_number_verified
+        ) VALUES (
+            #{email}, #{userUuid}, #{password}, #{roleId}, #{name}, #{nickname}, #{phoneNumber},
+            #{birthDate}, #{gender}, #{height}, #{weight}, CAST(#{loginType} AS user_login_type_enum),
+            #{loginId}, #{isEmailVerified}, #{companyId}, #{description},
+            CURRENT_TIMESTAMP, #{createUserId}, CURRENT_TIMESTAMP, #{updateUserId}, #{isPhoneNumberVerified}
+        )
+        RETURNING user_id
+    </insert>
+
+    <update id="updateEmailVerificationStatus">
+        /*
+        UserMapper.xml
+        updateEmailVerificationStatus
+        이메일 인증상태 변경
+        */
+        UPDATE "user"
+        SET is_email_verified = 'Y',
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{userId}
+        WHERE user_id = #{userId}
+
+    </update>
+
+    <select id="selectByUserId" resultType="kr.co.common.entity.user.UserEntity">
+        /*
+        UserMapper.xml
+        selectByUserId
+        userId로 사용자 조회
+        */
+        SELECT
+            u.*,
+            f.file_url as profileImageUrl
+        FROM "user" u
+        LEFT JOIN file_info f ON f.ref_table = 'user' AND f.ref_id = u.user_id AND f.file_type = 'IMAGE' AND f.delete_date IS NULL
+        WHERE u.user_id = #{userId}
+          AND u.delete_date IS NULL
+    </select>
+
+
+    <!-- 사용자 정보 수정 -->
+    <update id="updateUserInfo">
+        /*
+        UserMapper.xml
+        updateUserInfo
+        사용자 정보 수정
+        */
+        UPDATE "user" SET
+            name = #{name},
+            nickname = #{nickname},
+            phone_number = #{phoneNumber},
+            birth_date = #{birthDate},
+            gender = #{gender},
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{userId}
+        WHERE user_id = #{userId}
+        AND delete_date IS NULL
+    </update>
+    
+    <!-- 비밀번호 변경 -->
+    <update id="updatePassword">
+        /*
+        UserMapper.xml
+        updatePassword
+        비밀번호 변경
+        */
+        UPDATE "user" SET
+            password = #{password},
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{userId}
+        WHERE user_id = #{userId}
+        AND delete_date IS NULL
+    </update>
+    
+    <!-- 사용자 삭제 (논리삭제) -->
+    <update id="deleteById">
+        UPDATE "user" SET
+            delete_user_id = #{userId},
+            update_date = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+    </update>
+    
+</mapper>

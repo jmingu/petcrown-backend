@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 
 @Getter
 @Builder
-@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CommonResponseDto {
     private int resultCode;
@@ -19,12 +18,14 @@ public class CommonResponseDto {
     private String resultMessageEn;
     private Object result;
 
+
     public CommonResponseDto(CodeEnum codeEnum, Object result) {
         this.resultCode = codeEnum.getCode();
         this.resultMessageKo = codeEnum.getMessageKo();
         this.resultMessageEn = codeEnum.getMessageEn();
         this.result = result;
     }
+
     public CommonResponseDto(CodeEnum codeEnum) {
         this.resultCode = codeEnum.getCode();
         this.resultMessageKo = codeEnum.getMessageKo();
@@ -36,7 +37,8 @@ public class CommonResponseDto {
         this.resultMessageKo = resultMessageKo;
         this.resultMessageEn = resultMessageEn;
     }
-    public CommonResponseDto(int resultCode, String resultMessageKo, String resultMessageEn,  Object result) {
+
+    public CommonResponseDto(int resultCode, String resultMessageKo, String resultMessageEn, Object result) {
         this.resultCode = resultCode;
         this.resultMessageKo = resultMessageKo;
         this.resultMessageEn = resultMessageEn;
@@ -45,22 +47,33 @@ public class CommonResponseDto {
 
 
 
-//    public static <T> ResponseEntity<CommonResponseDto<T>> success(T result) {
-//        return ResponseEntity.status(CodeEnum.SUCCESS.getCode()).body(new CommonResponseDto<>(result));
-//    }
-//
-//
-//    public static ResponseEntity<CommonResponseDto> error() {
-//        return ResponseEntity.status(CodeEnum.ERROR.getCode()).body(new CommonResponseDto<>(CodeEnum.ERROR));
-//    }
-//
-//    public static ResponseEntity<CommonResponseDto> error(int resultCode, String resultMessage) {
-//        return ResponseEntity.status(resultCode).body(new CommonResponseDto(resultCode, resultMessage));
-//    }
-//
-//    public static ResponseEntity<CommonResponseDto> error(CodeEnum codeEnum) {
-//        return ResponseEntity.status(codeEnum.getCode()).body(new CommonResponseDto<>(codeEnum));
-//    }
+    /**
+     * 성공 응답 (데이터 없음)
+     */
+    public static <T> CommonResponseDto success(String message) {
+        return new CommonResponseDto(200, message, message, null);
+    }
+
+    /**
+     * 성공 응답 (데이터 있음)
+     */
+    public static <T> CommonResponseDto success(String message, T result) {
+        return new CommonResponseDto(200, message, message, result);
+    }
+
+    /**
+     * 실패 응답
+     */
+    public static <T> CommonResponseDto error(String message) {
+        return new CommonResponseDto(400, message, message, null);
+    }
+
+    /**
+     * 실패 응답 (코드 지정)
+     */
+    public static <T> CommonResponseDto error(int code, String message) {
+        return new CommonResponseDto(code, message, message, null);
+    }
 
 
 }

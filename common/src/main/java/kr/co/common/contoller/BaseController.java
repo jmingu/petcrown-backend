@@ -21,7 +21,7 @@ public abstract class BaseController {
     }
 
 
-    protected ResponseEntity<CommonResponseDto> error(CodeEnum codeEnum) {
+    protected ResponseEntity<CommonResponseDto>error(CodeEnum codeEnum) {
         return ResponseEntity.status(codeEnum.getCode())
                 .body(new CommonResponseDto(codeEnum));
     }

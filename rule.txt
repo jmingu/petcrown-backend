@@ -1,21 +1,54 @@
-메서드 이름 규칙
-    DB(Repository) 관련 :
-        생성 : save~
-        조회(단건) : find~
-        조회(다건) : findAll~
-        수정 : update~
-        삭제 : delete~
+메서드 이름 규칙 (By는 메서드 호출 시 전달되는 매개변수를 조건으로 쓸 때 붙임)
 
-    상태 값 :
-        최초생성 : create~
-        값 셋팅 : set~
-        조회 : get~
-        삭제 : remove~
-        발송 : send~
-        수정 : change~
-        수신 : receive~
-        파일 업로드 : upload~
-        인증/검증/확인 : check~
+    DB저장 : insert~
+    DB조회 : selete~
+    DB수정 : update~
+    DB삭제 : delete~
+    DB는 repository부터
+
+    생성 : create~
+    필드 셋팅 : set~
+    필드 조회 : get~
+    발송 : send~
+    수신 : receive~
+    파일 업로드 : upload~
+    인증/검증/확인 : check~
+
+엔티티, 도메인 반환 금지 dto로 변환하여 반환
+3개 초과 파라미터는 command로 변환하여 전달하기
+command는 내부용 dto
+컨트롤러의 핵심 역할 중 하나가 바로 외부 요청과 내부 서비스 계층 간의 데이터 변환
+서비스는 command 또는 각 value 받음
+레포지토리는 entity 또는 value 받음
+
+
+
+객체 규칙
+    생성자
+        도메인은 팩토리메서드로 생성하고 엔티티는 올생성자만 사용
+        mapper에서는 엔티티를 반환하고 레포지토리에서든 도메인을 반환
+        dto : public
+        vo : private
+        entity : protected
+    변환
+        vo : 메서드
+        domain : dtoDomain Mapper로 생성
+        entity : domainEntity Mapper로 생성
+
+
+of는 Java에서 흔히 “~로부터 객체를 만든다” 또는 **“~에 기반해 생성한다”**라는 의미로 사용,
+ofId이렇게 하면 id로만 객체 만들고 검증하지 않는다
+**For**는 보통 "특정 목적이나 상황을 위한" 이라는 의미
+
+
+of()	단일 값으로부터 객체 생성	VO, 기본값 기반 생성
+from()	다른 타입의 객체로부터 생성	DTO → Domain, Entity → Domain 등
+with()	기존 객체 + 변경값으로 새 객체 생성	불변 객체 일부 필드 수정
+valueOf()	문자열/기본형 → 객체 (JDK 스타일)	표준화된 변환용
+toXxx()	이 객체를 Xxx 타입으로 변환	도메인 → DTO, 도메인 → Entity 등
+
+
+
 
 주석 규칙
     메서드 밖 :

@@ -9,6 +9,18 @@ file:
   path:
     my-pet-image: 'C:\petcrown'
 
+# 네이버 클라우드 Object Storage 설정 (임시로 평문 - 실제 키값 입력 후 암호화 예정)
+naver:
+  cloud:
+    object-storage:
+      access-key: ENC(6fZA885uN0V+wB8Y1NaDufGl00pshfN3Hs8qndrA0vqzfqDORtN13uzsXJ5qOvYodEzu3dlbaSie2eR78fKb1Q==)
+      secret-key: ENC(4S5F5iRdWKYsSX2KIxfHjItKNJinqGjcu7n9Y3SBrWn6KXUbOdzpQWnxU8MFp/XnOUEsDCLMx1WuB3Z3u4EqyiZDlqSyPG9SoN/M1RQfkyE=)
+      region: kr-standard
+      endpoint: https://kr.object.ncloudstorage.com
+      bucket: ENC(c/JdTWUGLamVQBjhVIX2oUXaXUTcvDC+DIBJvuT8j8+21R5pZXm7Ji+I7qTA8QIeemG1OwO261khCI7Ggc7sAg==)
+      base-url: ENC(4GCp+pga5Htb4FXjkgngV/ytU7qqkNvLdmZfzfJybVIaSBOf9QlSBH7qHzdq//GW3vl1DJq1PyOQNJiEVIVOwrfuUoC6um96rQOi74wZGBxJzVCrtNbMVxsKeIwNKxpT)
+
+
 ---
 spring:
   config:
@@ -19,7 +31,15 @@ server:
 
 file:
   path:
-    pet-image: pet/image/local
+    pet-image: pet/image/prod
 
-
-
+# 네이버 클라우드 Object Storage 설정 (운영환경 - 임시로 평문)
+naver:
+  cloud:
+    object-storage:
+      access-key: ENC(6fZA885uN0V+wB8Y1NaDufGl00pshfN3Hs8qndrA0vqzfqDORtN13uzsXJ5qOvYodEzu3dlbaSie2eR78fKb1Q==)
+      secret-key: ENC(4S5F5iRdWKYsSX2KIxfHjItKNJinqGjcu7n9Y3SBrWn6KXUbOdzpQWnxU8MFp/XnOUEsDCLMx1WuB3Z3u4EqyiZDlqSyPG9SoN/M1RQfkyE=)
+      region: kr-standard
+      endpoint: https://kr.object.ncloudstorage.com
+      bucket: ENC(SwqIbsdT0ard1ozLXBu8nwlbcr2qNEUOlxa6C3GUx46BsFo0DYi81OP+5IJ+Ea8iit1Wp+tULcUSMXZ2EiwUaQ==)
+      base-url: ENC(4GCp+pga5Htb4FXjkgngV/ytU7qqkNvLdmZfzfJybVIaSBOf9QlSBH7qHzdq//GW3vl1DJq1PyOQNJiEVIVOwrfuUoC6um96rQOi74wZGBxJzVCrtNbMVxsKeIwNKxpT)

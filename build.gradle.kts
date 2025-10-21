@@ -43,8 +43,17 @@ subprojects { // 각 모듈에 적용할 공통 설정
 
 
 		implementation("org.springframework.boot:spring-boot-starter-web")
-		implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+		implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3")
 		runtimeOnly("org.postgresql:postgresql")
+		
+		// 네이버 클라우드 Object Storage
+		implementation("com.amazonaws:aws-java-sdk-s3:1.12.618")
+		
+		// Jasypt (암호화)
+		implementation("com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5")
+		
+		// .env 파일 지원
+		implementation("me.paulschwarz:spring-dotenv:4.0.0")
 
 		compileOnly("org.projectlombok:lombok")
 		annotationProcessor("org.projectlombok:lombok")

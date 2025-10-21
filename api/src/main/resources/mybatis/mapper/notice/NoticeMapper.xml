@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.notice.mapper.NoticeMapper">
+
+    <insert id="insertNotice" useGeneratedKeys="true" keyProperty="noticeId">
+        /*
+        NoticeMapper.xml
+        insertNotice
+        공지사항 저장
+        */
+        INSERT INTO notice (
+            title, content, content_type, is_pinned, pin_order,
+            start_date, end_date, view_count,
+            create_date, create_user_id, updated_date, update_user_id
+        ) VALUES (
+            #{title}, #{content}, #{contentType}, #{isPinned}, #{pinOrder},
+            #{startDate}, #{endDate}, #{viewCount},
+            CURRENT_TIMESTAMP, #{createUserId}, CURRENT_TIMESTAMP, #{createUserId}
+        )
+        RETURNING notice_id
+    </insert>
+
+    <select id="selectByNoticeId" resultType="kr.co.common.entity.notice.NoticeEntity">
+        /*
+        NoticeMapper.xml
+        selectByNoticeId
+        공지사항 ID로 조회
+        */
+        SELECT *
+        FROM notice
+        WHERE notice_id = #{noticeId}
+        AND delete_date IS NULL
+    </select>
+
+    <select id="selectActiveNotices" resultType="kr.co.common.entity.notice.NoticeEntity">
+        /*
+        NoticeMapper.xml
+        selectActiveNotices
+        활성화된 공지사항 목록 조회 (페이징)
+        */
+        SELECT *
+        FROM notice
+        WHERE delete_date IS NULL
+        AND start_date <![CDATA[<=]]> CURRENT_TIMESTAMP
+        AND (end_date IS NULL OR end_date >= CURRENT_TIMESTAMP)
+        ORDER BY is_pinned DESC, pin_order ASC, create_date DESC
+        OFFSET #{offset} LIMIT #{limit}
+    </select>
+
+    <select id="selectPinnedNotices" resultType="kr.co.common.entity.notice.NoticeEntity">
+        /*
+        NoticeMapper.xml
+        selectPinnedNotices
+        상단 고정 공지사항 목록 조회
+        */
+        SELECT *
+        FROM notice
+        WHERE delete_date IS NULL
+        AND is_pinned = 'Y'
+        AND start_date <![CDATA[<=]]> CURRENT_TIMESTAMP
+        AND (end_date IS NULL OR end_date >= CURRENT_TIMESTAMP)
+        ORDER BY pin_order ASC, create_date DESC
+    </select>
+
+    <select id="selectAllNotices" resultType="kr.co.common.entity.notice.NoticeEntity">
+        /*
+        NoticeMapper.xml
+        selectAllNotices
+        전체 공지사항 목록 조회 (관리자용)
+        */
+        SELECT *
+        FROM notice
+        WHERE delete_date IS NULL
+        ORDER BY is_pinned DESC, pin_order ASC, create_date DESC
+        OFFSET #{offset} LIMIT #{limit}
+    </select>
+
+    <select id="countActiveNotices" resultType="int">
+        /*
+        NoticeMapper.xml
+        countActiveNotices
+        활성화된 공지사항 개수 조회
+        */
+        SELECT COUNT(*)
+        FROM notice
+        WHERE delete_date IS NULL
+        AND start_date <![CDATA[<=]]> CURRENT_TIMESTAMP
+        AND (end_date IS NULL OR end_date >= CURRENT_TIMESTAMP)
+    </select>
+
+    <select id="countAllNotices" resultType="int">
+        /*
+        NoticeMapper.xml
+        countAllNotices
+        전체 공지사항 개수 조회
+        */
+        SELECT COUNT(*)
+        FROM notice
+        WHERE delete_date IS NULL
+    </select>
+
+    <update id="updateNotice">
+        /*
+        NoticeMapper.xml
+        updateNotice
+        공지사항 수정
+        */
+        UPDATE notice SET
+            title = #{title},
+            content = #{content},
+            content_type = #{contentType},
+            is_pinned = #{isPinned},
+            pin_order = #{pinOrder},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            updated_date = CURRENT_TIMESTAMP,
+            update_user_id = #{updateUserId}
+        WHERE notice_id = #{noticeId}
+        AND delete_date IS NULL
+    </update>
+
+    <update id="incrementViewCount">
+        /*
+        NoticeMapper.xml
+        incrementViewCount
+        조회수 증가
+        */
+        UPDATE notice SET
+            view_count = view_count + 1,
+            updated_date = CURRENT_TIMESTAMP
+        WHERE notice_id = #{noticeId}
+        AND delete_date IS NULL
+    </update>
+
+    <update id="deleteById">
+        /*
+        NoticeMapper.xml
+        deleteById
+        공지사항 삭제 (논리 삭제)
+        */
+        UPDATE notice SET
+            delete_date = CURRENT_TIMESTAMP,
+            delete_user_id = #{deleteUserId}
+        WHERE notice_id = #{noticeId}
+    </update>
+
+    <select id="searchByTitle" resultType="kr.co.common.entity.notice.NoticeEntity">
+        /*
+        NoticeMapper.xml
+        searchByTitle
+        제목으로 공지사항 검색
+        */
+        SELECT *
+        FROM notice
+        WHERE delete_date IS NULL
+        AND title ILIKE '%' || #{title} || '%'
+        AND start_date <![CDATA[<=]]> CURRENT_TIMESTAMP
+        AND (end_date IS NULL OR end_date >= CURRENT_TIMESTAMP)
+        ORDER BY is_pinned DESC, pin_order ASC, create_date DESC
+        OFFSET #{offset} LIMIT #{limit}
+    </select>
+
+    <select id="countSearchByTitle" resultType="int">
+        /*
+        NoticeMapper.xml
+        countSearchByTitle
+        제목으로 검색된 공지사항 개수
+        */
+        SELECT COUNT(*)
+        FROM notice
+        WHERE delete_date IS NULL
+        AND title ILIKE '%' || #{title} || '%'
+        AND start_date <![CDATA[<=]]> CURRENT_TIMESTAMP
+        AND (end_date IS NULL OR end_date >= CURRENT_TIMESTAMP)
+    </select>
+
+</mapper>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.user.mapper.EmailVerificationMapper">
+
+    <insert id="insertEmailVerification" useGeneratedKeys="true" keyProperty="emailVerificationId">
+        /*
+        EmailVerificationMapper.xml
+        insertEmailVerification
+        이메일 인증 정보 저장
+        */
+        INSERT INTO email_verification (
+            user_id, verification_code, expires_date, create_user_id, update_user_id
+        ) VALUES (
+            #{userId}, #{verificationCode}, #{expiresDate}, #{createUserId}, #{updateUserId}
+        )
+    </insert>
+
+    <select id="selectEmailCodeByEmail" resultType="kr.co.api.user.dto.command.EmailVerificationCodeDto">
+        /*
+        EmailVerificationMapper.xml
+        selectEmailCodeByEmail
+        사용자 Email로 인증코드 조회
+        */
+        SELECT
+            a.user_id,
+            a.email,
+            a.is_email_verified,
+            b.email_verification_id,
+            b.verification_code,
+            b.expires_date
+        FROM "user" a INNER JOIN email_verification b ON a.user_id = b.user_id
+        WHERE a.email = #{email}
+          AND a.delete_date IS NULL;
+    </select>
+    
+    <update id="updateVerificationNewCode">
+        /*
+        EmailVerificationMapper.xml
+        updateVerificationNewCode
+        새로운 인증코드로 수정
+        */
+
+        UPDATE email_verification
+        SET verification_code = #{verificationCode},
+            expires_date = #{expiresDate},
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{userId}
+        where user_id = #{userId}
+    </update>
+    
+</mapper>

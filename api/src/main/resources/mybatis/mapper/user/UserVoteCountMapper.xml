@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.user.mapper.UserVoteCountMapper">
+
+    <!-- 사용자 투표 카운트 저장 (회원가입 시) -->
+    <insert id="insertUserVoteCount" parameterType="kr.co.common.entity.user.UserVoteCountEntity">
+        INSERT INTO user_vote_count (
+            user_id,
+            create_date,
+            create_user_id,
+            update_date,
+            update_user_id,
+            vote_count
+        ) VALUES (
+            #{userId},
+            #{createDate},
+            #{createUserId},
+            #{updateDate},
+            #{updateUserId},
+            #{voteCount}
+        )
+    </insert>
+
+    <!-- 사용자 투표 카운트 조회 -->
+    <select id="selectByUserId" resultType="kr.co.common.entity.user.UserVoteCountEntity">
+        SELECT
+            user_id as userId,
+            create_date as createDate,
+            create_user_id as createUserId,
+            update_date as updateDate,
+            update_user_id as updateUserId,
+            vote_count as voteCount
+        FROM user_vote_count
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 투표 카운트 증가 (+1) -->
+    <update id="incrementVoteCount">
+        UPDATE user_vote_count
+        SET
+            vote_count = vote_count + 1,
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{updateUserId}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 투표 카운트 감소 (-1) -->
+    <update id="decrementVoteCount">
+        UPDATE user_vote_count
+        SET
+            vote_count = vote_count - 1,
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{updateUserId}
+        WHERE user_id = #{userId}
+          AND vote_count > 0
+    </update>
+
+    <!-- 모든 사용자의 투표 카운트를 1로 초기화 -->
+    <update id="resetAllVoteCounts">
+        UPDATE user_vote_count
+        SET
+            vote_count = 1,
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = 0
+    </update>
+
+    <!-- 투표 카운트 변경 이력 저장 -->
+    <insert id="insertVoteCountHistory" parameterType="kr.co.common.entity.user.UserVoteCountHistoryEntity">
+        INSERT INTO user_vote_count_history (
+            create_date,
+            create_user_id,
+            user_id,
+            change_amount,
+            before_count,
+            after_count
+        ) VALUES (
+            #{createDate},
+            #{createUserId},
+            #{userId},
+            #{changeAmount},
+            #{beforeCount},
+            #{afterCount}
+        )
+    </insert>
+
+</mapper>

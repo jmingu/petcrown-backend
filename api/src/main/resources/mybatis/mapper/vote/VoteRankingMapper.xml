@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.vote.mapper.VoteRankingMapper">
+
+    <!-- 이번 주 Top 3 랭킹 조회 (실시간) -->
+    <select id="selectCurrentWeekTopRanking" resultType="kr.co.api.vote.dto.command.VoteInfoDto">
+        /*
+        VoteRankingMapper.xml
+        selectCurrentWeekTopRanking
+        이번 주 Top 3 랭킹 조회 (vote_count 기준 내림차순, date_trunc 사용)
+        */
+        SELECT
+            vw.vote_weekly_id as voteId,
+            vw.pet_id as petId,
+            p.user_id as userId,
+            p.name as name,
+            p.gender as gender,
+            p.birth_date as birthDate,
+            b.breed_id as breedId,
+            b.name as breedName,
+            s.species_id as speciesId,
+            s.name as speciesName,
+            pm.pet_mode_id as petModeId,
+            pm.mode_name as petModeName,
+            0 as dailyVoteCount,
+            vw.vote_count as weeklyVoteCount,
+            0 as monthlyVoteCount,
+            vw.week_start_date as voteMonth,
+            vfi.file_url as profileImageUrl,
+            u.email as ownerEmail
+        FROM vote_weekly vw
+        INNER JOIN pet p ON vw.pet_id = p.pet_id AND p.delete_date IS NULL
+        INNER JOIN "user" u ON p.user_id = u.user_id AND u.delete_date IS NULL
+        LEFT JOIN breed b ON p.breed_id = b.breed_id
+        LEFT JOIN species s ON b.species_id = s.species_id
+        LEFT JOIN pet_mode pm ON vw.mode_id = pm.pet_mode_id AND pm.delete_date IS NULL
+        LEFT JOIN vote_file_info vfi ON vfi.ref_table = 'vote_weekly'
+            AND vfi.ref_id = vw.vote_weekly_id
+            AND vfi.delete_date IS NULL
+        WHERE date_trunc('week', vw.week_start_date) = date_trunc('week', CURRENT_DATE)
+        AND vw.delete_date IS NULL
+        ORDER BY vw.vote_count DESC, vw.vote_weekly_id ASC
+        LIMIT 3
+    </select>
+
+    <!-- 지난 주 Top 3 랭킹 조회 -->
+    <select id="selectLastWeekTopRanking" resultType="kr.co.api.vote.dto.command.VoteInfoDto">
+        /*
+        VoteRankingMapper.xml
+        selectLastWeekTopRanking
+        지난 주 Top 3 랭킹 조회 (vote_count 기준 내림차순, date_trunc 사용)
+        */
+        SELECT
+            vw.vote_weekly_id as voteId,
+            vw.pet_id as petId,
+            p.user_id as userId,
+            p.name as name,
+            p.gender as gender,
+            p.birth_date as birthDate,
+            b.breed_id as breedId,
+            b.name as breedName,
+            s.species_id as speciesId,
+            s.name as speciesName,
+            pm.pet_mode_id as petModeId,
+            pm.mode_name as petModeName,
+            0 as dailyVoteCount,
+            vw.vote_count as weeklyVoteCount,
+            0 as monthlyVoteCount,
+            vw.week_start_date as voteMonth,
+            vfi.file_url as profileImageUrl,
+            u.email as ownerEmail
+        FROM vote_weekly vw
+        INNER JOIN pet p ON vw.pet_id = p.pet_id AND p.delete_date IS NULL
+        INNER JOIN "user" u ON p.user_id = u.user_id AND u.delete_date IS NULL
+        LEFT JOIN breed b ON p.breed_id = b.breed_id
+        LEFT JOIN species s ON b.species_id = s.species_id
+        LEFT JOIN pet_mode pm ON vw.mode_id = pm.pet_mode_id AND pm.delete_date IS NULL
+        LEFT JOIN vote_file_info vfi ON vfi.ref_table = 'vote_weekly'
+            AND vfi.ref_id = vw.vote_weekly_id
+            AND vfi.delete_date IS NULL
+        WHERE date_trunc('week', vw.week_start_date) = date_trunc('week', CURRENT_DATE - INTERVAL '1 week')
+        AND vw.delete_date IS NULL
+        ORDER BY vw.vote_count DESC, vw.vote_weekly_id ASC
+        LIMIT 3
+    </select>
+
+</mapper>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.common.mapper.FileInfoMapper">
+
+    <insert id="insertFileInfo" useGeneratedKeys="true" keyProperty="fileId">
+        /*
+        FileInfoMapper.xml
+        insertFileInfo
+        파일 정보 저장
+        */
+        INSERT INTO file_info (
+            ref_table, ref_id, file_type, sort_order, file_url, file_size, mime_type,
+            file_name, original_file_name,
+            create_date, create_user_id, updated_date, update_user_id
+        ) VALUES (
+            CAST(#{refTable} AS ref_table_enum), #{refId}, CAST(#{fileType} AS file_type_enum), #{sortOrder}, #{fileUrl}, #{fileSize}, #{mimeType},
+            #{fileName}, #{originalFileName},
+            CURRENT_TIMESTAMP, #{createUserId}, CURRENT_TIMESTAMP, #{createUserId}
+        )
+        RETURNING file_id
+    </insert>
+
+    <insert id="insertFileInfoBatch">
+        /*
+        FileInfoMapper.xml
+        insertFileInfoBatch
+        파일 정보 배치 저장
+        */
+        INSERT INTO file_info (
+            ref_table, ref_id, file_type, sort_order, file_url, file_size, mime_type,
+            file_name, original_file_name,
+            create_date, create_user_id, updated_date, update_user_id
+        ) VALUES
+        <foreach collection="fileInfoList" item="item" separator=",">
+            (
+                CAST(#{item.refTable} AS ref_table_enum), #{item.refId}, CAST(#{item.fileType} AS file_type_enum), #{item.sortOrder}, #{item.fileUrl},
+                #{item.fileSize}, #{item.mimeType},
+                #{item.fileName}, #{item.originalFileName},
+                CURRENT_TIMESTAMP, #{item.createUserId}, CURRENT_TIMESTAMP, #{item.createUserId}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectByRefTableAndRefId" resultType="kr.co.common.entity.file.FileInfoEntity">
+        /*
+        FileInfoMapper.xml
+        selectByRefTableAndRefId
+        참조 테이블과 참조 ID로 파일 정보 조회
+        */
+        SELECT *
+        FROM file_info
+        WHERE ref_table = CAST(#{refTable} AS ref_table_enum)
+        AND ref_id = #{refId}
+        AND delete_date IS NULL
+        ORDER BY file_type, create_date
+    </select>
+
+    <select id="selectByFileId" resultType="kr.co.common.entity.file.FileInfoEntity">
+        /*
+        FileInfoMapper.xml
+        selectByFileId
+        파일 ID로 파일 정보 조회
+        */
+        SELECT *
+        FROM file_info
+        WHERE file_id = #{fileId}
+        AND delete_date IS NULL
+    </select>
+
+    <update id="deleteById">
+        /*
+        FileInfoMapper.xml
+        deleteById
+        파일 정보 삭제 (논리 삭제)
+        */
+        UPDATE file_info SET
+            delete_date = CURRENT_TIMESTAMP,
+            delete_user_id = #{deleteUserId}
+        WHERE file_id = #{fileId}
+    </update>
+
+    <update id="deleteByRefTableAndRefId">
+        /*
+        FileInfoMapper.xml
+        deleteByRefTableAndRefId
+        참조 테이블과 참조 ID로 파일 정보 모두 삭제 (논리 삭제)
+        */
+        UPDATE file_info SET
+            delete_date = CURRENT_TIMESTAMP,
+            delete_user_id = #{deleteUserId}
+        WHERE ref_table = CAST(#{refTable} AS ref_table_enum)
+        AND ref_id = #{refId}
+    </update>
+
+    <update id="deleteByRefTableAndRefIdAndFileType">
+        /*
+        FileInfoMapper.xml
+        deleteByRefTableAndRefIdAndFileType
+        특정 타입의 파일만 삭제 (논리 삭제)
+        */
+        UPDATE file_info SET
+            delete_date = CURRENT_TIMESTAMP,
+            delete_user_id = #{deleteUserId}
+        WHERE ref_table = CAST(#{refTable} AS ref_table_enum)
+        AND ref_id = #{refId}
+        AND file_type = CAST(#{fileType} AS file_type_enum)
+    </update>
+
+</mapper>

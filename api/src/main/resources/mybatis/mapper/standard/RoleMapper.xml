@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.api.user.mapper.RoleMapper">
+    
+    <!-- 기본 역할 조회 -->
+    <select id="selectDefaultRole" resultType="kr.co.common.entity.standard.role.RoleEntity">
+        SELECT *
+        FROM role
+        WHERE is_default = 'Y'
+        AND delete_date IS NULL
+    </select>
+    
+</mapper>
