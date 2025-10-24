@@ -122,4 +122,9 @@ public interface VoteMapper {
      * Weekly 투표 수정
      */
     void updateVoteWeekly(VoteWeeklyEntity voteWeeklyEntity);
+
+    /**
+     * 현재 주의 weekStartDate 조회 (date_trunc 사용)
+     */
+    LocalDate selectCurrentWeekStartDate();
 }

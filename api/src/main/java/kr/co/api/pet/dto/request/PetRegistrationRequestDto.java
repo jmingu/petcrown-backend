@@ -16,26 +16,14 @@ import java.time.LocalDate;
 @Getter
 @ToString
 public class PetRegistrationRequestDto {
-    
-    @Schema(description = "종류", required = false, example = "0")
+
+    @Schema(description = "품종 ID", required = false, example = "1")
     private Integer breedId;
 
-    @Schema(description = "종류 기타면 작성", required = false, example = "푸들30%, 말티즈20%")
+    @Schema(description = "기타 품종 (품종 ID가 없을 때)", required = false, example = "푸들30%, 말티즈20%")
     private String customBreed;
 
     @Schema(description = "이름", required = true, example = "바둑이")
     private String name;
-
-    @Schema(description = "생년월일", required = true, example = "2020-01-01")
-    private LocalDate birthDate;
-
-    @Schema(description = "성별", required = true, example = "M")
-    private String gender;
-
-    @Schema(description = "소개", required = false, example = "말을 잘 듣는다.")
-    private String description;
-
-    @Schema(description = "내장칩 번호", required = false, example = "123456")
-    private String microchipId;
 
 }

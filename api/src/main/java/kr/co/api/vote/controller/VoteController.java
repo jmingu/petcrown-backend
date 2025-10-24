@@ -82,7 +82,6 @@ public class VoteController extends BaseController {
     public ResponseEntity<CommonResponseDto> getVote(
             @PathVariable Long voteId) {
 
-
         VoteInfoDto voteInfoDto = voteService.getVote(voteId);
         VotePetResponseDto responseDto = voteDtoCommandConverter.toResponseDto(voteInfoDto);
         log.debug("responseDto {}", responseDto);

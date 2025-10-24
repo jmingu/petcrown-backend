@@ -14,16 +14,13 @@ public class UserDtoDomainConverter {
             return null;
         }
 
-        // User 객체 생성 (실제 구현 시 User 생성자에 맞게 수정)
+        // User 객체 생성 - 간단한 회원가입 (이메일, 이름, 닉네임, 비밀번호만)
         return User.createUserByEmail(
                 dto.getEmail(),
                 dto.getName(),
                 dto.getNickname(),
                 dto.getPassword(),
-                dto.getPasswordCheck(),
-                dto.getPhoneNumber(),
-                dto.getBirthDate(),
-                dto.getGender()
+                dto.getPasswordCheck()
         );
     }
     

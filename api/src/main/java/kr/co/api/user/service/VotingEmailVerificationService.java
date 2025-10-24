@@ -33,6 +33,9 @@ public class VotingEmailVerificationService {
     @Value("${petcrown.encryption.key}")
     private String encryptionKey;
 
+    @Value("${petcrown.frontend.url}")
+    private String frontendUrl;
+
     /**
      * 투표용 이메일 인증 메일 발송
      */
@@ -60,7 +63,7 @@ public class VotingEmailVerificationService {
             String encryptedToken = CryptoUtil.encrypt(plainToken, encryptionKey);
 
             // 4. HTML 이메일 콘텐츠 생성
-            EmailContentDto emailContent = EmailUtil.generateVotingEmailContent(email, encryptedToken);
+            EmailContentDto emailContent = EmailUtil.generateVotingEmailContent(email, encryptedToken, frontendUrl);
 
             // 5. 이메일 발송
             emailService.sendEmail(email, emailContent.getSubject(), emailContent.getBody());

@@ -45,4 +45,16 @@ public class CryptoUtil {
     public static String generateVerificationCode() {
         return String.format("%06d", random.nextInt(1000000));
     }
+
+    /**
+     * 임시 비밀번호 생성 (영문 대소문자, 숫자 조합 10자리)
+     */
+    public static String generateTemporaryPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
+    }
 }

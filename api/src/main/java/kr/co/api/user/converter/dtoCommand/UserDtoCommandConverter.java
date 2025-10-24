@@ -1,10 +1,12 @@
 package kr.co.api.user.converter.dtoCommand;
 
 import kr.co.api.user.dto.command.LoginTokenDto;
+import kr.co.api.user.dto.command.PasswordResetDto;
 import kr.co.api.user.dto.command.PasswordUpdateDto;
 import kr.co.api.user.dto.command.UserInfoDto;
 import kr.co.api.user.dto.command.UserRegistrationDto;
 import kr.co.api.user.dto.command.UserUpdateDto;
+import kr.co.api.user.dto.request.PasswordResetRequestDto;
 import kr.co.api.user.dto.request.PasswordUpdateRequestDto;
 import kr.co.api.user.dto.request.UserRegistrationRequestDto;
 import kr.co.api.user.dto.request.UserUpdateRequestDto;
@@ -37,10 +39,7 @@ public class UserDtoCommandConverter {
                 request.getName(),
                 request.getNickname(),
                 request.getPassword(),
-                request.getPasswordCheck(),
-                request.getPhoneNumber(),
-                request.getBirthDate(),
-                request.getGender()
+                request.getPasswordCheck()
         );
     }
 
@@ -83,6 +82,23 @@ public class UserDtoCommandConverter {
                 request.getCurrentPassword(),
                 request.getNewPassword(),
                 request.getNewPasswordConfirm()
+        );
+    }
+
+    /**
+     * PasswordResetRequestDto를 PasswordResetDto로 변환
+     *
+     * @param request HTTP 요청으로부터 받은 RequestDto
+     * @return Service Layer에서 사용할 CommandDto
+     */
+    public PasswordResetDto toCommandDto(PasswordResetRequestDto request) {
+        if (request == null) {
+            return null;
+        }
+
+        return new PasswordResetDto(
+                request.getEmail(),
+                request.getName()
         );
     }
 

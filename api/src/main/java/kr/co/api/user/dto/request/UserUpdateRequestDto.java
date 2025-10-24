@@ -21,7 +21,6 @@ public class UserUpdateRequestDto {
     @Schema(description = "성별", required = true)
     private String gender;
 
-
     @Schema(description = "생년월일", required = true)
     private LocalDate birthDate;
 

@@ -13,7 +13,7 @@ public class PhoneNumber {
     private final String value;
     
     public PhoneNumber(String phoneNumber) {
-        validatePhoneNumber(phoneNumber);
+//        validatePhoneNumber(phoneNumber);
         this.value = phoneNumber;
     }
     

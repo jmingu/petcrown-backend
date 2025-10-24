@@ -34,9 +34,9 @@ public class UserDomainEntityConverter {
                 roleEntity.getRoleId(), // roleId
                 user.getName().getValue(),
                 user.getNickname().getValue(),
-                user.getPhoneNumber().getValue(),
+                user.getPhoneNumber() != null ? user.getPhoneNumber().getValue() : null,
                 user.getBirthDate(),
-                user.getGender().getValue(),
+                user.getGender() != null ? user.getGender().getValue() : null,
                 user.getHeight(),
                 user.getWeight(),
                 "EMAIL", // loginType

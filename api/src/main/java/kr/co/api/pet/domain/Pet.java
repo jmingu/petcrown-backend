@@ -33,23 +33,15 @@ public class Pet {
 
 
     /**
-     * 펫을 생성하는 메서드
+     * 간단한 펫 등록 (품종 또는 기타품종, 이름)
      */
-    public static Pet SetPetObject(Integer breedId, String customBreed, Long userId, String nameValue, LocalDate birthDate,
-                              String genderValue, String microchipId, String description) {
-
+    public static Pet SetPetObject(Integer breedId, String customBreed, Long userId, String nameValue) {
         // Value Objects 생성 (유효성 검증 포함)
         PetName name = new PetName(nameValue);
-        PetGender gender = new PetGender(genderValue);
 
-        
-        // 미래 날짜 검증
-        if (birthDate.isAfter(LocalDate.now())) {
-            throw new PetCrownException(BusinessCode.INVALID_BIRTH_DATE);
-        }
-
-        return new Pet(null, Breed.getBreedAllFiled(breedId, null, null), customBreed, new Ownership(1),
-                User.ofId(userId), name, birthDate, gender, null, null, null, null, microchipId, description);
+        return new Pet(null, breedId != null ? Breed.getBreedAllFiled(breedId, null, null) : null,
+                customBreed, null,
+                User.ofId(userId), name, null, null, null, null, null, null, null, null);
     }
 
     /**
@@ -145,7 +137,7 @@ public class Pet {
                               String genderValue, String description, String microchipId) {
         // 유효성 검증
         PetName newName = new PetName(nameValue);
-        PetGender newGender = new PetGender(genderValue);
+        PetGender newGender = genderValue == null ? null : new PetGender(genderValue);
         
         // 미래 날짜 검증
         if (birthDate.isAfter(LocalDate.now())) {

@@ -39,9 +39,12 @@ public class EmailUtil {
     /**
      * 투표 이메일 인증을 위한 HTML 콘텐츠 생성
      */
-    public static EmailContentDto generateVotingEmailContent(String email, String encryptedToken) {
-        String title = "PET CROWN 투표 인증메일입니다.";
-        String verificationUrl = "http://localhost:8080/users/v1/verify-voting-email?email=" + email + "&token=" + encryptedToken;
+    public static EmailContentDto generateVotingEmailContent(String email, String encryptedToken, String frontendUrl) {
+        try {
+            String title = "PET CROWN 투표 인증메일입니다.";
+            String encodedEmail = java.net.URLEncoder.encode(email, "UTF-8");
+            String encodedToken = java.net.URLEncoder.encode(encryptedToken, "UTF-8");
+            String verificationUrl = frontendUrl + "/verify-voting-email?email=" + encodedEmail + "&token=" + encodedToken;
 
         String content = "<html>"
                 + "<head>"
@@ -66,6 +69,47 @@ public class EmailUtil {
                 + "  <p>• 이 인증은 오늘만 유효합니다<br>"
                 + "  • 인증 완료 후 오늘 하루 동안 투표 참여가 가능합니다<br>"
                 + "  • 본인이 요청하지 않았다면 이 메일을 무시해주세요</p>"
+                + "  <div class='footer'>"
+                + "    <p>※본 메일은 자동응답 메일이므로 회신하지 마세요.</p>"
+                + "  </div>"
+                + "</div>"
+                + "</body>"
+                + "</html>";
+
+            return EmailContentDto.builder().subject(title).body(content).build();
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new RuntimeException("URL encoding failed", e);
+        }
+    }
+
+    /**
+     * 임시 비밀번호 발급 이메일 콘텐츠 생성
+     */
+    public static EmailContentDto generateTemporaryPasswordEmail(String temporaryPassword) {
+        String title = "PET CROWN 임시 비밀번호 발급";
+        String content = "<html>"
+                + "<head>"
+                + "<style>"
+                + "  body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 40px; }"
+                + "  .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }"
+                + "  h1 { color: #333; }"
+                + "  p { font-size: 16px; color: #555; line-height: 1.6; }"
+                + "  .password-box { font-size: 24px; font-weight: bold; color: #1a73e8; background: #eef2ff; padding: 15px; border-radius: 5px; display: inline-block; margin: 20px 0; letter-spacing: 2px; }"
+                + "  .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 20px 0; text-align: left; }"
+                + "  .footer { font-size: 12px; color: grey; margin-top: 20px; }"
+                + "</style>"
+                + "</head>"
+                + "<body>"
+                + "<div class='container'>"
+                + "  <h2>🔑 임시 비밀번호 발급</h2>"
+                + "  <p>비밀번호 찾기 요청에 따라 임시 비밀번호를 발급해드립니다.</p>"
+                + "  <div class='password-box'>" + temporaryPassword + "</div>"
+                + "  <div class='warning'>"
+                + "    <p><strong>⚠️ 보안을 위한 안내사항</strong></p>"
+                + "    <p>• 로그인 후 반드시 비밀번호를 변경해주세요<br>"
+                + "    • 임시 비밀번호는 타인에게 노출되지 않도록 주의하세요<br>"
+                + "    • 본인이 요청하지 않았다면 즉시 고객센터로 문의해주세요</p>"
+                + "  </div>"
                 + "  <div class='footer'>"
                 + "    <p>※본 메일은 자동응답 메일이므로 회신하지 마세요.</p>"
                 + "  </div>"

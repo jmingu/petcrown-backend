@@ -43,7 +43,12 @@ public interface UserMapper {
      * 비밀번호 변경
      */
     void updatePassword(@Param("userId") Long userId, @Param("password") String password);
-    
+
+    /**
+     * 이메일, 이름으로 사용자 조회 (비밀번호 찾기용)
+     */
+    UserEntity selectByEmailAndName(@Param("email") String email, @Param("name") String name);
+
     /**
      * 사용자 삭제
      */

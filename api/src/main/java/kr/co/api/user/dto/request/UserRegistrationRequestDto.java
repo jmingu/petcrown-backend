@@ -30,13 +30,4 @@ public class UserRegistrationRequestDto {
 
     @Schema(description = "비밀번호 확인", required = true)
     private String passwordCheck;
-
-    @Schema(description = "휴대폰 번호", required = true)
-    private String phoneNumber;
-
-    @Schema(description = "생년월일", required = true)
-    private LocalDate birthDate;
-
-    @Schema(description = "성별", required = true)
-    private String gender;
 }

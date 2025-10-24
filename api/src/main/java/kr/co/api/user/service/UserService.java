@@ -395,6 +395,38 @@ public class UserService {
 
         log.info("Password updated successfully: userId={}", passwordUpdateDto.getUserId());
     }
+
+    /**
+     * 비밀번호 찾기 (임시 비밀번호 발급)
+     */
+    @Transactional
+    public void resetPassword(PasswordResetDto passwordResetDto) {
+
+        // 이메일, 이름으로 사용자 조회
+        UserEntity userEntity = userMapper.selectByEmailAndName(
+                passwordResetDto.getEmail(),
+                passwordResetDto.getName()
+        );
+
+        // 사용자 정보가 없으면 예외
+        if (userEntity == null) {
+            throw new PetCrownException(MEMBER_NOT_FOUND);
+        }
+
+        // 임시 비밀번호 생성
+        String temporaryPassword = CryptoUtil.generateTemporaryPassword();
+
+        // 임시 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(temporaryPassword);
+
+        // 비밀번호 업데이트
+        userMapper.updatePassword(userEntity.getUserId(), encodedPassword);
+
+        // 임시 비밀번호 이메일 발송
+        emailService.sendTemporaryPasswordEmailAsync(userEntity.getEmail(), temporaryPassword);
+
+        log.info("Temporary password issued successfully: email={}", userEntity.getEmail());
+    }
 //
 //    /**
 //     * 사용자 삭제

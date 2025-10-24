@@ -1,6 +1,7 @@
 package kr.co.api.vote.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,5 +18,6 @@ public class VoteUpdateRequestDto {
     private String profileImageUrl;
 
     @Schema(description = "펫 감정 모드 ID", required = true, example = "1")
+    @NotNull(message = "펫 감정 모드 ID는 필수입니다")
     private Integer petModeId;
 }

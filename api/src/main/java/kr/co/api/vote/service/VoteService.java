@@ -55,7 +55,16 @@ public class VoteService {
     @Transactional
     public void createVote(VoteRegistrationDto voteRegistrationDto, MultipartFile image) {
 
-        // 1. 주별 투표 등록 제한 검증 (주 1회만 등록 가능 - DB date_trunc 사용)
+        // 1. 현재 주의 weekStartDate 조회 (DB date_trunc 사용)
+        LocalDate weekStartDate = voteMapper.selectCurrentWeekStartDate();
+        log.debug("Current week start date: {}", weekStartDate);
+
+        // 2. petModeId 필수 검증
+        if (voteRegistrationDto.getPetModeId() == null) {
+            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
+        }
+
+        // 3. 주별 투표 등록 제한 검증 (주 1회만 등록 가능)
         int currentWeekVoteCount = voteMapper.countWeeklyVoteRegistrationByUser(
             voteRegistrationDto.getUserId());
 
@@ -66,7 +75,7 @@ public class VoteService {
         log.debug("Weekly vote registration validation passed: userId={}, currentWeekCount={}",
                 voteRegistrationDto.getUserId(), currentWeekVoteCount);
 
-        // 2. 이미지 처리 및 파일 정보 준비
+        // 3. 이미지 처리 및 파일 정보 준비
         String imageUrl;
         String fileName;
         String originalFileName;
@@ -74,8 +83,8 @@ public class VoteService {
         String mimeType;
 
         if (image != null && !image.isEmpty()) {
-            // 새 이미지 업로드
-            String folderPath = String.format("vote/user/%d", voteRegistrationDto.getUserId());
+            // 새 이미지 업로드 - vote/{weekStartDate}/UUID 경로 사용
+            String folderPath = String.format("vote/%s", weekStartDate.toString().replace("-", ""));
             imageUrl = objectStorageService.uploadFile(image, folderPath);
             fileName = extractFileNameFromUrl(imageUrl);
             originalFileName = image.getOriginalFilename();
@@ -108,12 +117,12 @@ public class VoteService {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
 
-        // 3. Weekly 투표 등록 (weekStartDate는 DB에서 자동 계산)
+        // 4. Weekly 투표 등록 (weekStartDate 사용)
         VoteWeeklyEntity voteWeeklyEntity =
             new VoteWeeklyEntity(
                 voteRegistrationDto.getUserId(),
                 voteRegistrationDto.getUserId(),
-                null,  // weekStartDate는 DB에서 date_trunc로 자동 설정
+                weekStartDate,  // DB에서 조회한 weekStartDate 사용
                 voteRegistrationDto.getPetId(),
                 0,
                 0,
@@ -122,7 +131,7 @@ public class VoteService {
         voteMapper.insertVoteWeekly(voteWeeklyEntity);
         Long voteWeeklyId = voteWeeklyEntity.getVoteWeeklyId();
 
-        // 4. 투표 파일 정보 등록
+        // 5. 투표 파일 정보 등록
         VoteFileInfoEntity voteFileInfoEntity =
             new VoteFileInfoEntity(
                 voteRegistrationDto.getUserId(),
@@ -139,7 +148,7 @@ public class VoteService {
             );
         voteMapper.insertVoteFileInfo(voteFileInfoEntity);
 
-        // 5. 사용자 투표 카운트 관리
+        // 6. 사용자 투표 카운트 관리
         UserVoteCountEntity userVoteCountEntity = userVoteCountMapper.selectByUserId(voteRegistrationDto.getUserId());
         if (userVoteCountEntity == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
@@ -212,10 +221,18 @@ public class VoteService {
             throw new PetCrownException(ACCESS_DENIED);
         }
 
-        // 3. 이미지 처리 - 새 이미지 업로드 → DB UPDATE → 기존 이미지 삭제
+        // 3. petModeId 필수 검증
+        if (voteUpdateDto.getPetModeId() == null) {
+            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
+        }
+
+        // 4. 현재 주의 weekStartDate 조회 (이미지 경로용)
+        LocalDate weekStartDate = voteMapper.selectCurrentWeekStartDate();
+
+        // 4. 이미지 처리 - 새 이미지 업로드 → DB UPDATE → 기존 이미지 삭제
         if (image != null && !image.isEmpty()) {
-            // 1) 새 이미지 업로드
-            String folderPath = String.format("vote/user/%d", voteUpdateDto.getUserId());
+            // 1) 새 이미지 업로드 - vote/{weekStartDate}/UUID 경로 사용
+            String folderPath = String.format("vote/%s", weekStartDate.toString());
             String newImageUrl = objectStorageService.uploadFile(image, folderPath);
 
             // 2) 파일 정보 DB UPDATE (기존 URL 수정)

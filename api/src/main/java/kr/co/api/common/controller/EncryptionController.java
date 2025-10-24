@@ -56,21 +56,17 @@ public class EncryptionController {
     @AuthRequired(authSkip = true)
     @GetMapping
     public String encryptValue(
-            @Parameter(description = "설정 키 이름 (선택사항)", example = "mail-username")
-            @RequestParam(required = false) String key,
             @Parameter(description = "암호화할 값", example = "test@example.com", required = true)
             @RequestParam String value) {
         
         String encrypted = encryptionUtil.encryptForConfig(value);
-        String keyName = key != null ? key : "value";
         
         System.out.println("\n=== 암호화 결과 ===");
-        System.out.println(keyName + ": " + encrypted);
         System.out.println("==================\n");
         
-        log.info("Encrypted {}: {}", keyName, encrypted);
+        log.info("Encrypted {}: {}", encrypted);
         
-        return String.format("암호화 완료!<br><br><b>%s</b>: %s<br><br>콘솔도 확인해보세요!", keyName, encrypted);
+        return String.format("암호화 완료!<br>%s<br>콘솔도 확인해보세요!", encrypted);
     }
     
     @Operation(

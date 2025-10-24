@@ -2,6 +2,22 @@ spring:
   config:
     activate:
       on-profile: local
+  mail:
+    host: smtp.gmail.com  # Gmail의 SMTP 서버 호스트
+    port: 587 # Gmail SMTP 서버는 587번 포트를 사용
+    username: ENC(vr/J5J9z3fU0IPMGFjOH16u0n2gpS2ZJBbDd+/oGZG4dA+g5XOOP/UyhJbu1nw2uHAuGDlhmdWgMo1rP/6QRsQ==)
+    password: ENC(ytFTZN4qKh7qt09ewh7sZwXUEyJiSoSzJ37g9jiMth9cxslK/Dk6S5gCdN6aLkbNY0+O/Wsi0Uepp/n/0zYJuA==)
+    properties:
+      mail:
+        smtp:
+          auth: true # SMTP 서버에 인증 필요한 경우 true로 지정 Gmail은 요구함
+          starttls:
+            enable: true # SMTP 서버가 TLS를 사용하여 안전한 연결을 요구하는 경우 true로 설정
+            required: true
+          connectiontimeout: 5000 # 클라이언트가 SMTP 서버와의 연결을 설정하는 데 대기해야 하는 시간
+          timeout: 5000 # 클라이언트가 SMTP 서버로부터 응답을 대기해야 하는 시간
+          writetimeout: 5000 # 클라이언트가 작업을 완료하는데 대기해야 하는 시간
+    auth-code-expiration-millis: 1800000  # 30 * 60 * 1000 == 30분 이메일 인증 코드의 만료 시간(Millisecond)
 server:
   shutdown: immediate
 
@@ -17,23 +33,39 @@ naver:
       secret-key: ENC(4S5F5iRdWKYsSX2KIxfHjItKNJinqGjcu7n9Y3SBrWn6KXUbOdzpQWnxU8MFp/XnOUEsDCLMx1WuB3Z3u4EqyiZDlqSyPG9SoN/M1RQfkyE=)
       region: kr-standard
       endpoint: https://kr.object.ncloudstorage.com
-      bucket: ENC(c/JdTWUGLamVQBjhVIX2oUXaXUTcvDC+DIBJvuT8j8+21R5pZXm7Ji+I7qTA8QIeemG1OwO261khCI7Ggc7sAg==)
-      base-url: ENC(4GCp+pga5Htb4FXjkgngV/ytU7qqkNvLdmZfzfJybVIaSBOf9QlSBH7qHzdq//GW3vl1DJq1PyOQNJiEVIVOwrfuUoC6um96rQOi74wZGBxJzVCrtNbMVxsKeIwNKxpT)
+      bucket: ENC(KhtbhYy8//8Y8p7VSsQNYkQhLgEXT+zrlRQEKWtsOEX/tBA76aPgPxoGY/msw1nE)
+      base-url: ENC(s5jqUALMcKBLZfyvioYA6Olu2xMOPva+Y2wj0hCtQWEJgayHIOfNyO7UOonBYrqbBQHrz5XPfF25ab3Jr8E3otlBk0EqJXrkxY9ZJ1g+N4LBeDI6ZSbXSgdbidy+fu8I)
 
 
 ---
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: dev
+  mail:
+    host: smtp.gmail.com  # Gmail의 SMTP 서버 호스트
+    port: 587 # Gmail SMTP 서버는 587번 포트를 사용
+    username: ENC(vr/J5J9z3fU0IPMGFjOH16u0n2gpS2ZJBbDd+/oGZG4dA+g5XOOP/UyhJbu1nw2uHAuGDlhmdWgMo1rP/6QRsQ==)
+    password: ENC(ytFTZN4qKh7qt09ewh7sZwXUEyJiSoSzJ37g9jiMth9cxslK/Dk6S5gCdN6aLkbNY0+O/Wsi0Uepp/n/0zYJuA==)
+    properties:
+      mail:
+        smtp:
+          auth: true # SMTP 서버에 인증 필요한 경우 true로 지정 Gmail은 요구함
+          starttls:
+            enable: true # SMTP 서버가 TLS를 사용하여 안전한 연결을 요구하는 경우 true로 설정
+            required: true
+          connectiontimeout: 5000 # 클라이언트가 SMTP 서버와의 연결을 설정하는 데 대기해야 하는 시간
+          timeout: 5000 # 클라이언트가 SMTP 서버로부터 응답을 대기해야 하는 시간
+          writetimeout: 5000 # 클라이언트가 작업을 완료하는데 대기해야 하는 시간
+    auth-code-expiration-millis: 1800000  # 30 * 60 * 1000 == 30분 이메일 인증 코드의 만료 시간(Millisecond)
 server:
   shutdown: immediate
 
 file:
   path:
-    pet-image: pet/image/prod
+    pet-image: pet/image/dev
 
-# 네이버 클라우드 Object Storage 설정 (운영환경 - 임시로 평문)
+# 네이버 클라우드 Object Storage 설정 (개발환경)
 naver:
   cloud:
     object-storage:
@@ -41,5 +73,44 @@ naver:
       secret-key: ENC(4S5F5iRdWKYsSX2KIxfHjItKNJinqGjcu7n9Y3SBrWn6KXUbOdzpQWnxU8MFp/XnOUEsDCLMx1WuB3Z3u4EqyiZDlqSyPG9SoN/M1RQfkyE=)
       region: kr-standard
       endpoint: https://kr.object.ncloudstorage.com
-      bucket: ENC(SwqIbsdT0ard1ozLXBu8nwlbcr2qNEUOlxa6C3GUx46BsFo0DYi81OP+5IJ+Ea8iit1Wp+tULcUSMXZ2EiwUaQ==)
-      base-url: ENC(4GCp+pga5Htb4FXjkgngV/ytU7qqkNvLdmZfzfJybVIaSBOf9QlSBH7qHzdq//GW3vl1DJq1PyOQNJiEVIVOwrfuUoC6um96rQOi74wZGBxJzVCrtNbMVxsKeIwNKxpT)
+      bucket: ENC(KhtbhYy8//8Y8p7VSsQNYkQhLgEXT+zrlRQEKWtsOEX/tBA76aPgPxoGY/msw1nE)
+      base-url: ENC(s5jqUALMcKBLZfyvioYA6Olu2xMOPva+Y2wj0hCtQWEJgayHIOfNyO7UOonBYrqbBQHrz5XPfF25ab3Jr8E3otlBk0EqJXrkxY9ZJ1g+N4LBeDI6ZSbXSgdbidy+fu8I)
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  mail:
+    host: smtp.gmail.com  # Gmail의 SMTP 서버 호스트
+    port: 587 # Gmail SMTP 서버는 587번 포트를 사용
+    username: ENC(vr/J5J9z3fU0IPMGFjOH16u0n2gpS2ZJBbDd+/oGZG4dA+g5XOOP/UyhJbu1nw2uHAuGDlhmdWgMo1rP/6QRsQ==)
+    password: ENC(ytFTZN4qKh7qt09ewh7sZwXUEyJiSoSzJ37g9jiMth9cxslK/Dk6S5gCdN6aLkbNY0+O/Wsi0Uepp/n/0zYJuA==)
+    properties:
+      mail:
+        smtp:
+          auth: true # SMTP 서버에 인증 필요한 경우 true로 지정 Gmail은 요구함
+          starttls:
+            enable: true # SMTP 서버가 TLS를 사용하여 안전한 연결을 요구하는 경우 true로 설정
+            required: true
+          connectiontimeout: 5000 # 클라이언트가 SMTP 서버와의 연결을 설정하는 데 대기해야 하는 시간
+          timeout: 5000 # 클라이언트가 SMTP 서버로부터 응답을 대기해야 하는 시간
+          writetimeout: 5000 # 클라이언트가 작업을 완료하는데 대기해야 하는 시간
+    auth-code-expiration-millis: 1800000  # 30 * 60 * 1000 == 30분 이메일 인증 코드의 만료 시간(Millisecond)
+server:
+  shutdown: immediate
+
+file:
+  path:
+    pet-image: pet/image/prod
+
+# 네이버 클라우드 Object Storage 설정 (운영환경)
+naver:
+  cloud:
+    object-storage:
+      access-key: ENC(6fZA885uN0V+wB8Y1NaDufGl00pshfN3Hs8qndrA0vqzfqDORtN13uzsXJ5qOvYodEzu3dlbaSie2eR78fKb1Q==)
+      secret-key: ENC(4S5F5iRdWKYsSX2KIxfHjItKNJinqGjcu7n9Y3SBrWn6KXUbOdzpQWnxU8MFp/XnOUEsDCLMx1WuB3Z3u4EqyiZDlqSyPG9SoN/M1RQfkyE=)
+      region: kr-standard
+      endpoint: https://kr.object.ncloudstorage.com
+      bucket: ENC(VEq8WRw26eWgF/ZwabCwrKYyZoWrDQWNJfOuhijbhDqeNeGvk6qd+OIKooy2NJRs)
+      base-url: ENC(Zl4uuZ41tXotpycbqW0k4ummDNYfKTdoo3DzXuix8GiO63rH/YchVXtM+5hbxiv/pTopBZILLzMHZwnOPTu8+RqROZYybcwN0tjhoDfpz5Q=)

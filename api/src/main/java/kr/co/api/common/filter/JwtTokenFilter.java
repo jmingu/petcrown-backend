@@ -1,6 +1,7 @@
 package kr.co.api.common.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -86,15 +87,31 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             if (!type.equals("access")) {
 //                throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
                 sendErrorResponse(response, CodeEnum.AUTHENTICATION_ERROR);
+                return;
             }
+        } catch (ExpiredJwtException e) {
+            // 토큰 만료 시 440 응답
+            sendErrorResponse(response, CodeEnum.INVALID_TOKEN);
+            return;
         } catch (Exception e) {
 //            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
             sendErrorResponse(response, CodeEnum.AUTHENTICATION_ERROR);
+            return;
         }
 
 
         // 토큰의 사용자 아이디 가져오기
-        String identifier = jwtUtil.getUserName(accessToken, jwtProperty.getSecretKey(), "identifier");
+        String identifier = null;
+        try {
+            identifier = jwtUtil.getUserName(accessToken, jwtProperty.getSecretKey(), "identifier");
+        } catch (ExpiredJwtException e) {
+            // 토큰 만료 시 440 응답
+            sendErrorResponse(response, CodeEnum.INVALID_TOKEN);
+            return;
+        } catch (Exception e) {
+            sendErrorResponse(response, CodeEnum.AUTHENTICATION_ERROR);
+            return;
+        }
 
         log.debug("identifier ==> {}", identifier);
         String userId = null;
@@ -103,6 +120,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         } catch (Exception e) {
 //            throw new PetCrownException(CodeEnum.AUTHENTICATION_ERROR);
             sendErrorResponse(response, CodeEnum.AUTHENTICATION_ERROR);
+            return;
         }
 
         log.debug("userId ==> {}", userId);

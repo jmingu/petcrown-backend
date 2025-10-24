@@ -157,6 +157,22 @@ public class UserRestController extends BaseController {
     }
 
     /**
+     * 비밀번호 찾기 (임시 비밀번호 발급)
+     */
+    @AuthRequired(authSkip = true)
+    @Operation(summary = "비밀번호 찾기", description = "이메일, 이름, 생년월일 확인 후 임시 비밀번호를 이메일로 발송")
+    @PostMapping("/v1/password/reset")
+    public ResponseEntity<CommonResponseDto> resetPassword(@RequestBody PasswordResetRequestDto request) {
+
+        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
+        PasswordResetDto passwordResetDto = userDtoCommandConverter.toCommandDto(request);
+
+        userService.resetPassword(passwordResetDto);
+
+        return success();
+    }
+
+    /**
      * 투표 가능 인증 이메일 발송
      */
     @AuthRequired(authSkip = true)
@@ -204,27 +220,11 @@ public class UserRestController extends BaseController {
     @AuthRequired(authSkip = true)
     @Operation(summary = "투표 이메일 인증 (링크 클릭)", description = "이메일 링크 클릭으로 투표 이메일 인증")
     @GetMapping("/v1/verify-voting-email")
-    public ResponseEntity<String> verifyVotingEmailByLink(
+    public ResponseEntity<CommonResponseDto> verifyVotingEmailByLink(
             @RequestParam String email,
             @RequestParam String token) {
 
-        try {
-            votingEmailVerificationService.confirmVotingEmail(email, token);
-            return ResponseEntity.ok(
-                "<html><body style='text-align:center; padding:50px; font-family:Arial;'>" +
-                "<h2>🎉 투표 인증 완료!</h2>" +
-                "<p>오늘 하루 동안 투표에 참여하실 수 있습니다.</p>" +
-                "<p>창을 닫고 투표를 진행해주세요.</p>" +
-                "</body></html>"
-            );
-        } catch (Exception e) {
-            return ResponseEntity.ok(
-                "<html><body style='text-align:center; padding:50px; font-family:Arial;'>" +
-                "<h2>❌ 인증 실패</h2>" +
-                "<p>인증에 실패했습니다: " + e.getMessage() + "</p>" +
-                "<p>다시 시도해주세요.</p>" +
-                "</body></html>"
-            );
-        }
+        votingEmailVerificationService.confirmVotingEmail(email, token);
+        return success();
     }
 }

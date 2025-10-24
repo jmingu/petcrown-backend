@@ -14,7 +14,7 @@
             week_start_date, pet_id, vote_count, view_count, mode_id,
             create_date, create_user_id, update_date, update_user_id
         ) VALUES (
-            date_trunc('week', CURRENT_DATE)::date, #{petId}, #{voteCount}, #{viewCount}, #{modeId},
+            #{weekStartDate}, #{petId}, #{voteCount}, #{viewCount}, #{modeId},
             #{createDate}, #{createUserId}, #{updateDate}, #{updateUserId}
         )
         RETURNING vote_weekly_id
@@ -412,5 +412,15 @@
             update_user_id = #{updateUserId}
         WHERE vote_weekly_id = #{voteWeeklyId}
     </update>
+
+    <!-- 현재 주의 weekStartDate 조회 (date_trunc 사용) -->
+    <select id="selectCurrentWeekStartDate" resultType="java.time.LocalDate">
+        /*
+        VoteMapper.xml
+        selectCurrentWeekStartDate
+        현재 주의 weekStartDate 조회
+        */
+        SELECT date_trunc('week', CURRENT_DATE)::date AS weekStartDate
+    </select>
 
 </mapper>

@@ -29,7 +29,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 import static kr.co.common.enums.BusinessCode.*;
 
@@ -64,7 +66,9 @@ public class PetService {
 
         // 3. 이미지 업로드 및 FileInfoEntity 저장
         if (image != null && !image.isEmpty()) {
-            String imageUrl = objectStorageService.uploadFile(image, "profiles/user/" + petRegistrationDto.getUserId() + "/pet");
+            // pet/yyyymmdd_uuid(8자리) 경로 생성
+            String folderPath = generatePetImagePath();
+            String imageUrl = objectStorageService.uploadFile(image, folderPath);
 
             FileInfoEntity fileInfoEntity = createFileInfoEntity(
                 petId, "IMAGE", imageUrl, image, petRegistrationDto.getUserId()
@@ -125,7 +129,7 @@ public class PetService {
                 User.ofId(existingPetInfo.getUserId()),
                 new PetName(existingPetInfo.getName()),
                 existingPetInfo.getBirthDate(),
-                new PetGender(existingPetInfo.getGender()),
+                existingPetInfo.getGender() == null ? null : new PetGender(existingPetInfo.getGender()),
                 null, null,
                 null,
                 null,
@@ -145,8 +149,9 @@ public class PetService {
             // 1) 기존 이미지 조회
             List<FileInfoEntity> existingFiles = fileInfoMapper.selectByRefTableAndRefId(PET_REF_TABLE, petUpdateDto.getPetId());
 
-            // 2) 새 이미지 업로드
-            String newImageUrl = objectStorageService.uploadFile(image, "profiles/user/" + petUpdateDto.getUserId() + "/pet");
+            // 2) 새 이미지 업로드 - pet/yyyymmdd_uuid(8자리) 경로 생성
+            String folderPath = generatePetImagePath();
+            String newImageUrl = objectStorageService.uploadFile(image, folderPath);
 
             // 3) 새 이미지 FileInfoEntity 저장
             FileInfoEntity fileInfoEntity = createFileInfoEntity(
@@ -301,5 +306,12 @@ public class PetService {
             return fileUrl.substring(lastSlashIndex + 1);
         }
         return fileUrl;
+    }
+
+    /**
+     * 펫 이미지 폴더 경로 생성 (pet)
+     */
+    private String generatePetImagePath() {
+        return "pet";
     }
 }

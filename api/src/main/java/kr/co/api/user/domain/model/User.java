@@ -57,25 +57,20 @@ public class User {
     }
 
     /**
-     * 이메일을 통해 회원가입하는 유저 생성
+     * 이메일을 통해 회원가입하는 유저 생성 (간단한 회원가입: 이메일, 이름, 닉네임, 비밀번호만)
      */
-    public static User createUserByEmail(String emailValue, String nameValue, String nicknameValue, String passwordValue, String passwordCheck, String phoneNumberValue, LocalDate birthDate, String genderValue) {
-        
+    public static User createUserByEmail(String emailValue, String nameValue, String nicknameValue, String passwordValue, String passwordCheck) {
+
         // Value Objects 생성 (유효성 검증 포함)
         Email email = Email.of(emailValue);
         UserName name = UserName.of(nameValue);
         Nickname nickname = Nickname.of(nicknameValue);
-        PhoneNumber phoneNumber = PhoneNumber.of(phoneNumberValue);
-        Gender gender = Gender.of(genderValue);
         Password password = Password.createPasswordCheck(passwordValue, passwordCheck);
-        
+
         // UUID 생성
         String uuid = UUID.randomUUID().toString().replace("-", "");
 
-        // 생년월일 변환
-        LocalDate localDate = birthDate;
-        
-        return new User(null, email, uuid, name, nickname, password, null, phoneNumber, localDate, gender, null, null, "N", "N", null, null, null, null);
+        return new User(null, email, uuid, name, nickname, password, null, null, null, null, null, null, "N", "N", null, null, null, null);
     }
 
     /**

@@ -88,5 +88,27 @@ public class EmailService {
         }
     }
 
+    /**
+     * 임시 비밀번호 이메일 발송 (비동기)
+     */
+    @Async
+    public void sendTemporaryPasswordEmailAsync(String toEmail, String temporaryPassword) {
+        try {
+            MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            String htmlContent = kr.co.common.util.EmailUtil.generateTemporaryPasswordEmail(temporaryPassword).getBody();
+
+            helper.setTo(toEmail);
+            helper.setSubject("[PetCrown] 임시 비밀번호 발급");
+            helper.setText(htmlContent, true);
+
+            javaMailSender.send(mimeMessage);
+            log.info("Temporary password email sent successfully to: {}", toEmail);
+
+        } catch (Exception e) {
+            log.error("Failed to send temporary password email to: {}", toEmail, e);
+        }
+    }
 
 }

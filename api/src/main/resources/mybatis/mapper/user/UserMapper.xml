@@ -124,5 +124,22 @@
             update_date = CURRENT_TIMESTAMP
         WHERE user_id = #{userId}
     </update>
-    
+
+    <!-- 이메일, 이름으로 사용자 조회 (비밀번호 찾기용) -->
+    <select id="selectByEmailAndName" resultType="kr.co.common.entity.user.UserEntity">
+        /*
+        UserMapper.xml
+        selectByEmailAndName
+        이메일, 이름으로 사용자 조회 (비밀번호 찾기용)
+        */
+        SELECT
+            u.*,
+            f.file_url as profileImageUrl
+        FROM "user" u
+        LEFT JOIN file_info f ON f.ref_table = 'user' AND f.ref_id = u.user_id AND f.file_type = 'IMAGE' AND f.delete_date IS NULL
+        WHERE u.email = #{email}
+          AND u.name = #{name}
+          AND u.delete_date IS NULL
+    </select>
+
 </mapper>

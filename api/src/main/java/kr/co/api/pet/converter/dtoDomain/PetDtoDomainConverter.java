@@ -23,15 +23,12 @@ public class PetDtoDomainConverter {
             return null;
         }
 
+        // 간단한 펫 등록 - 품종(또는 기타품종), 이름
         return Pet.SetPetObject(
                 dto.getBreedId(),
                 dto.getCustomBreed(),
                 dto.getUserId(),
-                dto.getName(),
-                dto.getBirthDate(),
-                dto.getGender(),
-                dto.getMicrochipId(),
-                dto.getDescription()
+                dto.getName()
         );
     }
 
@@ -46,15 +43,12 @@ public class PetDtoDomainConverter {
             return null;
         }
 
+        // 간단한 펫 수정 - 품종(또는 기타품종), 이름
         return Pet.SetPetObject(
                 dto.getBreedId(),
                 dto.getCustomBreed(),
                 dto.getUserId(),
-                dto.getName(),
-                dto.getBirthDate(),
-                dto.getGender(),
-                dto.getMicrochipId(),
-                dto.getDescription()
+                dto.getName()
         );
     }
 }

@@ -44,11 +44,7 @@ public class PetDtoCommandConverter {
                 userId,
                 request.getBreedId(),
                 request.getCustomBreed(),
-                request.getName(),
-                request.getBirthDate(),
-                request.getGender(),
-                request.getDescription(),
-                request.getMicrochipId()
+                request.getName()
         );
     }
 
