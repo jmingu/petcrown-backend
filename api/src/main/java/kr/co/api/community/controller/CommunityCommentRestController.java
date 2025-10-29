@@ -53,9 +53,10 @@ public class CommunityCommentRestController extends BaseController {
     @AuthRequired(authSkip = true)
     @Operation(summary = "게시글의 댓글 목록 조회", description = "게시글의 모든 댓글 및 대댓글 조회")
     @GetMapping("/v1/post/{postId}")
-    public ResponseEntity<CommonResponseDto> getCommentsByPostId(@PathVariable Long postId) {
+    public ResponseEntity<CommonResponseDto> getCommentsByPostId(Principal principal,@PathVariable Long postId) {
 
-        List<CommunityCommentInfoDto> commentInfoDtos = commentService.getCommentsByPostId(postId);
+        Long userId = Long.parseLong(principal.getName());
+        List<CommunityCommentInfoDto> commentInfoDtos = commentService.getCommentsByPostId(postId, userId);
 
         // InfoDto -> ResponseDto 변환
         List<CommunityCommentResponseDto> responseDtos = commentInfoDtos.stream()
@@ -124,6 +125,7 @@ public class CommunityCommentRestController extends BaseController {
                 infoDto.getLikeCount(),
                 infoDto.getDepth(),
                 infoDto.getCreateDate(),
+                infoDto.getCommentWriteYn(),
                 replyDtos
         );
     }

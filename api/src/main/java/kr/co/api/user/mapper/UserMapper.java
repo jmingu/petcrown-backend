@@ -1,5 +1,6 @@
 package kr.co.api.user.mapper;
 
+import kr.co.api.user.dto.command.UserDeletionDto;
 import kr.co.api.user.dto.command.UserUpdateDto;
 import kr.co.common.entity.user.UserEntity;
 import org.apache.ibatis.annotations.Mapper;
@@ -53,4 +54,9 @@ public interface UserMapper {
      * 사용자 삭제
      */
     void deleteById(@Param("userId") Long userId);
+
+    /**
+     * 사용자 정보 검증 및 소프트 삭제 (userId, email, name, password 모두 일치해야 삭제)
+     */
+    int softDeleteUser(UserDeletionDto userDeletionDto);
 }

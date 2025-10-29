@@ -7,11 +7,6 @@ User 패키지를 기준으로 한 표준 개발 패턴과 규칙을 정의합�
 ```
 api/src/main/java/kr/co/api/{domain}/
 ├── controller/           # REST 컨트롤러
-├── converter/           # 객체 변환 담당
-│   ├── domainEntity/    # 도메인 ↔ 엔티티 변환
-│   ├── dtoDomain/       # DTO ↔ 도메인 변환
-│   ├── entityCommand/   # 엔티티 ↔ 커맨드 변환
-│   └── dtoCommand/      # DTO ↔ 커맨드 양방향 변환 (요청→커맨드, 커맨드→응답)
 ├── domain/             # 도메인 모델 (DDD)
 │   ├── model/          # 도메인 엔티티
 │   └── vo/             # 값 객체 (Value Objects)
@@ -45,110 +40,31 @@ public ResponseEntity<CommonResponseDto> verifyEmailCode(@RequestBody EmailVerif
 
 #### 3개 초과 파라미터: Command DTO 사용
 ```java
-// ✅ Good: RequestDto → CommandDto 변환 사용
+// ✅ Good: RequestDto → CommandDto 생성자 직접 호출
 @PostMapping("/v1")
 public ResponseEntity<CommonResponseDto> createUser(@RequestBody UserRegistrationRequestDto request) {
-    // RequestDto → CommandDto 변환 (입력 변환)
-    UserRegistrationDto userRegistrationDto = userDtoCommandConverter.toCommandDto(request);
+    // RequestDto → CommandDto 변환 (생성자 직접 호출)
+    UserRegistrationDto userRegistrationDto = new UserRegistrationDto(
+        request.getEmail(),
+        request.getName(),
+        request.getNickname(),
+        request.getPassword(),
+        request.getPasswordCheck()
+    );
     userService.createUser(userRegistrationDto);
     return success();
 }
 
-// ✅ Good: Service 응답 → ResponseDto 변환 사용
+// ✅ Good: Service 응답 → ResponseDto 생성자 직접 호출
 @PostMapping("/v1/login")
 public ResponseEntity<CommonResponseDto> login(@RequestBody LoginRequestDto request) throws Exception {
-    LoginTokenDto login = userService.login(request.getEmail(), request.getPassword());
-    // CommandDto → ResponseDto 변환 (출력 변환)
-    LoginResponseDto responseDto = userDtoCommandConverter.toResponseDto(login);
+    LoginTokenDto loginTokenDto = userService.login(request.getEmail(), request.getPassword());
+    // CommandDto → ResponseDto 변환 (생성자 직접 호출)
+    LoginResponseDto responseDto = new LoginResponseDto(
+        loginTokenDto.getAccessToken(),
+        loginTokenDto.getRefreshToken()
+    );
     return success(responseDto);
-}
-```
-
-## 🔄 Converter 패턴
-
-### 1. DtoCommand Converter
-**역할**: HTTP DTO ↔ Service 레이어 Command DTO (양방향 변환)
-```java
-@Component
-public class UserDtoCommandConverter {
-
-    // Request → Command 변환 (입력)
-    public UserRegistrationDto toCommandDto(UserRegistrationRequestDto request) {
-        return new UserRegistrationDto(
-            request.getEmail(),
-            request.getName(),
-            // ... 기타 필드
-        );
-    }
-
-    // Command → Response 변환 (출력)
-    public LoginResponseDto toResponseDto(LoginTokenDto loginTokenDto) {
-        return new LoginResponseDto(
-            loginTokenDto.getAccessToken(),
-            loginTokenDto.getRefreshToken()
-        );
-    }
-}
-```
-
-### 2. DtoDomain Converter
-**역할**: Command DTO ↔ 도메인 객체
-```java
-@Component
-public class UserDtoDomainConverter {
-
-    public User toUserForRegistration(UserRegistrationDto dto) {
-        return User.createUserByEmail(
-            dto.getEmail(),
-            dto.getName(),
-            dto.getNickname(),
-            // ... 기타 필드
-        );
-    }
-}
-```
-
-### 3. DomainEntity Converter
-**역할**: 도메인 객체 ↔ 엔티티
-```java
-@Component
-public class UserDomainEntityConverter {
-
-    // 도메인 → 엔티티 변환
-    public UserEntity toUserEntityForRegistration(User user, RoleEntity roleEntity, LoginTypeEntity loginTypeEntity, CompanyEntity companyEntity) {
-        return new UserEntity(
-            user.getUserId(),
-            user.getEmail().getValue(),
-            user.getUserUuid(),
-            // ... 기타 필드
-        );
-    }
-
-    // 엔티티 → 도메인 변환
-    public User toUserDomain(UserEntity entity) {
-        return User.getUserAllFiled(
-            entity.getUserId(),
-            Email.of(entity.getEmail()),
-            entity.getUserUuid(),
-            // ... 기타 필드
-        );
-    }
-}
-```
-
-### 4. EntityCommand Converter
-**역할**: 엔티티 ↔ Command DTO (조회/응답용)
-```java
-@Component
-public class UserEntityCommandConverter {
-
-    public UserInfoDto toUserInfoDto(UserEntity userEntity) {
-        return new UserInfoDto(
-            userEntity.getUserId(),
-            userEntity.getEmail(),
-            // ... 기타 필드
-        );
-    }
 }
 ```
 
@@ -252,8 +168,14 @@ public class UserService {
     @Transactional
     public void createUser(UserRegistrationDto userRegistrationDto) {
 
-        // 1. CommandDto → Domain 변환
-        User user = userDtoDomainConverter.toUserForRegistration(userRegistrationDto);
+        // 1. CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        User user = User.createUserByEmail(
+            userRegistrationDto.getEmail(),
+            userRegistrationDto.getName(),
+            userRegistrationDto.getNickname(),
+            userRegistrationDto.getPassword(),
+            userRegistrationDto.getPasswordCheck()
+        );
 
         // 2. 비즈니스 규칙 검증
         validateUserForRegistration(user);
@@ -262,9 +184,20 @@ public class UserService {
         RoleEntity defaultRole = roleMapper.selectDefaultRole()
                 .orElseThrow(() -> new PetCrownException(MISSING_REQUIRED_VALUE));
 
-        // 4. Domain → Entity 변환
-        UserEntity userEntity = userDomainEntityConverter.toUserEntityForRegistration(
-            user, defaultRole, defaultLoginType, defaultCompany);
+        // 4. Domain → Entity 변환 (생성자 직접 호출)
+        UserEntity userEntity = new UserEntity(
+            user.getUserId(),
+            user.getEmail().getValue(),
+            user.getUserUuid(),
+            user.getPassword().getValue(),
+            defaultRole.getRoleId(),
+            user.getName().getValue(),
+            user.getNickname().getValue(),
+            user.getPhoneNumber() != null ? user.getPhoneNumber().getValue() : null,
+            user.getBirthDate(),
+            user.getGender() != null ? user.getGender().getValue() : null
+            // ... 기타 필드
+        );
 
         // 5. 영속성 저장
         userMapper.insertUser(userEntity);
@@ -389,20 +322,21 @@ public void validateEmailVerified() {
 ### 새로운 기능 개발 시 확인사항
 
 #### 1. 패키지 구조 확인
-- [ ] controller, service, domain, dto, mapper, converter 패키지 구조 준수
-- [ ] converter 하위에 용도별 패키지 생성 (domainEntity, dtoDomain, dtoCommand, entityCommand)
+- [ ] controller, service, domain, dto, mapper 패키지 구조 준수
 
 #### 2. Controller 레이어
 - [ ] 3개 초과 파라미터 시 Command DTO 사용
-- [ ] DtoCommand Converter 사용 (Request→Command, Command→Response 양방향 변환)
+- [ ] RequestDto → CommandDto 변환은 생성자 직접 호출
+- [ ] CommandDto → ResponseDto 변환은 생성자 직접 호출
 - [ ] @AuthRequired 어노테이션 적절히 설정
 - [ ] Swagger 어노테이션 추가
 
 #### 3. Service 레이어
 - [ ] @Transactional 적절히 설정 (readOnly, 전파 옵션 등)
-- [ ] Command DTO → Domain 변환
+- [ ] CommandDto → Domain 변환은 정적 팩토리 메서드 사용
 - [ ] 비즈니스 로직은 Domain 객체에 캡슐화
-- [ ] Domain → Entity 변환 후 저장
+- [ ] Domain → Entity 변환은 생성자 직접 호출
+- [ ] Entity → CommandDto 변환은 생성자 직접 호출
 
 #### 4. Domain 레이어
 - [ ] 불변 객체 설계 (final 필드)
@@ -410,16 +344,7 @@ public void validateEmailVerified() {
 - [ ] Value Objects 적극 활용
 - [ ] 비즈니스 규칙 도메인 내부에 구현
 
-#### 5. Converter 레이어
-- [ ] 각 Converter의 역할에 맞는 변환 로직 구현
-- [ ] DtoCommand: DTO ↔ 커맨드 양방향 변환 (요청→커맨드, 커맨드→응답)
-- [ ] DtoDomain: 커맨드 ↔ 도메인
-- [ ] DomainEntity: 도메인 ↔ 엔티티
-- [ ] EntityCommand: 엔티티 ↔ 커맨드 (조회용)
-- [ ] null 체크 포함
-- [ ] 단방향성 유지 (순환 참조 방지)
-
-#### 6. DTO 설계
+#### 5. DTO 설계
 - [ ] Command DTO는 불변 객체로 설계
 - [ ] Request/Response DTO는 HTTP 스펙에 맞게 설계
 - [ ] 적절한 validation 어노테이션 추가

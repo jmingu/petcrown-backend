@@ -3,7 +3,6 @@ package kr.co.api.event.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.event.converter.dtoCommand.EventDtoCommandConverter;
 import kr.co.api.event.dto.command.EventInfoDto;
 import kr.co.api.event.dto.command.EventRegistrationDto;
 import kr.co.api.event.dto.command.EventUpdateDto;
@@ -11,6 +10,7 @@ import kr.co.api.event.dto.request.EventRegistrationRequestDto;
 import kr.co.api.event.dto.request.EventUpdateRequestDto;
 import kr.co.api.event.dto.response.EventListResponseDto;
 import kr.co.api.event.dto.response.EventResponseDto;
+import kr.co.api.event.dto.response.EventsListResponseDto;
 import kr.co.api.event.service.EventService;
 import kr.co.common.contoller.BaseController;
 import kr.co.common.entity.common.CommonResponseDto;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/events")
@@ -31,7 +32,6 @@ import java.util.List;
 public class EventRestController extends BaseController {
 
     private final EventService eventService;
-    private final EventDtoCommandConverter eventDtoCommandConverter;
 
     /**
      * 이벤트 등록 (관리자만 가능)
@@ -43,8 +43,17 @@ public class EventRestController extends BaseController {
 
         Long createUserId = Long.parseLong(principal.getName());
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        EventRegistrationDto eventRegistrationDto = eventDtoCommandConverter.toCommandDto(request, createUserId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        EventRegistrationDto eventRegistrationDto = new EventRegistrationDto(
+                request.getTitle(),
+                request.getContent(),
+                request.getContentType(),
+                request.getStartDate(),
+                request.getEndDate(),
+                createUserId,
+                request.getThumbnailFile(),
+                request.getImageFiles()
+        );
 
         eventService.createEvent(eventRegistrationDto);
 
@@ -60,7 +69,21 @@ public class EventRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> getEventDetail(@PathVariable Long eventId) {
 
         EventInfoDto eventInfoDto = eventService.getEventDetail(eventId);
-        EventResponseDto responseDto = eventDtoCommandConverter.toResponseDto(eventInfoDto);
+
+        // CommandDto → ResponseDto 변환 (생성자 직접 호출)
+        EventResponseDto responseDto = new EventResponseDto(
+                eventInfoDto.getEventId(),
+                eventInfoDto.getTitle(),
+                eventInfoDto.getContent(),
+                eventInfoDto.getContentType(),
+                eventInfoDto.getStartDate(),
+                eventInfoDto.getEndDate(),
+                eventInfoDto.getViewCount(),
+                eventInfoDto.getCreateDate(),
+                eventInfoDto.getCreateUserId(),
+                eventInfoDto.getThumbnailUrl(),
+                eventInfoDto.getImageUrls()
+        );
 
         return success(responseDto);
     }
@@ -69,31 +92,63 @@ public class EventRestController extends BaseController {
      * 활성화된 이벤트 목록 조회
      */
     @AuthRequired(authSkip = true)
-    @Operation(summary = "활성화된 이벤트 목록 조회", description = "현재 시점에서 활성화된 이벤트 목록 조회 (썸네일 포함)")
+    @Operation(summary = "활성화된 이벤트 목록 조회", description = "현재 시점에서 활성화된 이벤트 목록 조회 (썸네일 포함, 리스트 + 총 개수)")
     @GetMapping("/v1")
     public ResponseEntity<CommonResponseDto> getActiveEvents(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         List<EventInfoDto> eventInfoDtos = eventService.getActiveEvents(page, size);
-        List<EventListResponseDto> responseDtos = eventDtoCommandConverter.toListResponseDtos(eventInfoDtos);
+        int totalCount = eventService.getActiveEventsCount();
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<EventListResponseDto> events = eventInfoDtos.stream()
+                .map(dto -> new EventListResponseDto(
+                        dto.getEventId(),
+                        dto.getTitle(),
+                        dto.getStartDate(),
+                        dto.getEndDate(),
+                        dto.getViewCount(),
+                        dto.getCreateDate(),
+                        dto.getThumbnailUrl()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        EventsListResponseDto responseDto = new EventsListResponseDto(events, totalCount);
+
+        return success(responseDto);
     }
 
     /**
      * 전체 이벤트 목록 조회 (관리자용)
      */
-    @Operation(summary = "전체 이벤트 목록 조회", description = "전체 이벤트 목록 조회 (관리자용)")
+    @Operation(summary = "전체 이벤트 목록 조회", description = "전체 이벤트 목록 조회 (관리자용, 리스트 + 총 개수)")
     @GetMapping("/v1/admin")
     public ResponseEntity<CommonResponseDto> getAllEvents(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         List<EventInfoDto> eventInfoDtos = eventService.getAllEvents(page, size);
-        List<EventListResponseDto> responseDtos = eventDtoCommandConverter.toListResponseDtos(eventInfoDtos);
+        int totalCount = eventService.getAllEventsCount();
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<EventListResponseDto> events = eventInfoDtos.stream()
+                .map(dto -> new EventListResponseDto(
+                        dto.getEventId(),
+                        dto.getTitle(),
+                        dto.getStartDate(),
+                        dto.getEndDate(),
+                        dto.getViewCount(),
+                        dto.getCreateDate(),
+                        dto.getThumbnailUrl()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        EventsListResponseDto responseDto = new EventsListResponseDto(events, totalCount);
+
+        return success(responseDto);
     }
 
     /**
@@ -145,8 +200,18 @@ public class EventRestController extends BaseController {
                 request.getImageFiles()
         );
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        EventUpdateDto eventUpdateDto = eventDtoCommandConverter.toCommandDto(request, updateUserId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        EventUpdateDto eventUpdateDto = new EventUpdateDto(
+                eventId,
+                request.getTitle(),
+                request.getContent(),
+                request.getContentType(),
+                request.getStartDate(),
+                request.getEndDate(),
+                updateUserId,
+                request.getThumbnailFile(),
+                request.getImageFiles()
+        );
 
         eventService.updateEvent(eventUpdateDto);
 
@@ -172,7 +237,7 @@ public class EventRestController extends BaseController {
      * 제목으로 이벤트 검색
      */
     @AuthRequired(authSkip = true)
-    @Operation(summary = "제목으로 이벤트 검색", description = "제목으로 이벤트 검색")
+    @Operation(summary = "제목으로 이벤트 검색", description = "제목으로 이벤트 검색 (리스트 + 총 개수)")
     @GetMapping("/v1/search")
     public ResponseEntity<CommonResponseDto> searchEventsByTitle(
             @RequestParam String title,
@@ -180,9 +245,25 @@ public class EventRestController extends BaseController {
             @RequestParam(defaultValue = "10") int size) {
 
         List<EventInfoDto> eventInfoDtos = eventService.searchEventsByTitle(title, page, size);
-        List<EventListResponseDto> responseDtos = eventDtoCommandConverter.toListResponseDtos(eventInfoDtos);
+        int totalCount = eventService.getSearchEventsCountByTitle(title);
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<EventListResponseDto> events = eventInfoDtos.stream()
+                .map(dto -> new EventListResponseDto(
+                        dto.getEventId(),
+                        dto.getTitle(),
+                        dto.getStartDate(),
+                        dto.getEndDate(),
+                        dto.getViewCount(),
+                        dto.getCreateDate(),
+                        dto.getThumbnailUrl()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        EventsListResponseDto responseDto = new EventsListResponseDto(events, totalCount);
+
+        return success(responseDto);
     }
 
     /**

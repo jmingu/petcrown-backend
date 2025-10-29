@@ -3,11 +3,10 @@ package kr.co.api.user.service;
 import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.service.EmailService;
 import kr.co.api.common.util.JwtUtil;
-import kr.co.api.user.converter.domainEntity.EmailVerificationDomainEntityConverter;
-import kr.co.api.user.converter.domainEntity.UserDomainEntityConverter;
-import kr.co.api.user.converter.dtoDomain.UserDtoDomainConverter;
-import kr.co.api.user.converter.entityCommand.UserEntityCommandConverter;
+import kr.co.api.pet.mapper.PetMapper;
+import kr.co.api.user.domain.model.Company;
 import kr.co.api.user.domain.model.EmailVerification;
+import kr.co.api.user.domain.model.Role;
 import kr.co.api.user.domain.model.User;
 import kr.co.api.user.domain.vo.Email;
 import kr.co.api.user.domain.vo.Nickname;
@@ -28,6 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 import static kr.co.common.enums.BusinessCode.*;
 import static kr.co.common.enums.CodeEnum.AUTHENTICATION_ERROR;
 import static kr.co.common.enums.CodeEnum.INVALID_TOKEN;
@@ -37,14 +38,9 @@ import static kr.co.common.enums.CodeEnum.INVALID_TOKEN;
 @Slf4j
 @Transactional(readOnly = true)
 public class UserService {
-    
-    
-    private final UserDtoDomainConverter userDtoDomainConverter;
-    private final UserDomainEntityConverter userDomainEntityConverter;
-    private final UserEntityCommandConverter userEntityCommandConverter;
+
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
-    private final EmailVerificationDomainEntityConverter emailVerificationDomainEntityConverter;
     private final EmailVerificationMapper emailVerificationMapper;
     private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
@@ -52,6 +48,7 @@ public class UserService {
     private final RoleMapper roleMapper;
     private final CompanyMapper companyMapper;
     private final UserVoteCountMapper userVoteCountMapper;
+    private final PetMapper petMapper;
 
     /**
      * 이메일 중복 확인
@@ -89,8 +86,14 @@ public class UserService {
     @Transactional
     public void createUser(UserRegistrationDto userRegistrationDto) {
 
-        // CommandDto → Domain 변환
-        User user = userDtoDomainConverter.toUserForRegistration(userRegistrationDto);
+        // CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        User user = User.createUserByEmail(
+                userRegistrationDto.getEmail(),
+                userRegistrationDto.getName(),
+                userRegistrationDto.getNickname(),
+                userRegistrationDto.getPassword(),
+                userRegistrationDto.getPasswordCheck()
+        );
 
         // 이메일 검증
         UserEntity emailUserEntity = userMapper.selectByEmail(user.getEmail().getValue());
@@ -117,7 +120,34 @@ public class UserService {
         CompanyEntity defaultCompany = companyMapper.selectDefaultCompany()
                 .orElseThrow(() -> new PetCrownException(MISSING_REQUIRED_VALUE));
 
-        UserEntity userEntity = userDomainEntityConverter.toUserEntityForRegistration(encodedPasswordUser, defaultRole, defaultCompany);
+        // Domain → Entity 변환 (생성자 직접 호출)
+        UserEntity userEntity = new UserEntity(
+                encodedPasswordUser.getUserId(),  // userId
+                encodedPasswordUser.getEmail().getValue(),  // email
+                encodedPasswordUser.getUserUuid(),  // userUuid
+                encodedPasswordUser.getPassword().getValue(),  // password
+                defaultRole.getRoleId(),  // roleId
+                encodedPasswordUser.getName().getValue(),  // name
+                encodedPasswordUser.getNickname().getValue(),  // nickname
+                encodedPasswordUser.getPhoneNumber() != null ? encodedPasswordUser.getPhoneNumber().getValue() : null,  // phoneNumber
+                encodedPasswordUser.getBirthDate(),  // birthDate
+                encodedPasswordUser.getGender() != null ? encodedPasswordUser.getGender().getValue() : null,  // gender
+                null,  // height
+                null,  // weight
+                "EMAIL",  // loginType
+                encodedPasswordUser.getEmail().getValue(),  // loginId
+                "N",  // isEmailVerified
+                "N",  // isPhoneNumberVerified
+                defaultCompany.getCompanyId(),  // companyId
+                null,  // description
+                null,  // profileImageUrl
+                LocalDateTime.now(),  // createDate
+                encodedPasswordUser.getUserId(),  // createUserId
+                LocalDateTime.now(),  // updateDate
+                encodedPasswordUser.getUserId(),  // updateUserId
+                null,  // deleteDate
+                null   // deleteUserId
+        );
 
         userMapper.insertUser(userEntity);
         log.debug("userEntity ==> {}", userEntity);
@@ -127,8 +157,17 @@ public class UserService {
         // 이메일 인증 코드 생성
         EmailVerification emailVerification = EmailVerification.createForRegistration(savedUser);
 
-        // EmailVerification을 Entity로 변환
-        EmailVerificationEntity emailVerificationEntity = emailVerificationDomainEntityConverter.toEntity(emailVerification);
+        // EmailVerification을 Entity로 변환 (생성자 직접 호출)
+        EmailVerificationEntity emailVerificationEntity = new EmailVerificationEntity(
+                emailVerification.getEmailVerificationId(),  // emailVerificationId
+                emailVerification.getUserId(),  // userId
+                emailVerification.getVerificationCode(),  // verificationCode
+                emailVerification.getExpiresDate(),  // expiresDate
+                LocalDateTime.now(),  // createDate
+                savedUser.getUserId(),  // createUserId
+                LocalDateTime.now(),  // updateDate
+                savedUser.getUserId()  // updateUserId
+        );
 
         // 이메일 인증코드 저장
         emailVerificationMapper.insertEmailVerification(emailVerificationEntity);
@@ -217,7 +256,27 @@ public class UserService {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
-        User userDomain = userDomainEntityConverter.toUserDomain(emailUserEntity);
+        // Entity → Domain 변환 (정적 팩토리 메서드 사용)
+        User userDomain = User.getUserAllFiled(
+                emailUserEntity.getUserId(),
+                Email.of(emailUserEntity.getEmail()),
+                emailUserEntity.getUserUuid(),
+                kr.co.api.user.domain.vo.UserName.of(emailUserEntity.getName()),
+                Nickname.of(emailUserEntity.getNickname()),
+                Password.of(emailUserEntity.getPassword()),
+                Role.ofId(emailUserEntity.getRoleId()),  // role
+                emailUserEntity.getPhoneNumber() != null ? kr.co.api.user.domain.vo.PhoneNumber.of(emailUserEntity.getPhoneNumber()) : null,
+                emailUserEntity.getBirthDate(),
+                emailUserEntity.getGender() != null ? kr.co.api.user.domain.vo.Gender.of(emailUserEntity.getGender()) : null,
+                emailUserEntity.getLoginType(),  // loginType
+                emailUserEntity.getLoginId(),
+                emailUserEntity.getIsEmailVerified(),
+                emailUserEntity.getIsPhoneNumberVerified(),
+                Company.ofId(emailUserEntity.getCompanyId()),  // company
+                emailUserEntity.getHeight(),
+                emailUserEntity.getWeight(),
+                emailUserEntity.getDescription()
+        );
 
         // 이메일 검증된 사용자인지 검증
         userDomain.validateEmailVerified();
@@ -250,9 +309,19 @@ public class UserService {
         if (userEntity == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
-        
-        // UserEntity를 UserInfoDto로 변환 (Converter 패턴 사용)
-        return userEntityCommandConverter.toUserInfoDto(userEntity);
+
+        // UserEntity → UserInfoDto 변환 (생성자 직접 호출)
+        return new UserInfoDto(
+                userEntity.getUserId(),
+                userEntity.getEmail(),
+                userEntity.getName(),
+                userEntity.getNickname(),
+                userEntity.getPhoneNumber(),
+                userEntity.getProfileImageUrl(),
+                userEntity.getBirthDate(),
+                userEntity.getGender(),
+                userEntity.getIsEmailVerified()
+        );
     }
 
     /**
@@ -427,19 +496,49 @@ public class UserService {
 
         log.info("Temporary password issued successfully: email={}", userEntity.getEmail());
     }
-//
-//    /**
-//     * 사용자 삭제
-//     */
-//    @Transactional
-//    public void deleteUser(Long userId) {
-//        User user = userMapper.findById(userId)
-//                .orElseThrow(() -> new PetCrownException(BusinessCode.MEMBER_NOT_FOUND));
-//
-//        userMapper.delete(user);
-//
-//        log.info("User deleted successfully: userId={}", userId);
-//    }
+
+    /**
+     * 사용자 삭제 (소프트 삭제)
+     * userId, email, name, password가 모두 일치해야 삭제 가능
+     * 사용자 삭제 시 해당 사용자의 모든 Pet도 소프트 삭제
+     */
+    @Transactional
+    public void deleteUser(UserDeletionDto userDeletionDto) {
+
+        // 기존 사용자 조회
+        UserEntity existingUser = userMapper.selectByUserId(userDeletionDto.getUserId());
+        if (existingUser == null) {
+            throw new PetCrownException(MEMBER_NOT_FOUND);
+        }
+
+        // 비밀번호 검증
+        Password password = Password.of(userDeletionDto.getPassword());
+        if (!passwordEncoder.matches(password.getValue(), existingUser.getPassword())) {
+            throw new PetCrownException(INVALID_PASSWORD_ERROR);
+        }
+
+        // 1. 사용자의 모든 Pet 소프트 삭제 (단일 쿼리로 처리)
+        petMapper.deleteAllPetsByUserId(userDeletionDto.getUserId(), userDeletionDto.getUserId());
+        log.info("All pets deleted for user: userId={}", userDeletionDto.getUserId());
+
+        // 2. 암호화된 비밀번호를 dto에 포함시켜 소프트 삭제 수행
+        UserDeletionDto deletionDtoWithEncodedPassword = new UserDeletionDto(
+                userDeletionDto.getUserId(),
+                userDeletionDto.getEmail(),
+                userDeletionDto.getName(),
+                existingUser.getPassword() // 이미 암호화된 비밀번호
+        );
+
+        // 3. userId, email, name, password 모두 일치하는 경우에만 소프트 삭제
+        int deletedCount = userMapper.softDeleteUser(deletionDtoWithEncodedPassword);
+
+        if (deletedCount == 0) {
+            // 조건이 하나라도 일치하지 않으면 삭제 실패
+            throw new PetCrownException(AUTHENTICATION_ERROR);
+        }
+
+        log.info("User soft deleted successfully: userId={}, email={}", userDeletionDto.getUserId(), userDeletionDto.getEmail());
+    }
 //
 //    // ========================
 //    // 비즈니스 로직 메서드들

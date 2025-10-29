@@ -34,7 +34,7 @@ public class EmailVerification {
      */
     public static EmailVerification createForRegistration(User user) {
         String verificationCode = generateVerificationCode();
-        LocalDateTime expiresDate = LocalDateTime.now().plusMinutes(10); // 10분 후 만료
+        LocalDateTime expiresDate = LocalDateTime.now().plusMinutes(5); // 10분 후 만료
         
         return new EmailVerification(
                 null,

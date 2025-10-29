@@ -18,5 +18,6 @@ public class CommunityCommentInfoDto {
     private final Long likeCount;
     private final Integer depth;
     private final LocalDateTime createDate;
+    private final String commentWriteYn;  // 작성자 여부 (Y/N)
     private final List<CommunityCommentInfoDto> replies;  // 대댓글 리스트
 }

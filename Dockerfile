@@ -5,6 +5,11 @@ RUN gradle :api:bootJar --no-daemon
 
 FROM openjdk:21-jdk
 WORKDIR /app
+
+# 타임존을 한국 시간으로 설정
+ENV TZ=Asia/Seoul
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 COPY --from=build /app/api/build/libs/*.jar app.jar
 ENTRYPOINT ["java","-Dspring.profiles.active=prod","-jar","./app.jar"]
 VOLUME ["/var/logback"]

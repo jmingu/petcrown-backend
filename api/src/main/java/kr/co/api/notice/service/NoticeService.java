@@ -1,8 +1,5 @@
 package kr.co.api.notice.service;
 
-import kr.co.api.notice.converter.domainEntity.NoticeDomainEntityConverter;
-import kr.co.api.notice.converter.dtoDomain.NoticeDtoDomainConverter;
-import kr.co.api.notice.converter.entityCommand.NoticeEntityCommandConverter;
 import kr.co.api.notice.domain.model.Notice;
 import kr.co.api.notice.dto.command.NoticeInfoDto;
 import kr.co.api.notice.dto.command.NoticeRegistrationDto;
@@ -16,7 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +23,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class NoticeService {
 
-    private final NoticeDtoDomainConverter noticeDtoDomainConverter;
-    private final NoticeDomainEntityConverter noticeDomainEntityConverter;
-    private final NoticeEntityCommandConverter noticeEntityCommandConverter;
     private final NoticeMapper noticeMapper;
 
     /**
@@ -35,14 +31,39 @@ public class NoticeService {
     @Transactional
     public void createNotice(NoticeRegistrationDto noticeRegistrationDto) {
 
-        // CommandDto → Domain 변환
-        Notice notice = noticeDtoDomainConverter.toNoticeForRegistration(noticeRegistrationDto);
+        // CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        Notice notice = Notice.createNotice(
+                noticeRegistrationDto.getTitle(),
+                noticeRegistrationDto.getContent(),
+                noticeRegistrationDto.getContentType(),
+                noticeRegistrationDto.getIsPinned(),
+                noticeRegistrationDto.getPinOrder(),
+                noticeRegistrationDto.getStartDate(),
+                noticeRegistrationDto.getEndDate(),
+                noticeRegistrationDto.getCreateUserId()
+        );
 
         // 비즈니스 규칙 검증
         validateNoticeForRegistration(notice);
 
-        // Domain → Entity 변환
-        NoticeEntity noticeEntity = noticeDomainEntityConverter.toNoticeEntityForRegistration(notice);
+        // Domain → Entity 변환 (생성자 직접 호출)
+        NoticeEntity noticeEntity = new NoticeEntity(
+                notice.getNoticeId(),
+                notice.getTitle() != null ? notice.getTitle().getValue() : null,
+                notice.getContent() != null ? notice.getContent().getValue() : null,
+                notice.getContentType() != null ? notice.getContentType().getValue() : null,
+                notice.getIsPinned(),
+                notice.getPinOrder(),
+                notice.getStartDate(),
+                notice.getEndDate(),
+                notice.getViewCount(),
+                LocalDateTime.now(),  // createDate
+                notice.getCreateUserId(),
+                LocalDateTime.now(),  // updatedDate
+                notice.getCreateUserId(),
+                null,  // deleteDate
+                null   // deleteUserId
+        );
 
         // 영속성 저장
         noticeMapper.insertNotice(noticeEntity);
@@ -63,8 +84,8 @@ public class NoticeService {
         // 조회수 증가
         noticeMapper.incrementViewCount(noticeId);
 
-        // Entity를 CommandDto로 변환 (Converter 패턴 사용)
-        return noticeEntityCommandConverter.toNoticeInfoDto(noticeEntity);
+        // Entity를 CommandDto로 변환 (생성자 직접 호출)
+        return convertToNoticeInfoDto(noticeEntity);
     }
 
     /**
@@ -76,7 +97,7 @@ public class NoticeService {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
 
-        return noticeEntityCommandConverter.toNoticeInfoDto(noticeEntity);
+        return convertToNoticeInfoDto(noticeEntity);
     }
 
     /**
@@ -86,7 +107,9 @@ public class NoticeService {
         int offset = (page - 1) * size;
         List<NoticeEntity> noticeEntities = noticeMapper.selectActiveNotices(offset, size);
 
-        return noticeEntityCommandConverter.toNoticeInfoDtos(noticeEntities);
+        return noticeEntities.stream()
+                .map(this::convertToNoticeInfoDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -95,7 +118,9 @@ public class NoticeService {
     public List<NoticeInfoDto> getPinnedNotices() {
         List<NoticeEntity> noticeEntities = noticeMapper.selectPinnedNotices();
 
-        return noticeEntityCommandConverter.toNoticeInfoDtos(noticeEntities);
+        return noticeEntities.stream()
+                .map(this::convertToNoticeInfoDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -105,7 +130,9 @@ public class NoticeService {
         int offset = (page - 1) * size;
         List<NoticeEntity> noticeEntities = noticeMapper.selectAllNotices(offset, size);
 
-        return noticeEntityCommandConverter.toNoticeInfoDtos(noticeEntities);
+        return noticeEntities.stream()
+                .map(this::convertToNoticeInfoDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -134,8 +161,17 @@ public class NoticeService {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
 
-        // CommandDto → Domain 변환
-        Notice notice = noticeDtoDomainConverter.toNoticeForUpdate(noticeUpdateDto);
+        // CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        Notice notice = Notice.createNotice(
+                noticeUpdateDto.getTitle(),
+                noticeUpdateDto.getContent(),
+                noticeUpdateDto.getContentType(),
+                noticeUpdateDto.getIsPinned(),
+                noticeUpdateDto.getPinOrder(),
+                noticeUpdateDto.getStartDate(),
+                noticeUpdateDto.getEndDate(),
+                noticeUpdateDto.getUpdateUserId()
+        );
 
         // 비즈니스 규칙 검증
         validateNoticeForUpdate(notice);
@@ -168,7 +204,9 @@ public class NoticeService {
         int offset = (page - 1) * size;
         List<NoticeEntity> noticeEntities = noticeMapper.searchByTitle(title, offset, size);
 
-        return noticeEntityCommandConverter.toNoticeInfoDtos(noticeEntities);
+        return noticeEntities.stream()
+                .map(this::convertToNoticeInfoDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -218,5 +256,24 @@ public class NoticeService {
         if (notice.isPinned() && notice.getPinOrder() == null) {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
+    }
+
+    /**
+     * NoticeEntity → NoticeInfoDto 변환 (생성자 직접 호출)
+     */
+    private NoticeInfoDto convertToNoticeInfoDto(NoticeEntity noticeEntity) {
+        return new NoticeInfoDto(
+                noticeEntity.getNoticeId(),
+                noticeEntity.getTitle(),
+                noticeEntity.getContent(),
+                noticeEntity.getContentType(),
+                noticeEntity.getIsPinned(),
+                noticeEntity.getPinOrder(),
+                noticeEntity.getStartDate(),
+                noticeEntity.getEndDate(),
+                noticeEntity.getViewCount(),
+                noticeEntity.getCreateDate(),
+                noticeEntity.getCreateUserId()
+        );
     }
 }

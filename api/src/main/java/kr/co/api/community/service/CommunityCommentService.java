@@ -84,17 +84,21 @@ public class CommunityCommentService {
         log.info("Comment created successfully: commentId={}", commentEntity.getCommentId());
     }
 
-    public List<CommunityCommentInfoDto> getCommentsByPostId(Long postId) {
+    public List<CommunityCommentInfoDto> getCommentsByPostId(Long postId, Long userId) {
         // 최상위 댓글만 조회
         List<CommunityCommentQueryDto> comments = commentMapper.selectByPostId(postId);
 
         List<CommunityCommentInfoDto> commentInfoDtos = new ArrayList<>();
+
         for (CommunityCommentQueryDto comment : comments) {
             // 각 댓글의 대댓글 조회
             List<CommunityCommentQueryDto> replies = commentMapper.selectRepliesByParentCommentId(comment.getCommentId());
             List<CommunityCommentInfoDto> replyInfoDtos = new ArrayList<>();
 
             for (CommunityCommentQueryDto reply : replies) {
+                // 대댓글 작성자 여부 확인
+                String replyWriteYn = (userId != null && userId.equals(reply.getUserId())) ? "Y" : "N";
+
                 replyInfoDtos.add(new CommunityCommentInfoDto(
                         reply.getCommentId(),
                         reply.getPostId(),
@@ -104,9 +108,13 @@ public class CommunityCommentService {
                         reply.getLikeCount(),
                         reply.getDepth(),
                         reply.getCreateDate(),
+                        replyWriteYn,
                         null  // 대댓글은 더 이상 하위 댓글이 없음
                 ));
             }
+
+            // 댓글 작성자 여부 확인
+            String commentWriteYn = (userId != null && userId.equals(comment.getUserId())) ? "Y" : "N";
 
             commentInfoDtos.add(new CommunityCommentInfoDto(
                     comment.getCommentId(),
@@ -117,6 +125,7 @@ public class CommunityCommentService {
                     comment.getLikeCount(),
                     comment.getDepth(),
                     comment.getCreateDate(),
+                    commentWriteYn,
                     replyInfoDtos
             ));
         }

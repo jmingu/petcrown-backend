@@ -53,6 +53,11 @@ public interface PetMapper {
     void deletePet(@Param("petId") Long petId, @Param("userId") Long userId);
 
     /**
+     * 사용자의 모든 펫 삭제 (논리삭제)
+     */
+    void deleteAllPetsByUserId(@Param("userId") Long userId, @Param("deleteUserId") Long deleteUserId);
+
+    /**
      * 종 목록 조회 (species_id != 0)
      */
     List<SpeciesInfoDto> selectAllSpecies();

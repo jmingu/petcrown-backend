@@ -138,11 +138,14 @@ public class Pet {
         // 유효성 검증
         PetName newName = new PetName(nameValue);
         PetGender newGender = genderValue == null ? null : new PetGender(genderValue);
-        
-        // 미래 날짜 검증
-        if (birthDate.isAfter(LocalDate.now())) {
-            throw new PetCrownException(BusinessCode.INVALID_BIRTH_DATE);
+
+        if(birthDate != null) {
+            // 미래 날짜 검증
+            if (birthDate.isAfter(LocalDate.now())) {
+                throw new PetCrownException(BusinessCode.INVALID_BIRTH_DATE);
+            }
         }
+
         
         // 새로운 Pet 객체 반환
         return new Pet(

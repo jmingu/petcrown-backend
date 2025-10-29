@@ -10,7 +10,6 @@ import kr.co.api.pet.dto.command.PetModeInfoDto;
 import kr.co.api.pet.mapper.PetMapper;
 import kr.co.api.pet.mapper.PetModeMapper;
 import kr.co.api.pet.domain.Pet;
-import kr.co.api.pet.converter.domainEntity.PetDomainEntityConverter;
 import kr.co.api.pet.domain.Breed;
 import kr.co.api.pet.domain.Ownership;
 import kr.co.api.pet.domain.vo.PetName;
@@ -48,7 +47,6 @@ public class PetService {
     private final VoteMapper voteMapper;
     private final FileInfoMapper fileInfoMapper;
     private final ObjectStorageService objectStorageService;
-    private final PetDomainEntityConverter petDomainEntityConverter;
 
     /**
      * 펫 등록
@@ -56,11 +54,31 @@ public class PetService {
     @Transactional
     public void insertPet(PetRegistrationDto petRegistrationDto, MultipartFile image) {
 
-        // 1. DTO → Domain 변환 (유효성 검증 포함)
-        Pet pet = petDomainEntityConverter.toPet(petRegistrationDto);
+        // 1. DTO → Domain 변환 (정적 팩토리 메서드 사용)
+        Pet pet = Pet.SetPetObject(
+                petRegistrationDto.getBreedId(),
+                petRegistrationDto.getCustomBreed(),
+                petRegistrationDto.getUserId(),
+                petRegistrationDto.getName()
+        );
 
-        // 2. Domain → Entity 변환하여 저장 (이미지 URL 없이)
-        PetEntity petEntity = petDomainEntityConverter.toPetEntity(pet);
+        // 2. Domain → Entity 변환하여 저장 (정적 팩토리 메서드 사용)
+        PetEntity petEntity = PetEntity.createPetEntity(
+                pet.getPetId(),
+                pet.getBreed() != null ? pet.getBreed().getBreedId() : null,
+                pet.getCustomBreed(),
+                pet.getOwnership() != null ? pet.getOwnership().getOwnershipId() : null,
+                pet.getUserId(),
+                pet.getNameValue(),
+                pet.getBirthDate(),
+                pet.getGenderValue(),
+                pet.getWeightValue(),
+                pet.getHeightValue(),
+                pet.getIsNeutered(),
+                pet.getMicrochipId(),
+                pet.getDescription()
+        );
+
         petMapper.insertPetEntity(petEntity);
         Long petId = petEntity.getPetId();
 
@@ -137,11 +155,33 @@ public class PetService {
                 existingPetInfo.getDescription()
         );
 
-        // 4. DTO → Domain 변환하여 업데이트된 Pet 생성
-        Pet updatedPet = petDomainEntityConverter.toPetForUpdate(petUpdateDto, existingPet);
+        // 4. Domain의 updateBasicInfo 메서드로 업데이트된 Pet 생성
+        Pet updatedPet = existingPet.updateBasicInfo(
+                petUpdateDto.getBreedId(),
+                petUpdateDto.getCustomBreed(),
+                petUpdateDto.getName(),
+                petUpdateDto.getBirthDate(),
+                petUpdateDto.getGender(),
+                petUpdateDto.getDescription(),
+                petUpdateDto.getMicrochipId()
+        );
 
-        // 5. Domain → Entity 변환하여 저장
-        PetEntity petEntity = petDomainEntityConverter.toPetEntityForUpdate(updatedPet);
+        // 5. Domain → Entity 변환하여 저장 (정적 팩토리 메서드 사용)
+        PetEntity petEntity = PetEntity.createPetEntity(
+                updatedPet.getPetId(),
+                updatedPet.getBreed() != null ? updatedPet.getBreed().getBreedId() : null,
+                updatedPet.getCustomBreed(),
+                updatedPet.getOwnership() != null ? updatedPet.getOwnership().getOwnershipId() : null,
+                updatedPet.getUserId(),
+                updatedPet.getNameValue(),
+                updatedPet.getBirthDate(),
+                updatedPet.getGenderValue(),
+                updatedPet.getWeightValue(),
+                updatedPet.getHeightValue(),
+                updatedPet.getIsNeutered(),
+                updatedPet.getMicrochipId(),
+                updatedPet.getDescription()
+        );
         petMapper.updatePetEntity(petEntity);
 
         // 6. 이미지가 제공되면 새로 업로드 및 FileInfoEntity 처리

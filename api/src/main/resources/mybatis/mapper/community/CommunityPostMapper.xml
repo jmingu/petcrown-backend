@@ -3,7 +3,7 @@
 
 <mapper namespace="kr.co.api.community.mapper.CommunityPostMapper">
 
-    <insert id="insertPost" useGeneratedKeys="true" keyProperty="postId">
+    <insert id="insertPost" useGeneratedKeys="true" keyProperty="entity.postId">
         /*
         CommunityPostMapper.xml
         insertPost
@@ -13,8 +13,8 @@
             user_id, category, title, content, content_type, view_count, like_count, comment_count,
             is_pinned, pin_order, create_date, create_user_id, update_date, update_user_id
         ) VALUES (
-            #{userId}, CAST(#{category} AS community_category_enum), #{title}, #{content}, #{contentType}, #{viewCount}, #{likeCount}, #{commentCount},
-            #{isPinned}, #{pinOrder}, CURRENT_TIMESTAMP, #{createUserId}, CURRENT_TIMESTAMP, #{createUserId}
+            #{entity.userId}, CAST(#{entity.category} AS community_category_enum), #{entity.title}, #{entity.content}, #{entity.contentType}, #{entity.viewCount}, #{entity.likeCount}, #{entity.commentCount},
+            #{entity.isPinned}, #{entity.pinOrder}, CURRENT_TIMESTAMP, #{entity.createUserId}, CURRENT_TIMESTAMP, #{entity.createUserId}
         )
         RETURNING post_id
     </insert>
@@ -132,12 +132,10 @@
         게시글 수정
         */
         UPDATE community_post SET
-            category = #{category},
+            category =  CAST(#{category} AS community_category_enum),
             title = #{title},
             content = #{content},
             content_type = #{contentType},
-            is_pinned = #{isPinned},
-            pin_order = #{pinOrder},
             update_date = CURRENT_TIMESTAMP,
             update_user_id = #{updateUserId}
         WHERE post_id = #{postId}

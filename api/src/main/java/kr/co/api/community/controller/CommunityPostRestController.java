@@ -3,13 +3,15 @@ package kr.co.api.community.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.community.converter.dtoCommand.CommunityPostDtoCommandConverter;
+import kr.co.api.community.dto.command.CommunityPostInfoDtailDto;
 import kr.co.api.community.dto.command.CommunityPostInfoDto;
 import kr.co.api.community.dto.command.CommunityPostRegistrationDto;
 import kr.co.api.community.dto.command.CommunityPostUpdateDto;
 import kr.co.api.community.dto.request.CommunityPostRegistrationRequestDto;
 import kr.co.api.community.dto.request.CommunityPostUpdateRequestDto;
 import kr.co.api.community.dto.response.CommunityPostListResponseDto;
+import kr.co.api.community.dto.response.CommunityPostsListResponseDto;
+import kr.co.api.community.dto.response.CommunityPostResponseDetailDto;
 import kr.co.api.community.dto.response.CommunityPostResponseDto;
 import kr.co.api.community.service.CommunityPostService;
 import kr.co.common.contoller.BaseController;
@@ -23,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/community/posts")
@@ -32,27 +35,26 @@ import java.util.List;
 public class CommunityPostRestController extends BaseController {
 
     private final CommunityPostService postService;
-    private final CommunityPostDtoCommandConverter postDtoCommandConverter;
 
     @Operation(summary = "게시글 등록", description = "커뮤니티 게시글 등록")
     @PostMapping(value = "/v1", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommonResponseDto> createPost(
             Principal principal,
             @RequestPart("data") CommunityPostRegistrationRequestDto request,
-            @RequestPart(value = "imageFiles", required = false) List<MultipartFile> imageFiles) {
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
 
         Long userId = Long.parseLong(principal.getName());
 
-        // Request DTO에 파일 설정
-        CommunityPostRegistrationRequestDto requestWithFiles = new CommunityPostRegistrationRequestDto(
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        CommunityPostRegistrationDto postRegistrationDto = new CommunityPostRegistrationDto(
+                userId,
                 request.getCategory(),
                 request.getTitle(),
                 request.getContent(),
                 request.getContentType(),
-                imageFiles
+                userId,  // createUserId
+                images
         );
-
-        CommunityPostRegistrationDto postRegistrationDto = postDtoCommandConverter.toCommandDto(requestWithFiles, userId, userId);
 
         postService.createPost(postRegistrationDto);
 
@@ -62,25 +64,63 @@ public class CommunityPostRestController extends BaseController {
     @AuthRequired(authSkip = true)
     @Operation(summary = "게시글 상세 조회", description = "게시글 상세 조회 (조회수 증가)")
     @GetMapping("/v1/{postId}")
-    public ResponseEntity<CommonResponseDto> getPostDetail(@PathVariable Long postId) {
+    public ResponseEntity<CommonResponseDto> getPostDetail(Principal principal, @PathVariable Long postId) {
 
-        CommunityPostInfoDto postInfoDto = postService.getPostDetail(postId);
-        CommunityPostResponseDto responseDto = postDtoCommandConverter.toResponseDto(postInfoDto);
+        Long userId = Long.parseLong(principal.getName());
+
+        CommunityPostInfoDtailDto postInfoDto = postService.getPostDetail(postId, userId);
+
+        // CommandDto → ResponseDto 변환 (생성자 직접 호출)
+        CommunityPostResponseDetailDto responseDto = new CommunityPostResponseDetailDto(
+                postInfoDto.getPostId(),
+                postInfoDto.getNickname(),
+                postInfoDto.getCategory(),
+                postInfoDto.getTitle(),
+                postInfoDto.getContent(),
+                postInfoDto.getContentType(),
+                postInfoDto.getViewCount(),
+                postInfoDto.getLikeCount(),
+                postInfoDto.getCommentCount(),
+                postInfoDto.getIsPinned(),
+                postInfoDto.getPinOrder(),
+                postInfoDto.getCreateDate(),
+                postInfoDto.getImageUrls(),
+                postInfoDto.getPostWriteYn()
+        );
 
         return success(responseDto);
     }
 
     @AuthRequired(authSkip = true)
-    @Operation(summary = "게시글 목록 조회", description = "커뮤니티 게시글 목록 조회")
+    @Operation(summary = "게시글 목록 조회", description = "커뮤니티 게시글 목록 조회 (리스트 + 총 개수)")
     @GetMapping("/v1")
     public ResponseEntity<CommonResponseDto> getAllPosts(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         List<CommunityPostInfoDto> postInfoDtos = postService.getAllPosts(page, size);
-        List<CommunityPostListResponseDto> responseDtos = postDtoCommandConverter.toListResponseDtos(postInfoDtos);
+        int totalCount = postService.getAllPostsCount();
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<CommunityPostListResponseDto> posts = postInfoDtos.stream()
+                .map(dto -> new CommunityPostListResponseDto(
+                        dto.getPostId(),
+                        dto.getNickname(),
+                        dto.getCategory(),
+                        dto.getTitle(),
+                        dto.getViewCount(),
+                        dto.getLikeCount(),
+                        dto.getCommentCount(),
+                        dto.getIsPinned(),
+                        dto.getPinOrder(),
+                        dto.getCreateDate()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        CommunityPostsListResponseDto responseDto = new CommunityPostsListResponseDto(posts, totalCount);
+
+        return success(responseDto);
     }
 
     @AuthRequired(authSkip = true)
@@ -99,12 +139,12 @@ public class CommunityPostRestController extends BaseController {
             Principal principal,
             @PathVariable Long postId,
             @RequestPart("data") CommunityPostUpdateRequestDto request,
-            @RequestPart(value = "imageFiles", required = false) List<MultipartFile> imageFiles) {
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
 
         Long updateUserId = Long.parseLong(principal.getName());
 
-        // Request DTO에 파일 및 postId 설정
-        CommunityPostUpdateRequestDto requestWithFiles = new CommunityPostUpdateRequestDto(
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        CommunityPostUpdateDto postUpdateDto = new CommunityPostUpdateDto(
                 postId,
                 request.getCategory(),
                 request.getTitle(),
@@ -112,10 +152,10 @@ public class CommunityPostRestController extends BaseController {
                 request.getContentType(),
                 request.getIsPinned(),
                 request.getPinOrder(),
-                imageFiles
+                updateUserId,
+                images
         );
 
-        CommunityPostUpdateDto postUpdateDto = postDtoCommandConverter.toCommandDto(requestWithFiles, updateUserId);
         postService.updatePost(postUpdateDto);
 
         return success();
@@ -150,7 +190,22 @@ public class CommunityPostRestController extends BaseController {
             @RequestParam(defaultValue = "10") int size) {
 
         List<CommunityPostInfoDto> postInfoDtos = postService.searchPostsByTitle(title, page, size);
-        List<CommunityPostListResponseDto> responseDtos = postDtoCommandConverter.toListResponseDtos(postInfoDtos);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<CommunityPostListResponseDto> responseDtos = postInfoDtos.stream()
+                .map(dto -> new CommunityPostListResponseDto(
+                        dto.getPostId(),
+                        dto.getNickname(),
+                        dto.getCategory(),
+                        dto.getTitle(),
+                        dto.getViewCount(),
+                        dto.getLikeCount(),
+                        dto.getCommentCount(),
+                        dto.getIsPinned(),
+                        dto.getPinOrder(),
+                        dto.getCreateDate()
+                ))
+                .collect(Collectors.toList());
 
         return success(responseDtos);
     }

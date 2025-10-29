@@ -19,6 +19,7 @@ public class VotePetResponseDto {
     private LocalDate birthDate;
     private Integer breedId;
     private String breedName;
+    private String customBreed;
     private Integer speciesId;
     private String speciesName;
     private Integer petModeId;

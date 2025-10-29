@@ -142,4 +142,23 @@
           AND u.delete_date IS NULL
     </select>
 
+    <!-- 사용자 정보 검증 및 소프트 삭제 -->
+    <update id="softDeleteUser">
+        /*
+        UserMapper.xml
+        softDeleteUser
+        사용자 정보 검증 및 소프트 삭제 (userId, email, name, password 모두 일치해야 삭제)
+        */
+        UPDATE "user" SET
+            delete_date = CURRENT_TIMESTAMP,
+            delete_user_id = #{userId},
+            update_date = CURRENT_TIMESTAMP,
+            update_user_id = #{userId}
+        WHERE user_id = #{userId}
+          AND email = #{email}
+          AND name = #{name}
+          AND password = #{password}
+          AND delete_date IS NULL
+    </update>
+
 </mapper>

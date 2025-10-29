@@ -12,12 +12,7 @@ import kr.co.api.pet.dto.command.PetInfoDto;
 import kr.co.api.pet.dto.command.SpeciesInfoDto;
 import kr.co.api.pet.dto.command.BreedInfoDto;
 import kr.co.api.pet.dto.command.PetModeInfoDto;
-import kr.co.api.pet.dto.response.PetInfoResponseDto;
-import kr.co.api.pet.dto.response.PetListResponseDto;
-import kr.co.api.pet.dto.response.SpeciesListResponseDto;
-import kr.co.api.pet.dto.response.BreedListResponseDto;
-import kr.co.api.pet.dto.response.PetModeListResponseDto;
-import kr.co.api.pet.converter.dtoCommand.PetDtoCommandConverter;
+import kr.co.api.pet.dto.response.*;
 import kr.co.api.pet.service.PetService;
 import kr.co.common.contoller.BaseController;
 import kr.co.common.entity.common.CommonResponseDto;
@@ -32,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,7 +38,6 @@ import java.util.List;
 public class PetController extends BaseController {
 
     private final PetService petService;
-    private final PetDtoCommandConverter petDtoCommandConverter;
 
     /**
      * 나의 펫 등록
@@ -56,8 +51,13 @@ public class PetController extends BaseController {
     ) {
         Long userId = Long.parseLong(principal.getName());
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        PetRegistrationDto petRegistrationDto = petDtoCommandConverter.toCommandDto(request, userId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        PetRegistrationDto petRegistrationDto = new PetRegistrationDto(
+                userId,
+                request.getBreedId(),
+                request.getCustomBreed(),
+                request.getName()
+        );
 
         petService.insertPet(petRegistrationDto, image);
 
@@ -72,7 +72,29 @@ public class PetController extends BaseController {
         Long userId = Long.parseLong(principal.getName());
 
         List<PetInfoDto> petInfoDtos = petService.selectPetList(userId);
-        PetListResponseDto responseDto = petDtoCommandConverter.toListResponseDto(petInfoDtos);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<PetInfoResponseDto> pets = petInfoDtos.stream()
+                .map(dto -> new PetInfoResponseDto(
+                        dto.getPetId(),
+                        dto.getName(),
+                        dto.getBreedId(),
+                        dto.getBreedName(),
+                        dto.getSpeciesId(),
+                        dto.getSpeciesName(),
+                        dto.getCustomBreed(),
+                        dto.getGender(),
+                        dto.getBirthDate(),
+                        dto.getDescription(),
+                        dto.getMicrochipId(),
+                        dto.getOwnershipId(),
+                        dto.getOwnershipName(),
+                        dto.getImageUrl(),
+                        dto.getCreateDate()
+                ))
+                .collect(Collectors.toList());
+
+        PetListResponseDto responseDto = new PetListResponseDto(pets, pets.size());
 
         return success(responseDto);
     }
@@ -86,7 +108,25 @@ public class PetController extends BaseController {
         Long userId = Long.parseLong(principal.getName());
 
         PetInfoDto petInfoDto = petService.selectPet(petId, userId);
-        PetInfoResponseDto responseDto = petDtoCommandConverter.toResponseDto(petInfoDto);
+
+        // CommandDto → ResponseDto 변환 (생성자 직접 호출)
+        PetInfoResponseDto responseDto = new PetInfoResponseDto(
+                petInfoDto.getPetId(),
+                petInfoDto.getName(),
+                petInfoDto.getBreedId(),
+                petInfoDto.getBreedName(),
+                petInfoDto.getSpeciesId(),
+                petInfoDto.getSpeciesName(),
+                petInfoDto.getCustomBreed(),
+                petInfoDto.getGender(),
+                petInfoDto.getBirthDate(),
+                petInfoDto.getDescription(),
+                petInfoDto.getMicrochipId(),
+                petInfoDto.getOwnershipId(),
+                petInfoDto.getOwnershipName(),
+                petInfoDto.getImageUrl(),
+                petInfoDto.getCreateDate()
+        );
 
         return success(responseDto);
     }
@@ -103,8 +143,18 @@ public class PetController extends BaseController {
 
         Long userId = Long.parseLong(principal.getName());
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        PetUpdateDto petUpdateDto = petDtoCommandConverter.toCommandDto(request, petId, userId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        PetUpdateDto petUpdateDto = new PetUpdateDto(
+                petId,
+                userId,
+                request.getBreedId(),
+                request.getCustomBreed(),
+                request.getName(),
+                request.getBirthDate(),
+                request.getGender(),
+                request.getDescription(),
+                request.getMicrochipId()
+        );
 
         petService.updatePet(petUpdateDto, image);
 
@@ -134,7 +184,13 @@ public class PetController extends BaseController {
     public ResponseEntity<CommonResponseDto> getAllSpecies() {
 
         List<SpeciesInfoDto> speciesInfoDtos = petService.getAllSpecies();
-        SpeciesListResponseDto response = petDtoCommandConverter.toSpeciesListResponseDto(speciesInfoDtos);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<SpeciesDto> species = speciesInfoDtos.stream()
+                .map(dto -> new SpeciesDto(dto.getSpeciesId(), dto.getName()))
+                .collect(Collectors.toList());
+
+        SpeciesListResponseDto response = new SpeciesListResponseDto(species);
 
         return success(response);
     }
@@ -148,7 +204,13 @@ public class PetController extends BaseController {
             @RequestParam Long speciesId) {
 
         List<BreedInfoDto> breedInfoDtos = petService.getBreedsBySpeciesId(speciesId);
-        BreedListResponseDto response = petDtoCommandConverter.toBreedListResponseDto(breedInfoDtos);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<BreedDto> breeds = breedInfoDtos.stream()
+                .map(dto -> new BreedDto(dto.getBreedId(), dto.getName()))
+                .collect(Collectors.toList());
+
+        BreedListResponseDto response = new BreedListResponseDto(breeds);
 
         return success(response);
     }
@@ -161,7 +223,13 @@ public class PetController extends BaseController {
     public ResponseEntity<CommonResponseDto> getAllPetModes() {
 
         List<PetModeInfoDto> petModeInfoDtos = petService.getAllPetModes();
-        PetModeListResponseDto response = petDtoCommandConverter.toPetModeListResponseDto(petModeInfoDtos);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<PetModeDto> petModes = petModeInfoDtos.stream()
+                .map(dto -> new PetModeDto(dto.getPetModeId(), dto.getModeName()))
+                .collect(Collectors.toList());
+
+        PetModeListResponseDto response = new PetModeListResponseDto(petModes);
 
         return success(response);
     }

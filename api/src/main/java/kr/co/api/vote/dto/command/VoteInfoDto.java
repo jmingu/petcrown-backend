@@ -17,6 +17,7 @@ public class VoteInfoDto {
     private final LocalDate birthDate;
     private final Integer breedId;
     private final String breedName;
+    private final String customBreed;
     private final Integer speciesId;
     private final String speciesName;
     private final Integer petModeId;

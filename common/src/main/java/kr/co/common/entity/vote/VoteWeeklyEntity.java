@@ -1,6 +1,7 @@
 package kr.co.common.entity.vote;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -32,6 +33,24 @@ public class VoteWeeklyEntity {
 
         LocalDateTime now = LocalDateTime.now();
 
+        this.createDate = now;
+        this.createUserId = createUserId;
+        this.updateDate = now;
+        this.updateUserId = updateUserId;
+        this.deleteDate = null;
+        this.deleteUserId = null;
+        this.weekStartDate = weekStartDate;
+        this.petId = petId;
+        this.voteCount = voteCount;
+        this.viewCount = viewCount;
+        this.modeId = modeId;
+    }
+
+    // 생성용
+    public VoteWeeklyEntity(Long voteWeeklyId, Long createUserId, Long updateUserId, LocalDate weekStartDate, Long petId, int voteCount, int viewCount, int modeId) {
+
+        LocalDateTime now = LocalDateTime.now();
+        this.voteWeeklyId = voteWeeklyId;
         this.createDate = now;
         this.createUserId = createUserId;
         this.updateDate = now;

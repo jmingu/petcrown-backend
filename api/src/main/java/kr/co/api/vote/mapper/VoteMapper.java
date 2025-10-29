@@ -119,6 +119,11 @@ public interface VoteMapper {
     int countWeeklyVoteRegistrationByUser(@Param("userId") Long userId);
 
     /**
+     * 사용자의 현재 주 투표 등록 수 조회 (date_trunc 사용) - 삭제후 재 등록 방지를 위함
+     */
+    int countWeeklyVoteRegistrationByUserNoDelete(@Param("userId") Long userId);
+
+    /**
      * Weekly 투표 수정
      */
     void updateVoteWeekly(VoteWeeklyEntity voteWeeklyEntity);

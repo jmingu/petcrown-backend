@@ -10,16 +10,20 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommunityCommentResponseDto {
+public class CommunityPostResponseDetailDto {
 
-    private Long commentId;
     private Long postId;
     private String nickname;
-    private Long parentCommentId;
+    private String category;
+    private String title;
     private String content;
+    private String contentType;
+    private Long viewCount;
     private Long likeCount;
-    private Integer depth;
+    private Long commentCount;
+    private String isPinned;
+    private Integer pinOrder;
     private LocalDateTime createDate;
-    private String commentWriteYn;  // 작성자 여부 (Y/N)
-    private List<CommunityCommentResponseDto> replies;  // 대댓글 리스트
+    private List<String> imageUrls;
+    private String postWriteYn;
 }

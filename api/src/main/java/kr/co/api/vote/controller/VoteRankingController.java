@@ -3,9 +3,9 @@ package kr.co.api.vote.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.vote.converter.dtoCommand.VoteDtoCommandConverter;
 import kr.co.api.vote.dto.command.VoteInfoDto;
 import kr.co.api.vote.dto.response.VoteRankingResponseDto;
+import kr.co.api.vote.dto.response.VotePetResponseDto;
 import kr.co.api.vote.service.VoteRankingService;
 import kr.co.common.contoller.BaseController;
 import kr.co.common.entity.common.CommonResponseDto;
@@ -16,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,7 +27,6 @@ import java.util.List;
 public class VoteRankingController extends BaseController {
 
     private final VoteRankingService voteRankingService;
-    private final VoteDtoCommandConverter voteDtoCommandConverter;
 
     /**
      * 이번 주 Top 3 랭킹 조회 (실시간)
@@ -37,7 +37,32 @@ public class VoteRankingController extends BaseController {
     public ResponseEntity<CommonResponseDto> getCurrentWeekTopRanking() {
 
         List<VoteInfoDto> ranking = voteRankingService.getCurrentWeekTopRanking();
-        VoteRankingResponseDto response = voteDtoCommandConverter.toRankingResponseDto(ranking);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<VotePetResponseDto> rankingList = ranking.stream()
+                .map(dto -> new VotePetResponseDto(
+                        dto.getVoteId(),
+                        dto.getPetId(),
+                        dto.getName(),
+                        dto.getGender(),
+                        dto.getBirthDate(),
+                        dto.getBreedId(),
+                        dto.getBreedName(),
+                        dto.getCustomBreed(),
+                        dto.getSpeciesId(),
+                        dto.getSpeciesName(),
+                        dto.getPetModeId(),
+                        dto.getPetModeName(),
+                        dto.getDailyVoteCount(),
+                        dto.getWeeklyVoteCount(),
+                        dto.getMonthlyVoteCount(),
+                        dto.getVoteMonth(),
+                        dto.getProfileImageUrl(),
+                        dto.getOwnerEmail()
+                ))
+                .collect(Collectors.toList());
+
+        VoteRankingResponseDto response = new VoteRankingResponseDto(rankingList);
 
         return success(response);
     }
@@ -51,7 +76,32 @@ public class VoteRankingController extends BaseController {
     public ResponseEntity<CommonResponseDto> getLastWeekTopRanking() {
 
         List<VoteInfoDto> ranking = voteRankingService.getLastWeekTopRanking();
-        VoteRankingResponseDto response = voteDtoCommandConverter.toRankingResponseDto(ranking);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<VotePetResponseDto> rankingList = ranking.stream()
+                .map(dto -> new VotePetResponseDto(
+                        dto.getVoteId(),
+                        dto.getPetId(),
+                        dto.getName(),
+                        dto.getGender(),
+                        dto.getBirthDate(),
+                        dto.getBreedId(),
+                        dto.getBreedName(),
+                        dto.getCustomBreed(),
+                        dto.getSpeciesId(),
+                        dto.getSpeciesName(),
+                        dto.getPetModeId(),
+                        dto.getPetModeName(),
+                        dto.getDailyVoteCount(),
+                        dto.getWeeklyVoteCount(),
+                        dto.getMonthlyVoteCount(),
+                        dto.getVoteMonth(),
+                        dto.getProfileImageUrl(),
+                        dto.getOwnerEmail()
+                ))
+                .collect(Collectors.toList());
+
+        VoteRankingResponseDto response = new VoteRankingResponseDto(rankingList);
 
         return success(response);
     }

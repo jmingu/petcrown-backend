@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper
 public interface CommunityPostMapper {
 
-    void insertPost(CommunityPostEntity post);
+    void insertPost(@Param("entity") CommunityPostEntity post);
 
     CommunityPostQueryDto selectByPostId(@Param("postId") Long postId);
 

@@ -124,6 +124,7 @@
             p.birth_date as birthDate,
             b.breed_id as breedId,
             b.name as breedName,
+            p.custom_breed as customBreed,
             s.species_id as speciesId,
             s.name as speciesName,
             pm.pet_mode_id as petModeId,
@@ -141,11 +142,11 @@
         LEFT JOIN species s ON b.species_id = s.species_id
         LEFT JOIN pet_mode pm ON vw.mode_id = pm.pet_mode_id AND pm.delete_date IS NULL
         LEFT JOIN vote_file_info vfi ON vfi.ref_table = 'vote_weekly'
-            AND vfi.ref_id = vw.vote_weekly_id
-            AND vfi.delete_date IS NULL
+        AND vfi.ref_id = vw.vote_weekly_id
+        AND vfi.delete_date IS NULL
         WHERE vw.week_start_date = #{weekStartDate}
         AND vw.delete_date IS NULL
-        ORDER BY vw.vote_count DESC, vw.vote_weekly_id DESC
+        ORDER BY vw.vote_weekly_id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
@@ -159,6 +160,7 @@
         SELECT COUNT(*)
         FROM vote_weekly vw
         INNER JOIN pet p ON vw.pet_id = p.pet_id AND p.delete_date IS NULL
+        INNER JOIN "user" u ON p.user_id = u.user_id AND u.delete_date IS NULL
         WHERE vw.week_start_date = #{weekStartDate}
         AND vw.delete_date IS NULL
     </select>
@@ -179,6 +181,7 @@
             p.birth_date as birthDate,
             b.breed_id as breedId,
             b.name as breedName,
+            p.custom_breed as customBreed,
             s.species_id as speciesId,
             s.name as speciesName,
             pm.pet_mode_id as petModeId,
@@ -399,6 +402,19 @@
         AND vw.delete_date IS NULL
     </select>
 
+    <select id="countWeeklyVoteRegistrationByUserNoDelete" resultType="int">
+        /*
+        VoteMapper.xml
+        countWeeklyVoteRegistrationByUser
+        사용자의 현재 주 투표 등록 수 조회 (date_trunc 사용) - 삭제 후 재 등록을 방지하기 위해
+        */
+        SELECT COUNT(*)
+        FROM vote_weekly vw
+                 INNER JOIN pet p ON vw.pet_id = p.pet_id
+        WHERE p.user_id = #{userId}
+          AND date_trunc('week', vw.week_start_date) = date_trunc('week', CURRENT_DATE)
+    </select>
+
     <!-- Weekly 투표 수정 (파일 URL) -->
     <update id="updateVoteWeekly">
         /*
@@ -408,6 +424,7 @@
         */
         UPDATE vote_weekly
         SET
+            mode_id = #{modeId},
             update_date = CURRENT_TIMESTAMP,
             update_user_id = #{updateUserId}
         WHERE vote_weekly_id = #{voteWeeklyId}

@@ -3,13 +3,13 @@ package kr.co.api.notice.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.notice.converter.dtoCommand.NoticeDtoCommandConverter;
 import kr.co.api.notice.dto.command.NoticeInfoDto;
 import kr.co.api.notice.dto.command.NoticeRegistrationDto;
 import kr.co.api.notice.dto.command.NoticeUpdateDto;
 import kr.co.api.notice.dto.request.NoticeRegistrationRequestDto;
 import kr.co.api.notice.dto.request.NoticeUpdateRequestDto;
 import kr.co.api.notice.dto.response.NoticeListResponseDto;
+import kr.co.api.notice.dto.response.NoticesListResponseDto;
 import kr.co.api.notice.dto.response.NoticeResponseDto;
 import kr.co.api.notice.service.NoticeService;
 import kr.co.common.contoller.BaseController;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/notices")
@@ -30,7 +31,6 @@ import java.util.List;
 public class NoticeRestController extends BaseController {
 
     private final NoticeService noticeService;
-    private final NoticeDtoCommandConverter noticeDtoCommandConverter;
 
     /**
      * 공지사항 등록 (관리자만 가능)
@@ -42,8 +42,17 @@ public class NoticeRestController extends BaseController {
 
         Long createUserId = Long.parseLong(principal.getName());
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        NoticeRegistrationDto noticeRegistrationDto = noticeDtoCommandConverter.toCommandDto(request, createUserId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        NoticeRegistrationDto noticeRegistrationDto = new NoticeRegistrationDto(
+                request.getTitle(),
+                request.getContent(),
+                request.getContentType(),
+                request.getIsPinned(),
+                request.getPinOrder(),
+                request.getStartDate(),
+                request.getEndDate(),
+                createUserId
+        );
 
         noticeService.createNotice(noticeRegistrationDto);
 
@@ -59,7 +68,21 @@ public class NoticeRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> getNoticeDetail(@PathVariable Long noticeId) {
 
         NoticeInfoDto noticeInfoDto = noticeService.getNoticeDetail(noticeId);
-        NoticeResponseDto responseDto = noticeDtoCommandConverter.toResponseDto(noticeInfoDto);
+
+        // CommandDto → ResponseDto 변환 (생성자 직접 호출)
+        NoticeResponseDto responseDto = new NoticeResponseDto(
+                noticeInfoDto.getNoticeId(),
+                noticeInfoDto.getTitle(),
+                noticeInfoDto.getContent(),
+                noticeInfoDto.getContentType(),
+                noticeInfoDto.getIsPinned(),
+                noticeInfoDto.getPinOrder(),
+                noticeInfoDto.getStartDate(),
+                noticeInfoDto.getEndDate(),
+                noticeInfoDto.getViewCount(),
+                noticeInfoDto.getCreateDate(),
+                noticeInfoDto.getCreateUserId()
+        );
 
         return success(responseDto);
     }
@@ -68,45 +91,95 @@ public class NoticeRestController extends BaseController {
      * 활성화된 공지사항 목록 조회
      */
     @AuthRequired(authSkip = true)
-    @Operation(summary = "활성화된 공지사항 목록 조회", description = "현재 시점에서 활성화된 공지사항 목록 조회")
+    @Operation(summary = "활성화된 공지사항 목록 조회", description = "현재 시점에서 활성화된 공지사항 목록 조회 (리스트 + 총 개수)")
     @GetMapping("/v1")
     public ResponseEntity<CommonResponseDto> getActiveNotices(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         List<NoticeInfoDto> noticeInfoDtos = noticeService.getActiveNotices(page, size);
-        List<NoticeListResponseDto> responseDtos = noticeDtoCommandConverter.toListResponseDtos(noticeInfoDtos);
+        int totalCount = noticeService.getActiveNoticesCount();
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<NoticeListResponseDto> notices = noticeInfoDtos.stream()
+                .map(dto -> new NoticeListResponseDto(
+                        dto.getNoticeId(),
+                        dto.getTitle(),
+                        dto.getIsPinned(),
+                        dto.getPinOrder(),
+                        dto.getStartDate(),
+                        dto.getEndDate(),
+                        dto.getViewCount(),
+                        dto.getCreateDate()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        NoticesListResponseDto responseDto = new NoticesListResponseDto(notices, totalCount);
+
+        return success(responseDto);
     }
 
     /**
      * 상단 고정 공지사항 목록 조회
      */
     @AuthRequired(authSkip = true)
-    @Operation(summary = "상단 고정 공지사항 목록 조회", description = "상단에 고정된 공지사항 목록 조회")
+    @Operation(summary = "상단 고정 공지사항 목록 조회", description = "상단에 고정된 공지사항 목록 조회 (리스트 + 총 개수)")
     @GetMapping("/v1/pinned")
     public ResponseEntity<CommonResponseDto> getPinnedNotices() {
 
         List<NoticeInfoDto> noticeInfoDtos = noticeService.getPinnedNotices();
-        List<NoticeListResponseDto> responseDtos = noticeDtoCommandConverter.toListResponseDtos(noticeInfoDtos);
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<NoticeListResponseDto> notices = noticeInfoDtos.stream()
+                .map(dto -> new NoticeListResponseDto(
+                        dto.getNoticeId(),
+                        dto.getTitle(),
+                        dto.getIsPinned(),
+                        dto.getPinOrder(),
+                        dto.getStartDate(),
+                        dto.getEndDate(),
+                        dto.getViewCount(),
+                        dto.getCreateDate()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        NoticesListResponseDto responseDto = new NoticesListResponseDto(notices, notices.size());
+
+        return success(responseDto);
     }
 
     /**
      * 전체 공지사항 목록 조회 (관리자용)
      */
-    @Operation(summary = "전체 공지사항 목록 조회", description = "전체 공지사항 목록 조회 (관리자용)")
+    @Operation(summary = "전체 공지사항 목록 조회", description = "전체 공지사항 목록 조회 (관리자용, 리스트 + 총 개수)")
     @GetMapping("/v1/admin")
     public ResponseEntity<CommonResponseDto> getAllNotices(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         List<NoticeInfoDto> noticeInfoDtos = noticeService.getAllNotices(page, size);
-        List<NoticeListResponseDto> responseDtos = noticeDtoCommandConverter.toListResponseDtos(noticeInfoDtos);
+        int totalCount = noticeService.getAllNoticesCount();
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<NoticeListResponseDto> notices = noticeInfoDtos.stream()
+                .map(dto -> new NoticeListResponseDto(
+                        dto.getNoticeId(),
+                        dto.getTitle(),
+                        dto.getIsPinned(),
+                        dto.getPinOrder(),
+                        dto.getStartDate(),
+                        dto.getEndDate(),
+                        dto.getViewCount(),
+                        dto.getCreateDate()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        NoticesListResponseDto responseDto = new NoticesListResponseDto(notices, totalCount);
+
+        return success(responseDto);
     }
 
     /**
@@ -158,8 +231,18 @@ public class NoticeRestController extends BaseController {
                 request.getEndDate()
         );
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        NoticeUpdateDto noticeUpdateDto = noticeDtoCommandConverter.toCommandDto(request, updateUserId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        NoticeUpdateDto noticeUpdateDto = new NoticeUpdateDto(
+                noticeId,
+                request.getTitle(),
+                request.getContent(),
+                request.getContentType(),
+                request.getIsPinned(),
+                request.getPinOrder(),
+                request.getStartDate(),
+                request.getEndDate(),
+                updateUserId
+        );
 
         noticeService.updateNotice(noticeUpdateDto);
 
@@ -185,7 +268,7 @@ public class NoticeRestController extends BaseController {
      * 제목으로 공지사항 검색
      */
     @AuthRequired(authSkip = true)
-    @Operation(summary = "제목으로 공지사항 검색", description = "제목으로 공지사항 검색")
+    @Operation(summary = "제목으로 공지사항 검색", description = "제목으로 공지사항 검색 (리스트 + 총 개수)")
     @GetMapping("/v1/search")
     public ResponseEntity<CommonResponseDto> searchNoticesByTitle(
             @RequestParam String title,
@@ -193,9 +276,26 @@ public class NoticeRestController extends BaseController {
             @RequestParam(defaultValue = "10") int size) {
 
         List<NoticeInfoDto> noticeInfoDtos = noticeService.searchNoticesByTitle(title, page, size);
-        List<NoticeListResponseDto> responseDtos = noticeDtoCommandConverter.toListResponseDtos(noticeInfoDtos);
+        int totalCount = noticeService.getSearchNoticesCountByTitle(title);
 
-        return success(responseDtos);
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<NoticeListResponseDto> notices = noticeInfoDtos.stream()
+                .map(dto -> new NoticeListResponseDto(
+                        dto.getNoticeId(),
+                        dto.getTitle(),
+                        dto.getIsPinned(),
+                        dto.getPinOrder(),
+                        dto.getStartDate(),
+                        dto.getEndDate(),
+                        dto.getViewCount(),
+                        dto.getCreateDate()
+                ))
+                .collect(Collectors.toList());
+
+        // 리스트 + 총 개수를 감싸는 ResponseDto 생성
+        NoticesListResponseDto responseDto = new NoticesListResponseDto(notices, totalCount);
+
+        return success(responseDto);
     }
 
     /**

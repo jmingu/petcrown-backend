@@ -1,6 +1,5 @@
 package kr.co.api.pet.repository;
 
-import kr.co.api.pet.converter.domainEntity.PetDomainEntityConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -9,8 +8,6 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 @Slf4j
 public class PetRepository {
-
-    private final PetDomainEntityConverter petDomainEntityConverter;
     
 //    public Pet savePet(Pet pet) {
 //        PetEntity petEntity = petMapper.toPetEntity(pet);

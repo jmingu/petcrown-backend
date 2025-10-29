@@ -2,9 +2,6 @@ package kr.co.api.event.service;
 
 import kr.co.api.common.mapper.FileInfoMapper;
 import kr.co.api.common.service.FileService;
-import kr.co.api.event.converter.domainEntity.EventDomainEntityConverter;
-import kr.co.api.event.converter.dtoDomain.EventDtoDomainConverter;
-import kr.co.api.event.converter.entityCommand.EventEntityCommandConverter;
 import kr.co.api.event.domain.Event;
 import kr.co.api.event.dto.command.EventInfoDto;
 import kr.co.api.event.dto.command.EventRegistrationDto;
@@ -30,9 +27,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class EventService {
 
-    private final EventDtoDomainConverter eventDtoDomainConverter;
-    private final EventDomainEntityConverter eventDomainEntityConverter;
-    private final EventEntityCommandConverter eventEntityCommandConverter;
     private final EventMapper eventMapper;
     private final FileInfoMapper fileInfoMapper;
     private final FileService fileService;
@@ -46,14 +40,35 @@ public class EventService {
     @Transactional
     public void createEvent(EventRegistrationDto eventRegistrationDto) {
 
-        // CommandDto → Domain 변환
-        Event event = eventDtoDomainConverter.toEventForRegistration(eventRegistrationDto);
+        // CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        Event event = Event.createEvent(
+                eventRegistrationDto.getTitle(),
+                eventRegistrationDto.getContent(),
+                eventRegistrationDto.getContentType(),
+                eventRegistrationDto.getStartDate(),
+                eventRegistrationDto.getEndDate(),
+                eventRegistrationDto.getCreateUserId()
+        );
 
         // 비즈니스 규칙 검증
         validateEventForRegistration(event);
 
-        // Domain → Entity 변환
-        EventEntity eventEntity = eventDomainEntityConverter.toEventEntityForRegistration(event);
+        // Domain → Entity 변환 (생성자 직접 호출)
+        EventEntity eventEntity = new EventEntity(
+                event.getEventId(),
+                event.getTitle() != null ? event.getTitle().getValue() : null,
+                event.getContent() != null ? event.getContent().getValue() : null,
+                event.getContentType() != null ? event.getContentType().getValue() : null,
+                event.getStartDate(),
+                event.getEndDate(),
+                event.getViewCount(),
+                LocalDateTime.now(),  // createDate
+                event.getCreateUserId(),
+                LocalDateTime.now(),  // updatedDate
+                event.getCreateUserId(),
+                null,  // deleteDate
+                null   // deleteUserId
+        );
 
         // 영속성 저장
         eventMapper.insertEvent(eventEntity);
@@ -84,8 +99,8 @@ public class EventService {
         // 파일 정보 조회
         List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventId);
 
-        // Entity를 CommandDto로 변환 (Converter 패턴 사용)
-        return eventEntityCommandConverter.toEventInfoDto(eventEntity, fileInfoEntities);
+        // Entity를 CommandDto로 변환 (생성자 직접 호출)
+        return convertToEventInfoDto(eventEntity, fileInfoEntities);
     }
 
     /**
@@ -100,7 +115,7 @@ public class EventService {
         // 파일 정보 조회
         List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventId);
 
-        return eventEntityCommandConverter.toEventInfoDto(eventEntity, fileInfoEntities);
+        return convertToEventInfoDto(eventEntity, fileInfoEntities);
     }
 
     /**
@@ -114,7 +129,7 @@ public class EventService {
         List<EventInfoDto> eventInfoDtos = new ArrayList<>();
         for (EventEntity eventEntity : eventEntities) {
             List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
-            eventInfoDtos.add(eventEntityCommandConverter.toEventInfoDto(eventEntity, fileInfoEntities));
+            eventInfoDtos.add(convertToEventInfoDto(eventEntity, fileInfoEntities));
         }
 
         return eventInfoDtos;
@@ -131,7 +146,7 @@ public class EventService {
         List<EventInfoDto> eventInfoDtos = new ArrayList<>();
         for (EventEntity eventEntity : eventEntities) {
             List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
-            eventInfoDtos.add(eventEntityCommandConverter.toEventInfoDto(eventEntity, fileInfoEntities));
+            eventInfoDtos.add(convertToEventInfoDto(eventEntity, fileInfoEntities));
         }
 
         return eventInfoDtos;
@@ -163,8 +178,15 @@ public class EventService {
             throw new PetCrownException(BusinessCode.EVENT_NOT_FOUND);
         }
 
-        // CommandDto → Domain 변환
-        Event event = eventDtoDomainConverter.toEventForUpdate(eventUpdateDto);
+        // CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        Event event = Event.createEvent(
+                eventUpdateDto.getTitle(),
+                eventUpdateDto.getContent(),
+                eventUpdateDto.getContentType(),
+                eventUpdateDto.getStartDate(),
+                eventUpdateDto.getEndDate(),
+                eventUpdateDto.getUpdateUserId()
+        );
 
         // 비즈니스 규칙 검증
         validateEventForUpdate(event);
@@ -245,7 +267,7 @@ public class EventService {
         List<EventInfoDto> eventInfoDtos = new ArrayList<>();
         for (EventEntity eventEntity : eventEntities) {
             List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
-            eventInfoDtos.add(eventEntityCommandConverter.toEventInfoDto(eventEntity, fileInfoEntities));
+            eventInfoDtos.add(convertToEventInfoDto(eventEntity, fileInfoEntities));
         }
 
         return eventInfoDtos;
@@ -360,5 +382,35 @@ public class EventService {
             return fileUrl.substring(lastSlashIndex + 1);
         }
         return fileUrl;
+    }
+
+    /**
+     * EventEntity → EventInfoDto 변환 (생성자 직접 호출)
+     */
+    private EventInfoDto convertToEventInfoDto(EventEntity eventEntity, List<FileInfoEntity> fileInfoEntities) {
+        String thumbnailUrl = null;
+        List<String> imageUrls = new ArrayList<>();
+
+        for (FileInfoEntity fileInfoEntity : fileInfoEntities) {
+            if ("THUMBNAIL".equals(fileInfoEntity.getFileType())) {
+                thumbnailUrl = fileInfoEntity.getFileUrl();
+            } else if ("IMAGE".equals(fileInfoEntity.getFileType())) {
+                imageUrls.add(fileInfoEntity.getFileUrl());
+            }
+        }
+
+        return new EventInfoDto(
+                eventEntity.getEventId(),
+                eventEntity.getTitle(),
+                eventEntity.getContent(),
+                eventEntity.getContentType(),
+                eventEntity.getStartDate(),
+                eventEntity.getEndDate(),
+                eventEntity.getViewCount(),
+                eventEntity.getCreateDate(),
+                eventEntity.getCreateUserId(),
+                thumbnailUrl,
+                imageUrls
+        );
     }
 }

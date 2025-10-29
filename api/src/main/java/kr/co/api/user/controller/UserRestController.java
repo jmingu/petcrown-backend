@@ -3,7 +3,6 @@ package kr.co.api.user.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.user.converter.dtoCommand.UserDtoCommandConverter;
 import kr.co.api.user.dto.command.*;
 import kr.co.api.user.dto.request.*;
 import kr.co.api.user.dto.response.LoginResponseDto;
@@ -25,10 +24,9 @@ import java.security.Principal;
 @Slf4j
 @Tag(name = "User", description = "유저 관련 API")
 public class UserRestController extends BaseController {
-    
+
     private final UserService userService;
     private final VotingEmailVerificationService votingEmailVerificationService;
-    private final UserDtoCommandConverter userDtoCommandConverter;
 
     @AuthRequired(authSkip = true)
     @Operation(summary = "이메일 중복 확인", description = "이메일 중복 확인")
@@ -56,8 +54,14 @@ public class UserRestController extends BaseController {
     @PostMapping("/v1")
     public ResponseEntity<CommonResponseDto> createUser(@RequestBody UserRegistrationRequestDto request) {
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        UserRegistrationDto userRegistrationDto = userDtoCommandConverter.toCommandDto(request);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        UserRegistrationDto userRegistrationDto = new UserRegistrationDto(
+                request.getEmail(),
+                request.getName(),
+                request.getNickname(),
+                request.getPassword(),
+                request.getPasswordCheck()
+        );
 
         userService.createUser(userRegistrationDto);
 
@@ -92,7 +96,10 @@ public class UserRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> login(@RequestBody LoginRequestDto request) throws Exception{
 
         LoginTokenDto login = userService.login(request.getEmail(), request.getPassword());
-        LoginResponseDto responseDto = userDtoCommandConverter.toResponseDto(login);
+        LoginResponseDto responseDto = new LoginResponseDto(
+                login.getAccessToken(),
+                login.getRefreshToken()
+        );
 
         return success(responseDto);
     }
@@ -103,7 +110,17 @@ public class UserRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> getUserInfo(Principal principal) {
 
         UserInfoDto userInfoDto = userService.getUserInfo(Long.parseLong(principal.getName()));
-        UserInfoResponseDto responseDto = userDtoCommandConverter.toResponseDto(userInfoDto);
+        UserInfoResponseDto responseDto = new UserInfoResponseDto(
+                userInfoDto.getUserId(),
+                userInfoDto.getEmail(),
+                userInfoDto.getName(),
+                userInfoDto.getNickname(),
+                userInfoDto.getPhoneNumber(),
+                userInfoDto.getProfileImageUrl(),
+                userInfoDto.getBirthDate(),
+                userInfoDto.getGender(),
+                userInfoDto.getIsEmailVerified()
+        );
 
         return success(responseDto);
     }
@@ -113,7 +130,10 @@ public class UserRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> refreshToken(@RequestBody RefreshTokenRequestDto requestDto) throws Exception {
 
         LoginTokenDto login = userService.refreshToken(requestDto.getAccessToken(), requestDto.getRefreshToken());
-        LoginResponseDto responseDto = userDtoCommandConverter.toResponseDto(login);
+        LoginResponseDto responseDto = new LoginResponseDto(
+                login.getAccessToken(),
+                login.getRefreshToken()
+        );
 
         return success(responseDto);
     }
@@ -130,8 +150,15 @@ public class UserRestController extends BaseController {
 
         Long userId = Long.parseLong(principal.getName());
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        UserUpdateDto userUpdateDto = userDtoCommandConverter.toCommandDto(request, userId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        UserUpdateDto userUpdateDto = new UserUpdateDto(
+                userId,
+                request.getName(),
+                request.getNickname(),
+                request.getGender(),
+                request.getBirthDate(),
+                request.getPhoneNumber()
+        );
 
         userService.updateUserInfo(userUpdateDto);
 
@@ -148,8 +175,13 @@ public class UserRestController extends BaseController {
 
         Long userId = Long.parseLong(principal.getName());
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        PasswordUpdateDto passwordUpdateDto = userDtoCommandConverter.toCommandDto(request, userId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        PasswordUpdateDto passwordUpdateDto = new PasswordUpdateDto(
+                userId,
+                request.getCurrentPassword(),
+                request.getNewPassword(),
+                request.getNewPasswordConfirm()
+        );
 
         userService.updatePassword(passwordUpdateDto);
 
@@ -164,8 +196,11 @@ public class UserRestController extends BaseController {
     @PostMapping("/v1/password/reset")
     public ResponseEntity<CommonResponseDto> resetPassword(@RequestBody PasswordResetRequestDto request) {
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        PasswordResetDto passwordResetDto = userDtoCommandConverter.toCommandDto(request);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        PasswordResetDto passwordResetDto = new PasswordResetDto(
+                request.getEmail(),
+                request.getName()
+        );
 
         userService.resetPassword(passwordResetDto);
 
@@ -225,6 +260,29 @@ public class UserRestController extends BaseController {
             @RequestParam String token) {
 
         votingEmailVerificationService.confirmVotingEmail(email, token);
+        return success();
+    }
+
+    /**
+     * 회원 삭제 (소프트 삭제)
+     */
+    @Operation(summary = "회원 삭제", description = "회원 정보 검증 후 소프트 삭제 (userId, email, name, password 모두 일치해야 삭제)")
+    @DeleteMapping("/v1")
+    public ResponseEntity<CommonResponseDto> deleteUser(
+            Principal principal, @RequestBody UserDeletionRequestDto request) {
+
+        Long userId = Long.parseLong(principal.getName());
+
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        UserDeletionDto userDeletionDto = new UserDeletionDto(
+                userId,
+                request.getEmail(),
+                request.getName(),
+                request.getPassword()
+        );
+
+        userService.deleteUser(userDeletionDto);
+
         return success();
     }
 }

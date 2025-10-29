@@ -3,7 +3,6 @@ package kr.co.api.vote.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.common.annotation.AuthRequired;
-import kr.co.api.vote.converter.dtoCommand.VoteDtoCommandConverter;
 import kr.co.api.vote.dto.command.VoteInfoDto;
 import kr.co.api.vote.dto.command.VoteListDto;
 import kr.co.api.vote.dto.command.VoteRegistrationDto;
@@ -25,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,7 +36,6 @@ import java.security.Principal;
 public class VoteController extends BaseController {
 
     private final VoteService voteService;
-    private final VoteDtoCommandConverter voteDtoCommandConverter;
 
     /**
      * 투표 등록
@@ -49,8 +49,13 @@ public class VoteController extends BaseController {
 
         Long userId = Long.parseLong(principal.getName());
 
-        // RequestDto → CommandDto 변환 (Converter 패턴 사용)
-        VoteRegistrationDto voteRegistrationDto = voteDtoCommandConverter.toCommandDto(request, userId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출 - 등록용)
+        VoteRegistrationDto voteRegistrationDto = new VoteRegistrationDto(
+                userId,
+                request.getPetId(),
+                request.getProfileImageUrl(),  // profileImageUrl (이미지 업로드 후 설정됨)
+                request.getPetModeId()
+        );
 
         voteService.createVote(voteRegistrationDto, image);
 
@@ -68,7 +73,35 @@ public class VoteController extends BaseController {
             @RequestParam(defaultValue = "10") int size) {
 
         VoteListDto voteListDto = voteService.getVotes(page, size);
-        VoteListResponseDto responseDto = voteDtoCommandConverter.toListResponseDto(voteListDto);
+
+        // CommandDto 리스트 → ResponseDto 변환 (생성자 직접 호출)
+        List<VotePetResponseDto> votePetList = voteListDto.getVotes().stream()
+                .map(dto -> new VotePetResponseDto(
+                        dto.getVoteId(),
+                        dto.getPetId(),
+                        dto.getName(),
+                        dto.getGender(),
+                        dto.getBirthDate(),
+                        dto.getBreedId(),
+                        dto.getBreedName(),
+                        dto.getCustomBreed(),
+                        dto.getSpeciesId(),
+                        dto.getSpeciesName(),
+                        dto.getPetModeId(),
+                        dto.getPetModeName(),
+                        dto.getDailyVoteCount(),
+                        dto.getWeeklyVoteCount(),
+                        dto.getMonthlyVoteCount(),
+                        dto.getVoteMonth(),
+                        dto.getProfileImageUrl(),
+                        dto.getOwnerEmail()
+                ))
+                .collect(Collectors.toList());
+
+        VoteListResponseDto responseDto = new VoteListResponseDto(
+                votePetList,
+                voteListDto.getTotalCount()
+        );
 
         return success(responseDto);
     }
@@ -83,7 +116,29 @@ public class VoteController extends BaseController {
             @PathVariable Long voteId) {
 
         VoteInfoDto voteInfoDto = voteService.getVote(voteId);
-        VotePetResponseDto responseDto = voteDtoCommandConverter.toResponseDto(voteInfoDto);
+
+        // CommandDto → ResponseDto 변환 (생성자 직접 호출)
+        VotePetResponseDto responseDto = new VotePetResponseDto(
+                voteInfoDto.getVoteId(),
+                voteInfoDto.getPetId(),
+                voteInfoDto.getName(),
+                voteInfoDto.getGender(),
+                voteInfoDto.getBirthDate(),
+                voteInfoDto.getBreedId(),
+                voteInfoDto.getBreedName(),
+                voteInfoDto.getCustomBreed(),
+                voteInfoDto.getSpeciesId(),
+                voteInfoDto.getSpeciesName(),
+                voteInfoDto.getPetModeId(),
+                voteInfoDto.getPetModeName(),
+                voteInfoDto.getDailyVoteCount(),
+                voteInfoDto.getWeeklyVoteCount(),
+                voteInfoDto.getMonthlyVoteCount(),
+                voteInfoDto.getVoteMonth(),
+                voteInfoDto.getProfileImageUrl(),
+                voteInfoDto.getOwnerEmail()
+        );
+
         log.debug("responseDto {}", responseDto);
         return success(responseDto);
     }
@@ -101,8 +156,14 @@ public class VoteController extends BaseController {
 
         Long userId = Long.parseLong(principal.getName());
 
-        // RequestDto → UpdateCommandDto 변환 (Converter 패턴 사용)
-        VoteUpdateDto voteUpdateDto = voteDtoCommandConverter.toUpdateCommandDto(request, userId, voteId);
+        // RequestDto → CommandDto 변환 (생성자 직접 호출)
+        VoteUpdateDto voteUpdateDto = new VoteUpdateDto(
+                voteId,
+                userId,
+                request.getPetId(),
+                request.getProfileImageUrl(),  // profileImageUrl (이미지 업로드 후 설정됨)
+                request.getPetModeId()
+        );
 
         voteService.updateVote(voteUpdateDto, image);
 
