@@ -3,7 +3,7 @@ package kr.co.api.user.service;
 import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.service.EmailService;
 import kr.co.api.common.util.JwtUtil;
-import kr.co.api.pet.mapper.PetMapper;
+import kr.co.api.pet.repository.PetRepository;
 import kr.co.api.user.domain.model.Company;
 import kr.co.api.user.domain.model.EmailVerification;
 import kr.co.api.user.domain.model.Role;
@@ -12,7 +12,7 @@ import kr.co.api.user.domain.vo.Email;
 import kr.co.api.user.domain.vo.Nickname;
 import kr.co.api.user.domain.vo.Password;
 import kr.co.api.user.dto.command.*;
-import kr.co.api.user.mapper.*;
+import kr.co.api.user.repository.*;
 import kr.co.common.entity.standard.company.CompanyEntity;
 import kr.co.common.entity.standard.role.RoleEntity;
 import kr.co.common.entity.user.EmailVerificationEntity;
@@ -41,14 +41,14 @@ public class UserService {
 
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
-    private final EmailVerificationMapper emailVerificationMapper;
-    private final UserMapper userMapper;
+    private final EmailVerificationRepository emailVerificationRepository;
+    private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final JwtProperty jwtProperty;
-    private final RoleMapper roleMapper;
-    private final CompanyMapper companyMapper;
-    private final UserVoteCountMapper userVoteCountMapper;
-    private final PetMapper petMapper;
+    private final RoleRepository roleRepository;
+    private final CompanyRepository companyRepository;
+    private final UserVoteCountRepository userVoteCountRepository;
+    private final PetRepository petRepository;
 
     /**
      * 이메일 중복 확인
@@ -57,7 +57,7 @@ public class UserService {
 
         Email emailObject = Email.of(email);
 
-        UserEntity userEntity = userMapper.selectByEmail(emailObject.getValue());
+        UserEntity userEntity = userRepository.selectByEmail(emailObject.getValue());
 
         if (userEntity != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
@@ -72,7 +72,7 @@ public class UserService {
     public void checkNicknameDuplicate(String nickname) {
 
         Nickname nicknameObject = Nickname.of(nickname);
-        UserEntity userEntity = userMapper.selectByNickname(nicknameObject.getValue());
+        UserEntity userEntity = userRepository.selectByNickname(nicknameObject.getValue());
         if (userEntity != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
         }
@@ -96,13 +96,13 @@ public class UserService {
         );
 
         // 이메일 검증
-        UserEntity emailUserEntity = userMapper.selectByEmail(user.getEmail().getValue());
+        UserEntity emailUserEntity = userRepository.selectByEmail(user.getEmail().getValue());
         if (emailUserEntity != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
         }
 
         // 닉네임 검증
-        UserEntity nicknameUserEntity = userMapper.selectByNickname(user.getNickname().getValue());
+        UserEntity nicknameUserEntity = userRepository.selectByNickname(user.getNickname().getValue());
         if (nicknameUserEntity != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
         }
@@ -113,12 +113,15 @@ public class UserService {
 
         // 사용자 저장
         // 기본 조회
-        RoleEntity defaultRole = roleMapper.selectDefaultRole()
-                .orElseThrow(() -> new PetCrownException(MISSING_REQUIRED_VALUE));
+        RoleEntity defaultRole = roleRepository.selectDefaultRole();
+        if (defaultRole == null) {
+            throw new PetCrownException(MISSING_REQUIRED_VALUE);
+        }
 
-
-        CompanyEntity defaultCompany = companyMapper.selectDefaultCompany()
-                .orElseThrow(() -> new PetCrownException(MISSING_REQUIRED_VALUE));
+        CompanyEntity defaultCompany = companyRepository.selectDefaultCompany();
+        if (defaultCompany == null) {
+            throw new PetCrownException(MISSING_REQUIRED_VALUE);
+        }
 
         // Domain → Entity 변환 (생성자 직접 호출)
         UserEntity userEntity = new UserEntity(
@@ -149,10 +152,10 @@ public class UserService {
                 null   // deleteUserId
         );
 
-        userMapper.insertUser(userEntity);
-        log.debug("userEntity ==> {}", userEntity);
+        Long userId = userRepository.insertUser(userEntity);
+        log.debug("Saved userId ==> {}", userId);
 
-        User savedUser = encodedPasswordUser.withUserId(userEntity.getUserId());
+        User savedUser = encodedPasswordUser.withUserId(userId);
 
         // 이메일 인증 코드 생성
         EmailVerification emailVerification = EmailVerification.createForRegistration(savedUser);
@@ -170,13 +173,13 @@ public class UserService {
         );
 
         // 이메일 인증코드 저장
-        emailVerificationMapper.insertEmailVerification(emailVerificationEntity);
+        emailVerificationRepository.insertEmailVerification(emailVerificationEntity);
         log.debug("Email verification code generated and saved for: {}", user.getEmail().getValue());
 
 
         // 사용자 투표 카운트 초기화
         UserVoteCountEntity userVoteCountEntity = new UserVoteCountEntity(savedUser.getUserId());
-        userVoteCountMapper.insertUserVoteCount(userVoteCountEntity);
+        userVoteCountRepository.insertUserVoteCount(userVoteCountEntity);
 
         // 이메일 인증 코드 발송
         emailService.sendVerificationEmailAsync(user.getEmail().getValue(), emailVerification.getVerificationCode());
@@ -190,7 +193,7 @@ public class UserService {
     public void verifyEmailCode(String email, String code) {
 
         User user = User.ofEmail(email);
-        EmailVerificationCodeDto emailVerificationCodeDto = emailVerificationMapper.selectEmailCodeByEmail(user.getEmail().getValue());
+        EmailVerificationCodeDto emailVerificationCodeDto = emailVerificationRepository.selectEmailCodeByEmail(user.getEmail().getValue());
 
         // 존재하는 이메일인지 검증
         if(emailVerificationCodeDto == null) {
@@ -212,7 +215,7 @@ public class UserService {
         verifacationCode.verifyCode(code);
 
         // 검증 끝나면 검증 완료로 업데이트
-        userMapper.updateEmailVerificationStatus(verifacationCode.getUserId());
+        userRepository.updateEmailVerificationStatus(verifacationCode.getUserId());
 
 
     }
@@ -226,7 +229,7 @@ public class UserService {
         Email email = Email.of(emailValue);
 
         // 이메일로 가입 사용자인지 이메일로 검증
-        UserEntity emailUserEntity = userMapper.selectByEmail(email.getValue());
+        UserEntity emailUserEntity = userRepository.selectByEmail(email.getValue());
         if (emailUserEntity == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
@@ -237,7 +240,7 @@ public class UserService {
         EmailVerification emailVerification = EmailVerification.createForRegistration(user);
 
         // 이메일 인증코드를 새 인증코드로 수정
-        emailVerificationMapper.updateVerificationNewCode(emailVerification.getUserId(), emailVerification.getVerificationCode(), emailVerification.getExpiresDate());
+        emailVerificationRepository.updateVerificationNewCode(emailVerification.getUserId(), emailVerification.getVerificationCode(), emailVerification.getExpiresDate());
 
         // 이메일 인증 코드 발송
         emailService.sendVerificationEmailAsync(emailUserEntity.getEmail(), emailVerification.getVerificationCode());
@@ -251,7 +254,7 @@ public class UserService {
         Email email = Email.of(emailValue);
 
         // 이메일로 가입 사용자인지 이메일로 검증
-        UserEntity emailUserEntity = userMapper.selectByEmail(email.getValue());
+        UserEntity emailUserEntity = userRepository.selectByEmail(email.getValue());
         if (emailUserEntity == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
@@ -305,7 +308,7 @@ public class UserService {
      * 사용자 정보 조회
      */
     public UserInfoDto getUserInfo(Long userId) {
-        UserEntity userEntity = userMapper.selectByUserId(userId);
+        UserEntity userEntity = userRepository.selectByUserId(userId);
         if (userEntity == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
@@ -392,23 +395,23 @@ public class UserService {
      */
     @Transactional
     public void updateUserInfo(UserUpdateDto userUpdateDto) {
-        
+
         // 기존 사용자 조회
-        UserEntity existingUser = userMapper.selectByUserId(userUpdateDto.getUserId());
+        UserEntity existingUser = userRepository.selectByUserId(userUpdateDto.getUserId());
         if (existingUser == null) {
             throw new PetCrownException(MEMBER_NOT_FOUND);
         }
 
         // 닉네임 변경시 중복 검사 (기존 닉네임과 다른 경우에만)
         if (!existingUser.getNickname().equals(userUpdateDto.getNickname())) {
-            UserEntity duplicateUser = userMapper.selectByNickname(userUpdateDto.getNickname());
+            UserEntity duplicateUser = userRepository.selectByNickname(userUpdateDto.getNickname());
             if (duplicateUser != null) {
                 throw new PetCrownException(DUPLICATE_NICKNAME);
             }
         }
 
         // 사용자 정보 업데이트
-        userMapper.updateUserInfo(userUpdateDto);
+        userRepository.updateUserInfo(userUpdateDto);
 
         log.info("User info updated successfully: userId={}", userUpdateDto.getUserId());
     }
@@ -437,9 +440,9 @@ public class UserService {
      */
     @Transactional
     public void updatePassword(PasswordUpdateDto passwordUpdateDto) {
-        
+
         // 기존 사용자 조회
-        UserEntity existingUser = userMapper.selectByUserId(passwordUpdateDto.getUserId());
+        UserEntity existingUser = userRepository.selectByUserId(passwordUpdateDto.getUserId());
         if (existingUser == null) {
             throw new PetCrownException(MEMBER_NOT_FOUND);
         }
@@ -460,7 +463,7 @@ public class UserService {
         String encodedNewPassword = passwordEncoder.encode(newPassword.getValue());
 
         // 비밀번호 업데이트
-        userMapper.updatePassword(passwordUpdateDto.getUserId(), encodedNewPassword);
+        userRepository.updatePassword(passwordUpdateDto.getUserId(), encodedNewPassword);
 
         log.info("Password updated successfully: userId={}", passwordUpdateDto.getUserId());
     }
@@ -472,7 +475,7 @@ public class UserService {
     public void resetPassword(PasswordResetDto passwordResetDto) {
 
         // 이메일, 이름으로 사용자 조회
-        UserEntity userEntity = userMapper.selectByEmailAndName(
+        UserEntity userEntity = userRepository.selectByEmailAndName(
                 passwordResetDto.getEmail(),
                 passwordResetDto.getName()
         );
@@ -489,7 +492,7 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(temporaryPassword);
 
         // 비밀번호 업데이트
-        userMapper.updatePassword(userEntity.getUserId(), encodedPassword);
+        userRepository.updatePassword(userEntity.getUserId(), encodedPassword);
 
         // 임시 비밀번호 이메일 발송
         emailService.sendTemporaryPasswordEmailAsync(userEntity.getEmail(), temporaryPassword);
@@ -506,7 +509,7 @@ public class UserService {
     public void deleteUser(UserDeletionDto userDeletionDto) {
 
         // 기존 사용자 조회
-        UserEntity existingUser = userMapper.selectByUserId(userDeletionDto.getUserId());
+        UserEntity existingUser = userRepository.selectByUserId(userDeletionDto.getUserId());
         if (existingUser == null) {
             throw new PetCrownException(MEMBER_NOT_FOUND);
         }
@@ -518,7 +521,7 @@ public class UserService {
         }
 
         // 1. 사용자의 모든 Pet 소프트 삭제 (단일 쿼리로 처리)
-        petMapper.deleteAllPetsByUserId(userDeletionDto.getUserId(), userDeletionDto.getUserId());
+        petRepository.deleteAllPetsByUserId(userDeletionDto.getUserId(), userDeletionDto.getUserId());
         log.info("All pets deleted for user: userId={}", userDeletionDto.getUserId());
 
         // 2. 암호화된 비밀번호를 dto에 포함시켜 소프트 삭제 수행
@@ -530,7 +533,7 @@ public class UserService {
         );
 
         // 3. userId, email, name, password 모두 일치하는 경우에만 소프트 삭제
-        int deletedCount = userMapper.softDeleteUser(deletionDtoWithEncodedPassword);
+        int deletedCount = userRepository.softDeleteUser(deletionDtoWithEncodedPassword);
 
         if (deletedCount == 0) {
             // 조건이 하나라도 일치하지 않으면 삭제 실패

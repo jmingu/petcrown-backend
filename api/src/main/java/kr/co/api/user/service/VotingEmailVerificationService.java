@@ -1,8 +1,8 @@
 package kr.co.api.user.service;
 
 import kr.co.api.common.service.EmailService;
-import kr.co.api.user.mapper.EmailGuestMapper;
-import kr.co.api.user.mapper.UserMapper;
+import kr.co.api.user.repository.EmailGuestRepository;
+import kr.co.api.user.repository.UserRepository;
 import kr.co.common.dto.EmailContentDto;
 import kr.co.common.entity.user.EmailGuestEntity;
 import kr.co.common.entity.user.UserEntity;
@@ -26,8 +26,8 @@ import static kr.co.common.enums.BusinessCode.*;
 @Transactional(readOnly = true)
 public class VotingEmailVerificationService {
 
-    private final UserMapper userMapper;
-    private final EmailGuestMapper emailGuestMapper;
+    private final UserRepository userRepository;
+    private final EmailGuestRepository emailGuestRepository;
     private final EmailService emailService;
 
     @Value("${petcrown.encryption.key}")
@@ -44,13 +44,13 @@ public class VotingEmailVerificationService {
         LocalDate today = LocalDate.now();
 
         // 1. 이미 등록된 회원 이메일인지 확인
-        UserEntity existingUser = userMapper.selectByEmail(email);
+        UserEntity existingUser = userRepository.selectByEmail(email);
         if (existingUser != null) {
             throw new PetCrownException(EMAIL_ALREADY_REGISTERED);
         }
 
-        // 2. 오늘 이미 인증된 이메일인지 확인
-        EmailGuestEntity existingEmailGuest = emailGuestMapper.selectTodayVerifiedEmail(email, today);
+        // 2. 오늘 이미 인증된 이메일인지 확인 (DB의 current_date 사용)
+        EmailGuestEntity existingEmailGuest = emailGuestRepository.selectTodayVerifiedEmail(email);
         if (existingEmailGuest != null) {
             throw new PetCrownException(EMAIL_ALREADY_VERIFIED_TODAY);
         }
@@ -107,17 +107,17 @@ public class VotingEmailVerificationService {
                 throw new PetCrownException(VERIFICATION_TOKEN_EXPIRED);
             }
 
-            // 5. 이미 인증된 이메일인지 재확인
-            EmailGuestEntity existingEmailGuest = emailGuestMapper.selectTodayVerifiedEmail(email, today);
+            // 5. 이미 인증된 이메일인지 재확인 (DB의 current_date 사용)
+            EmailGuestEntity existingEmailGuest = emailGuestRepository.selectTodayVerifiedEmail(email);
             if (existingEmailGuest != null) {
                 throw new PetCrownException(EMAIL_ALREADY_VERIFIED_TODAY);
             }
 
-            // 6. 이메일 게스트 테이블에 저장
-            EmailGuestEntity emailGuest = new EmailGuestEntity(email, today, encryptedToken);
-            emailGuestMapper.insertEmailGuest(emailGuest);
+            // 6. 이메일 게스트 테이블에 저장 (joinDate, createDate는 Repository에서 DB 기준으로 설정)
+            EmailGuestEntity emailGuest = new EmailGuestEntity(email, encryptedToken);
+            Long emailGuestId = emailGuestRepository.insertEmailGuest(emailGuest);
 
-            log.info("Voting email verification completed successfully for: {}", email);
+            log.info("Voting email verification completed successfully for: {} (emailGuestId={})", email, emailGuestId);
 
         } catch (PetCrownException e) {
             throw e;
@@ -128,40 +128,36 @@ public class VotingEmailVerificationService {
     }
 
     /**
-     * 오늘 인증된 이메일인지 확인 (예외 발생 버전)
+     * 오늘 인증된 이메일인지 확인 (예외 발생 버전, DB의 current_date 사용)
      */
     public void checkVerifiedEmailToday(String email) {
-        LocalDate today = LocalDate.now();
-
         // 1. 회원 이메일인지 확인
-        UserEntity existingUser = userMapper.selectByEmail(email);
+        UserEntity existingUser = userRepository.selectByEmail(email);
         if (existingUser != null) {
             // 회원이면 인증 완료로 처리
             return;
         }
 
-        // 2. 비회원이면 오늘 인증된 이메일인지 확인
-        EmailGuestEntity emailGuest = emailGuestMapper.selectTodayVerifiedEmail(email, today);
+        // 2. 비회원이면 오늘 인증된 이메일인지 확인 (DB의 current_date 사용)
+        EmailGuestEntity emailGuest = emailGuestRepository.selectTodayVerifiedEmail(email);
         if (emailGuest == null) {
             throw new PetCrownException(EMAIL_NOT_VERIFIED_TODAY);
         }
     }
 
     /**
-     * 오늘 인증된 이메일인지 확인 (boolean 반환 버전)
+     * 오늘 인증된 이메일인지 확인 (boolean 반환 버전, DB의 current_date 사용)
      */
     public boolean isVerifiedEmailToday(String email) {
-        LocalDate today = LocalDate.now();
-
         // 1. 회원 이메일인지 확인
-        UserEntity existingUser = userMapper.selectByEmail(email);
+        UserEntity existingUser = userRepository.selectByEmail(email);
         if (existingUser != null) {
             // 회원이면 항상 true (회원은 별도 인증 불필요)
             return true;
         }
 
-        // 2. 비회원이면 오늘 인증된 이메일인지 확인
-        EmailGuestEntity emailGuest = emailGuestMapper.selectTodayVerifiedEmail(email, today);
+        // 2. 비회원이면 오늘 인증된 이메일인지 확인 (DB의 current_date 사용)
+        EmailGuestEntity emailGuest = emailGuestRepository.selectTodayVerifiedEmail(email);
         return emailGuest != null;
     }
 }

@@ -1,0 +1,22 @@
+# JOOQ Database Configuration Example
+# 이 파일을 복사해서 gradle.properties 파일을 생성하고, 본인의 DB 정보를 입력하세요
+# cp gradle.properties.example gradle.properties
+
+# 기본 환경 설정 (dev 또는 prod)
+jooq.env=dev
+
+# Development 환경 (로컬 개발용)
+jooq.dev.driver=org.postgresql.Driver
+jooq.dev.url=jdbc:postgresql://localhost:5432/petcrown_dev
+jooq.dev.user=postgres
+jooq.dev.password=YOUR_DEV_PASSWORD_HERE
+
+# Production 환경 (운영 서버용)
+jooq.prod.driver=org.postgresql.Driver
+jooq.prod.url=jdbc:postgresql://your-prod-server:5432/petcrown_prod
+jooq.prod.user=postgres
+jooq.prod.password=YOUR_PROD_PASSWORD_HERE
+
+# 사용법:
+# 1. 기본 (dev 환경): ./gradlew generateJooq
+# 2. Prod 환경: ./gradlew generateJooq -Pjooq.env=prod

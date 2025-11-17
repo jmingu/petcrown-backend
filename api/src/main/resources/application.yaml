@@ -31,15 +31,9 @@ petcrown:
 logging:
   config: classpath:logback/logback-${spring.profiles.active}.xml  # 동적 로깅 설정 파일
   level:
-    kr.co.api.user.repository.mybatis: DEBUG
+    kr.co.api.user.repository: DEBUG
 
-# MyBatis
-mybatis:
-  mapper-locations: classpath:mybatis/mapper/**/*.xml
-  type-aliases-package: kr.co.common.entity
-  configuration:
-    map-underscore-to-camel-case: true
-    jdbc-type-for-null: NULL
+# JOOQ (MyBatis 설정 제거됨)
 
 ---
 spring:

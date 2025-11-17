@@ -8,7 +8,11 @@
       "Bash(mv:*)",
       "Bash(mkdir:*)",
       "Bash(./gradlew.bat build:*)",
-      "Bash(./gradlew.bat:*)"
+      "Bash(./gradlew.bat:*)",
+      "Bash(javac:*)",
+      "Bash(Select-String -Pattern \"PetRepository|BUILD\")",
+      "Bash(.gradlew.bat build:*)",
+      "Bash(Select-String -Pattern \"error:|BUILD\")"
     ],
     "deny": []
   }

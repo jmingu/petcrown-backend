@@ -42,6 +42,10 @@ out/
 .env.production
 .env.development
 
+### Gradle 설정 파일 (민감 정보 포함) ###
+gradle.properties
+local.properties
+
 ### 암호화 비밀 파일들 ###
 secrets.local.md
 secrets.*.md

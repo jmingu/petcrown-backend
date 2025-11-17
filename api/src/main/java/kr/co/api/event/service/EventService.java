@@ -1,12 +1,12 @@
 package kr.co.api.event.service;
 
-import kr.co.api.common.mapper.FileInfoMapper;
+import kr.co.api.common.repository.FileInfoRepository;
 import kr.co.api.common.service.FileService;
 import kr.co.api.event.domain.Event;
 import kr.co.api.event.dto.command.EventInfoDto;
 import kr.co.api.event.dto.command.EventRegistrationDto;
 import kr.co.api.event.dto.command.EventUpdateDto;
-import kr.co.api.event.mapper.EventMapper;
+import kr.co.api.event.repository.EventRepository;
 import kr.co.common.entity.event.EventEntity;
 import kr.co.common.entity.file.FileInfoEntity;
 import kr.co.common.enums.BusinessCode;
@@ -27,8 +27,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class EventService {
 
-    private final EventMapper eventMapper;
-    private final FileInfoMapper fileInfoMapper;
+    private final EventRepository eventRepository;
+    private final FileInfoRepository fileInfoRepository;
     private final FileService fileService;
 
     private static final String EVENT_REF_TABLE = "event";
@@ -71,16 +71,16 @@ public class EventService {
         );
 
         // 영속성 저장
-        eventMapper.insertEvent(eventEntity);
+        Long eventId = eventRepository.insertEvent(eventEntity);
 
         // 파일 업로드 처리
         if (eventRegistrationDto.getThumbnailFile() != null ||
             (eventRegistrationDto.getImageFiles() != null && !eventRegistrationDto.getImageFiles().isEmpty())) {
-            saveEventFiles(eventEntity.getEventId(), eventRegistrationDto.getThumbnailFile(),
+            saveEventFiles(eventId, eventRegistrationDto.getThumbnailFile(),
                           eventRegistrationDto.getImageFiles(), eventRegistrationDto.getCreateUserId());
         }
 
-        log.info("Event created successfully: eventId={}", eventEntity.getEventId());
+        log.info("Event created successfully: eventId={}", eventId);
     }
 
     /**
@@ -88,16 +88,16 @@ public class EventService {
      */
     @Transactional
     public EventInfoDto getEventDetail(Long eventId) {
-        EventEntity eventEntity = eventMapper.selectByEventId(eventId);
+        EventEntity eventEntity = eventRepository.selectByEventId(eventId);
         if (eventEntity == null) {
             throw new PetCrownException(BusinessCode.EVENT_NOT_FOUND);
         }
 
         // 조회수 증가
-        eventMapper.incrementViewCount(eventId);
+        eventRepository.incrementViewCount(eventId);
 
         // 파일 정보 조회
-        List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventId);
+        List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(EVENT_REF_TABLE, eventId);
 
         // Entity를 CommandDto로 변환 (생성자 직접 호출)
         return convertToEventInfoDto(eventEntity, fileInfoEntities);
@@ -107,13 +107,13 @@ public class EventService {
      * 이벤트 조회 (조회수 증가 없음)
      */
     public EventInfoDto getEvent(Long eventId) {
-        EventEntity eventEntity = eventMapper.selectByEventId(eventId);
+        EventEntity eventEntity = eventRepository.selectByEventId(eventId);
         if (eventEntity == null) {
             throw new PetCrownException(BusinessCode.EVENT_NOT_FOUND);
         }
 
         // 파일 정보 조회
-        List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventId);
+        List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(EVENT_REF_TABLE, eventId);
 
         return convertToEventInfoDto(eventEntity, fileInfoEntities);
     }
@@ -123,12 +123,12 @@ public class EventService {
      */
     public List<EventInfoDto> getActiveEvents(int page, int size) {
         int offset = (page - 1) * size;
-        List<EventEntity> eventEntities = eventMapper.selectActiveEvents(offset, size);
+        List<EventEntity> eventEntities = eventRepository.selectActiveEvents(offset, size);
 
         // 각 이벤트의 썸네일만 조회
         List<EventInfoDto> eventInfoDtos = new ArrayList<>();
         for (EventEntity eventEntity : eventEntities) {
-            List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
+            List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
             eventInfoDtos.add(convertToEventInfoDto(eventEntity, fileInfoEntities));
         }
 
@@ -140,12 +140,12 @@ public class EventService {
      */
     public List<EventInfoDto> getAllEvents(int page, int size) {
         int offset = (page - 1) * size;
-        List<EventEntity> eventEntities = eventMapper.selectAllEvents(offset, size);
+        List<EventEntity> eventEntities = eventRepository.selectAllEvents(offset, size);
 
         // 각 이벤트의 썸네일만 조회
         List<EventInfoDto> eventInfoDtos = new ArrayList<>();
         for (EventEntity eventEntity : eventEntities) {
-            List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
+            List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
             eventInfoDtos.add(convertToEventInfoDto(eventEntity, fileInfoEntities));
         }
 
@@ -156,14 +156,14 @@ public class EventService {
      * 활성화된 이벤트 개수 조회
      */
     public int getActiveEventsCount() {
-        return eventMapper.countActiveEvents();
+        return eventRepository.countActiveEvents();
     }
 
     /**
      * 전체 이벤트 개수 조회
      */
     public int getAllEventsCount() {
-        return eventMapper.countAllEvents();
+        return eventRepository.countAllEvents();
     }
 
     /**
@@ -173,7 +173,7 @@ public class EventService {
     public void updateEvent(EventUpdateDto eventUpdateDto) {
 
         // 기존 이벤트 조회
-        EventEntity existingEvent = eventMapper.selectByEventId(eventUpdateDto.getEventId());
+        EventEntity existingEvent = eventRepository.selectByEventId(eventUpdateDto.getEventId());
         if (existingEvent == null) {
             throw new PetCrownException(BusinessCode.EVENT_NOT_FOUND);
         }
@@ -192,12 +192,12 @@ public class EventService {
         validateEventForUpdate(event);
 
         // 이벤트 정보 업데이트
-        eventMapper.updateEvent(eventUpdateDto);
+        eventRepository.updateEvent(eventUpdateDto);
 
         // 파일 업데이트 처리 (기존 파일 조회 → 새 파일 업로드 → DB 저장 → 기존 파일 개별 삭제)
         if (eventUpdateDto.getThumbnailFile() != null) {
             // 기존 썸네일 조회
-            List<FileInfoEntity> existingThumbnails = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventUpdateDto.getEventId())
+            List<FileInfoEntity> existingThumbnails = fileInfoRepository.selectByRefTableAndRefId(EVENT_REF_TABLE, eventUpdateDto.getEventId())
                 .stream().filter(f -> "THUMBNAIL".equals(f.getFileType())).toList();
 
             // 새 썸네일 업로드 및 DB 저장
@@ -206,18 +206,18 @@ public class EventService {
                 FileInfoEntity thumbnailEntity = createFileInfoEntity(eventUpdateDto.getEventId(), "THUMBNAIL",
                                                                      thumbnailUrl, eventUpdateDto.getThumbnailFile(),
                                                                      eventUpdateDto.getUpdateUserId());
-                fileInfoMapper.insertFileInfo(thumbnailEntity);
+                fileInfoRepository.insertFileInfo(thumbnailEntity); // fileId 반환되지만 사용하지 않음
 
                 // 기존 썸네일만 개별 삭제
                 for (FileInfoEntity existing : existingThumbnails) {
-                    fileInfoMapper.deleteById(existing.getFileId(), eventUpdateDto.getUpdateUserId());
+                    fileInfoRepository.deleteById(existing.getFileId(), eventUpdateDto.getUpdateUserId());
                 }
             }
         }
 
         if (eventUpdateDto.getImageFiles() != null && !eventUpdateDto.getImageFiles().isEmpty()) {
             // 기존 이미지 조회
-            List<FileInfoEntity> existingImages = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventUpdateDto.getEventId())
+            List<FileInfoEntity> existingImages = fileInfoRepository.selectByRefTableAndRefId(EVENT_REF_TABLE, eventUpdateDto.getEventId())
                 .stream().filter(f -> "IMAGE".equals(f.getFileType())).toList();
 
             // 새 이미지 업로드 및 DB 저장
@@ -229,11 +229,11 @@ public class EventService {
                                                           imageUrls.get(i), eventUpdateDto.getImageFiles().get(i),
                                                           eventUpdateDto.getUpdateUserId()));
                 }
-                fileInfoMapper.insertFileInfoBatch(imageEntities);
+                fileInfoRepository.insertFileInfoBatch(imageEntities);
 
                 // 기존 이미지만 개별 삭제
                 for (FileInfoEntity existing : existingImages) {
-                    fileInfoMapper.deleteById(existing.getFileId(), eventUpdateDto.getUpdateUserId());
+                    fileInfoRepository.deleteById(existing.getFileId(), eventUpdateDto.getUpdateUserId());
                 }
             }
         }
@@ -246,13 +246,13 @@ public class EventService {
      */
     @Transactional
     public void deleteEvent(Long eventId, Long deleteUserId) {
-        EventEntity existingEvent = eventMapper.selectByEventId(eventId);
+        EventEntity existingEvent = eventRepository.selectByEventId(eventId);
         if (existingEvent == null) {
             throw new PetCrownException(BusinessCode.EVENT_NOT_FOUND);
         }
 
-        eventMapper.deleteById(eventId, deleteUserId);
-        fileInfoMapper.deleteByRefTableAndRefId(EVENT_REF_TABLE, eventId, deleteUserId);
+        eventRepository.deleteById(eventId, deleteUserId);
+        fileInfoRepository.deleteByRefTableAndRefId(EVENT_REF_TABLE, eventId, deleteUserId);
 
         log.info("Event deleted successfully: eventId={}", eventId);
     }
@@ -262,11 +262,11 @@ public class EventService {
      */
     public List<EventInfoDto> searchEventsByTitle(String title, int page, int size) {
         int offset = (page - 1) * size;
-        List<EventEntity> eventEntities = eventMapper.searchByTitle(title, offset, size);
+        List<EventEntity> eventEntities = eventRepository.searchByTitle(title, offset, size);
 
         List<EventInfoDto> eventInfoDtos = new ArrayList<>();
         for (EventEntity eventEntity : eventEntities) {
-            List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
+            List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(EVENT_REF_TABLE, eventEntity.getEventId());
             eventInfoDtos.add(convertToEventInfoDto(eventEntity, fileInfoEntities));
         }
 
@@ -277,7 +277,7 @@ public class EventService {
      * 제목으로 검색된 이벤트 개수
      */
     public int getSearchEventsCountByTitle(String title) {
-        return eventMapper.countSearchByTitle(title);
+        return eventRepository.countSearchByTitle(title);
     }
 
     // ========================
@@ -336,7 +336,7 @@ public class EventService {
 
         // 배치 저장
         if (!fileInfoEntities.isEmpty()) {
-            fileInfoMapper.insertFileInfoBatch(fileInfoEntities);
+            fileInfoRepository.insertFileInfoBatch(fileInfoEntities);
         }
     }
 

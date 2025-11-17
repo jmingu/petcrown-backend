@@ -18,11 +18,10 @@ public class EmailGuestEntity {
     private String encrypteToken;
     private LocalDateTime createDate;
 
-    // 이메일 게스트 생성자
-    public EmailGuestEntity(String email, LocalDate joinDate, String encrypteToken) {
+    // 이메일 게스트 생성자 (joinDate, createDate는 Repository에서 DB의 current_date/current_timestamp 사용)
+    public EmailGuestEntity(String email, String encrypteToken) {
         this.email = email;
-        this.joinDate = joinDate;
         this.encrypteToken = encrypteToken;
-        this.createDate = LocalDateTime.now();
+        // joinDate, createDate는 Repository에서 설정
     }
 }

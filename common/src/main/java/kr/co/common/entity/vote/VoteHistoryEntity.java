@@ -22,21 +22,19 @@ public class VoteHistoryEntity {
 
     private LocalDateTime createDate;
 
-    // 회원 투표용 생성자(주간)
-    public VoteHistoryEntity(Long userId, Long voteId, LocalDate historyDate, String voteCycle) {
+    // 회원 투표용 생성자 (historyDate, createDate는 Repository에서 DB의 current_date/current_timestamp 사용)
+    public VoteHistoryEntity(Long userId, Long voteId, String voteCycle) {
         this.userId = userId;
         this.voteId = voteId;
-        this.historyDate = historyDate;
-        this.createDate = LocalDateTime.now();
         this.voteCycle = voteCycle;
+        // historyDate, createDate는 Repository에서 설정
     }
 
-    // 비회원 투표용 생성자
-    public VoteHistoryEntity(String email, Long voteId, LocalDate historyDate, String voteCycle) {
+    // 비회원 투표용 생성자 (historyDate, createDate는 Repository에서 DB의 current_date/current_timestamp 사용)
+    public VoteHistoryEntity(String email, Long voteId, String voteCycle) {
         this.email = email;
         this.voteId = voteId;
-        this.historyDate = historyDate;
-        this.createDate = LocalDateTime.now();
         this.voteCycle = voteCycle;
+        // historyDate, createDate는 Repository에서 설정
     }
 }

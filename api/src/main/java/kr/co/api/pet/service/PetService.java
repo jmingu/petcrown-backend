@@ -1,21 +1,21 @@
 package kr.co.api.pet.service;
 
-import kr.co.api.common.mapper.FileInfoMapper;
+import kr.co.api.common.repository.FileInfoRepository;
 import kr.co.api.pet.dto.command.PetRegistrationDto;
 import kr.co.api.pet.dto.command.PetUpdateDto;
 import kr.co.api.pet.dto.command.PetInfoDto;
 import kr.co.api.pet.dto.command.SpeciesInfoDto;
 import kr.co.api.pet.dto.command.BreedInfoDto;
 import kr.co.api.pet.dto.command.PetModeInfoDto;
-import kr.co.api.pet.mapper.PetMapper;
-import kr.co.api.pet.mapper.PetModeMapper;
+import kr.co.api.pet.repository.PetRepository;
+import kr.co.api.pet.repository.PetModeRepository;
 import kr.co.api.pet.domain.Pet;
 import kr.co.api.pet.domain.Breed;
 import kr.co.api.pet.domain.Ownership;
 import kr.co.api.pet.domain.vo.PetName;
 import kr.co.api.pet.domain.vo.PetGender;
 import kr.co.api.user.domain.model.User;
-import kr.co.api.vote.mapper.VoteMapper;
+import kr.co.api.vote.repository.VoteRepository;
 import kr.co.common.entity.file.FileInfoEntity;
 import kr.co.common.service.ObjectStorageService;
 import kr.co.common.exception.PetCrownException;
@@ -42,10 +42,10 @@ public class PetService {
 
     private static final String PET_REF_TABLE = "pet";
 
-    private final PetMapper petMapper;
-    private final PetModeMapper petModeMapper;
-    private final VoteMapper voteMapper;
-    private final FileInfoMapper fileInfoMapper;
+    private final PetRepository petRepository;
+    private final PetModeRepository petModeRepository;
+    private final VoteRepository voteRepository;
+    private final FileInfoRepository fileInfoRepository;
     private final ObjectStorageService objectStorageService;
 
     /**
@@ -79,8 +79,7 @@ public class PetService {
                 pet.getDescription()
         );
 
-        petMapper.insertPetEntity(petEntity);
-        Long petId = petEntity.getPetId();
+        Long petId = petRepository.insertPetEntity(petEntity);
 
         // 3. 이미지 업로드 및 FileInfoEntity 저장
         if (image != null && !image.isEmpty()) {
@@ -91,9 +90,9 @@ public class PetService {
             FileInfoEntity fileInfoEntity = createFileInfoEntity(
                 petId, "IMAGE", imageUrl, image, petRegistrationDto.getUserId()
             );
-            fileInfoMapper.insertFileInfo(fileInfoEntity);
+            Long fileId = fileInfoRepository.insertFileInfo(fileInfoEntity);
 
-            log.info("Pet image registered: petId={}, imageUrl={}", petId, imageUrl);
+            log.info("Pet image registered: petId={}, fileId={}, imageUrl={}", petId, fileId, imageUrl);
         }
 
         log.info("Pet registered successfully: userId={}, petId={}", petRegistrationDto.getUserId(), petId);
@@ -102,14 +101,14 @@ public class PetService {
      * 나의 펫 목록 조회
      */
     public List<PetInfoDto> selectPetList(Long userId) {
-        return petMapper.selectPetListByUserId(userId);
+        return petRepository.selectPetListByUserId(userId);
     }
     
     /**
      * 펫 단일 조회
      */
     public PetInfoDto selectPet(Long petId, Long userId) {
-        PetInfoDto petInfoDto = petMapper.selectPetById(petId);
+        PetInfoDto petInfoDto = petRepository.selectPetById(petId);
         if (petInfoDto == null) {
             throw new PetCrownException(PET_NOT_FOUND);
         }
@@ -128,7 +127,7 @@ public class PetService {
     public void updatePet(PetUpdateDto petUpdateDto, MultipartFile image) {
 
         // 1. 기존 펫 존재 확인
-        PetInfoDto existingPetInfo = petMapper.selectPetById(petUpdateDto.getPetId());
+        PetInfoDto existingPetInfo = petRepository.selectPetById(petUpdateDto.getPetId());
         if (existingPetInfo == null) {
             throw new PetCrownException(PET_NOT_FOUND);
         }
@@ -182,12 +181,12 @@ public class PetService {
                 updatedPet.getMicrochipId(),
                 updatedPet.getDescription()
         );
-        petMapper.updatePetEntity(petEntity);
+        petRepository.updatePetEntity(petEntity);
 
         // 6. 이미지가 제공되면 새로 업로드 및 FileInfoEntity 처리
         if (image != null && !image.isEmpty()) {
             // 1) 기존 이미지 조회
-            List<FileInfoEntity> existingFiles = fileInfoMapper.selectByRefTableAndRefId(PET_REF_TABLE, petUpdateDto.getPetId());
+            List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(PET_REF_TABLE, petUpdateDto.getPetId());
 
             // 2) 새 이미지 업로드 - pet/yyyymmdd_uuid(8자리) 경로 생성
             String folderPath = generatePetImagePath();
@@ -197,14 +196,14 @@ public class PetService {
             FileInfoEntity fileInfoEntity = createFileInfoEntity(
                 petUpdateDto.getPetId(), "IMAGE", newImageUrl, image, petUpdateDto.getUserId()
             );
-            fileInfoMapper.insertFileInfo(fileInfoEntity);
+            fileInfoRepository.insertFileInfo(fileInfoEntity);
             log.info("새 이미지 업로드 및 DB 저장 완료: {}", newImageUrl);
 
             // 4) 새 이미지 저장 성공 후, 기존 이미지만 개별 삭제
             if (!existingFiles.isEmpty()) {
                 for (FileInfoEntity existingFile : existingFiles) {
                     // DB에서 기존 파일 정보 논리 삭제 (개별)
-                    fileInfoMapper.deleteById(existingFile.getFileId(), petUpdateDto.getUserId());
+                    fileInfoRepository.deleteById(existingFile.getFileId(), petUpdateDto.getUserId());
 
                     // Object Storage에서 기존 파일 삭제
                     if (existingFile.getFileUrl() != null) {
@@ -227,7 +226,7 @@ public class PetService {
     @Transactional
     public void deletePet(Long petId, Long userId) {
 
-        PetInfoDto pet = petMapper.selectPetById(petId);
+        PetInfoDto pet = petRepository.selectPetById(petId);
         if (pet == null) {
             throw new PetCrownException(PET_NOT_FOUND);
         }
@@ -243,7 +242,7 @@ public class PetService {
             LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
 
             kr.co.common.entity.vote.VoteWeeklyEntity existingWeeklyVote =
-                voteMapper.selectVoteWeeklyByPetIdAndWeek(petId, weekStart);
+                voteRepository.selectVoteWeeklyByPetIdAndWeek(petId, weekStart);
 
             // 현재 주에 활성화된 투표가 있으면 삭제 불가
             if (existingWeeklyVote != null) {
@@ -257,7 +256,7 @@ public class PetService {
         }
 
         // FileInfoEntity 삭제 (이미지 파일도 함께 삭제)
-        List<FileInfoEntity> existingFiles = fileInfoMapper.selectByRefTableAndRefId(PET_REF_TABLE, petId);
+        List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(PET_REF_TABLE, petId);
         if (!existingFiles.isEmpty()) {
             for (FileInfoEntity existingFile : existingFiles) {
                 if (existingFile.getFileUrl() != null) {
@@ -269,10 +268,10 @@ public class PetService {
                     }
                 }
             }
-            fileInfoMapper.deleteByRefTableAndRefId(PET_REF_TABLE, petId, userId);
+            fileInfoRepository.deleteByRefTableAndRefId(PET_REF_TABLE, petId, userId);
         }
 
-        petMapper.deletePet(petId, userId);
+        petRepository.deletePet(petId, userId);
 
         log.info("Pet deleted successfully: petId={}, userId={}", petId, userId);
     }
@@ -310,7 +309,7 @@ public class PetService {
      * 종 목록 조회
      */
     public List<SpeciesInfoDto> getAllSpecies() {
-        List<SpeciesInfoDto> speciesList = petMapper.selectAllSpecies();
+        List<SpeciesInfoDto> speciesList = petRepository.selectAllSpecies();
         log.info("Species list retrieved: count={}", speciesList.size());
         return speciesList;
     }
@@ -319,7 +318,7 @@ public class PetService {
      * 품종 목록 조회 (특정 종)
      */
     public List<BreedInfoDto> getBreedsBySpeciesId(Long speciesId) {
-        List<BreedInfoDto> breedList = petMapper.selectBreedsBySpeciesId(speciesId);
+        List<BreedInfoDto> breedList = petRepository.selectBreedsBySpeciesId(speciesId);
         log.info("Breed list retrieved: speciesId={}, count={}", speciesId, breedList.size());
         return breedList;
     }
@@ -328,7 +327,7 @@ public class PetService {
      * 펫 감정 모드 전체 목록 조회
      */
     public List<PetModeInfoDto> getAllPetModes() {
-        List<PetModeInfoDto> petModeList = petModeMapper.selectAllPetModes();
+        List<PetModeInfoDto> petModeList = petModeRepository.selectAllPetModes();
         log.info("PetMode list retrieved: count={}", petModeList.size());
         return petModeList;
     }

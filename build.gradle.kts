@@ -1,7 +1,8 @@
 plugins {
 	id("java")
-	id("org.springframework.boot") version "3.4.3"
+	id("org.springframework.boot") version "3.4.3" apply false
 	id("io.spring.dependency-management") version "1.1.7"
+	id("nu.studer.jooq") version "9.0" apply false
 }
 
 java {
@@ -30,6 +31,7 @@ subprojects { // 각 모듈에 적용할 공통 설정
 		plugin("java-library")
 		plugin("org.springframework.boot")
 		plugin("io.spring.dependency-management")
+		plugin("nu.studer.jooq")
 	}
 
 	java {
@@ -43,7 +45,9 @@ subprojects { // 각 모듈에 적용할 공통 설정
 
 
 		implementation("org.springframework.boot:spring-boot-starter-web")
-		implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3")
+
+		// JOOQ (MyBatis 제거됨)
+		implementation("org.springframework.boot:spring-boot-starter-jooq")
 		runtimeOnly("org.postgresql:postgresql")
 		
 		// 네이버 클라우드 Object Storage

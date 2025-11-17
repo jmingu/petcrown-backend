@@ -4,7 +4,7 @@ import kr.co.api.notice.domain.model.Notice;
 import kr.co.api.notice.dto.command.NoticeInfoDto;
 import kr.co.api.notice.dto.command.NoticeRegistrationDto;
 import kr.co.api.notice.dto.command.NoticeUpdateDto;
-import kr.co.api.notice.mapper.NoticeMapper;
+import kr.co.api.notice.repository.NoticeRepository;
 import kr.co.common.entity.notice.NoticeEntity;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class NoticeService {
 
-    private final NoticeMapper noticeMapper;
+    private final NoticeRepository noticeRepository;
 
     /**
      * 공지사항 등록
@@ -66,9 +66,9 @@ public class NoticeService {
         );
 
         // 영속성 저장
-        noticeMapper.insertNotice(noticeEntity);
+        Long noticeId = noticeRepository.insertNotice(noticeEntity);
 
-        log.info("Notice created successfully: noticeId={}", noticeEntity.getNoticeId());
+        log.info("Notice created successfully: noticeId={}", noticeId);
     }
 
     /**
@@ -76,13 +76,13 @@ public class NoticeService {
      */
     @Transactional
     public NoticeInfoDto getNoticeDetail(Long noticeId) {
-        NoticeEntity noticeEntity = noticeMapper.selectByNoticeId(noticeId);
+        NoticeEntity noticeEntity = noticeRepository.selectByNoticeId(noticeId);
         if (noticeEntity == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
 
         // 조회수 증가
-        noticeMapper.incrementViewCount(noticeId);
+        noticeRepository.incrementViewCount(noticeId);
 
         // Entity를 CommandDto로 변환 (생성자 직접 호출)
         return convertToNoticeInfoDto(noticeEntity);
@@ -92,7 +92,7 @@ public class NoticeService {
      * 공지사항 조회 (조회수 증가 없음)
      */
     public NoticeInfoDto getNotice(Long noticeId) {
-        NoticeEntity noticeEntity = noticeMapper.selectByNoticeId(noticeId);
+        NoticeEntity noticeEntity = noticeRepository.selectByNoticeId(noticeId);
         if (noticeEntity == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
@@ -105,7 +105,7 @@ public class NoticeService {
      */
     public List<NoticeInfoDto> getActiveNotices(int page, int size) {
         int offset = (page - 1) * size;
-        List<NoticeEntity> noticeEntities = noticeMapper.selectActiveNotices(offset, size);
+        List<NoticeEntity> noticeEntities = noticeRepository.selectActiveNotices(offset, size);
 
         return noticeEntities.stream()
                 .map(this::convertToNoticeInfoDto)
@@ -116,7 +116,7 @@ public class NoticeService {
      * 상단 고정 공지사항 목록 조회
      */
     public List<NoticeInfoDto> getPinnedNotices() {
-        List<NoticeEntity> noticeEntities = noticeMapper.selectPinnedNotices();
+        List<NoticeEntity> noticeEntities = noticeRepository.selectPinnedNotices();
 
         return noticeEntities.stream()
                 .map(this::convertToNoticeInfoDto)
@@ -128,7 +128,7 @@ public class NoticeService {
      */
     public List<NoticeInfoDto> getAllNotices(int page, int size) {
         int offset = (page - 1) * size;
-        List<NoticeEntity> noticeEntities = noticeMapper.selectAllNotices(offset, size);
+        List<NoticeEntity> noticeEntities = noticeRepository.selectAllNotices(offset, size);
 
         return noticeEntities.stream()
                 .map(this::convertToNoticeInfoDto)
@@ -139,14 +139,14 @@ public class NoticeService {
      * 활성화된 공지사항 개수 조회
      */
     public int getActiveNoticesCount() {
-        return noticeMapper.countActiveNotices();
+        return noticeRepository.countActiveNotices();
     }
 
     /**
      * 전체 공지사항 개수 조회
      */
     public int getAllNoticesCount() {
-        return noticeMapper.countAllNotices();
+        return noticeRepository.countAllNotices();
     }
 
     /**
@@ -156,7 +156,7 @@ public class NoticeService {
     public void updateNotice(NoticeUpdateDto noticeUpdateDto) {
 
         // 기존 공지사항 조회
-        NoticeEntity existingNotice = noticeMapper.selectByNoticeId(noticeUpdateDto.getNoticeId());
+        NoticeEntity existingNotice = noticeRepository.selectByNoticeId(noticeUpdateDto.getNoticeId());
         if (existingNotice == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
@@ -177,7 +177,7 @@ public class NoticeService {
         validateNoticeForUpdate(notice);
 
         // 공지사항 정보 업데이트
-        noticeMapper.updateNotice(noticeUpdateDto);
+        noticeRepository.updateNotice(noticeUpdateDto);
 
         log.info("Notice updated successfully: noticeId={}", noticeUpdateDto.getNoticeId());
     }
@@ -187,12 +187,12 @@ public class NoticeService {
      */
     @Transactional
     public void deleteNotice(Long noticeId, Long deleteUserId) {
-        NoticeEntity existingNotice = noticeMapper.selectByNoticeId(noticeId);
+        NoticeEntity existingNotice = noticeRepository.selectByNoticeId(noticeId);
         if (existingNotice == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
 
-        noticeMapper.deleteById(noticeId, deleteUserId);
+        noticeRepository.deleteById(noticeId, deleteUserId);
 
         log.info("Notice deleted successfully: noticeId={}", noticeId);
     }
@@ -202,7 +202,7 @@ public class NoticeService {
      */
     public List<NoticeInfoDto> searchNoticesByTitle(String title, int page, int size) {
         int offset = (page - 1) * size;
-        List<NoticeEntity> noticeEntities = noticeMapper.searchByTitle(title, offset, size);
+        List<NoticeEntity> noticeEntities = noticeRepository.searchByTitle(title, offset, size);
 
         return noticeEntities.stream()
                 .map(this::convertToNoticeInfoDto)
@@ -213,7 +213,7 @@ public class NoticeService {
      * 제목으로 검색된 공지사항 개수
      */
     public int getSearchNoticesCountByTitle(String title) {
-        return noticeMapper.countSearchByTitle(title);
+        return noticeRepository.countSearchByTitle(title);
     }
 
     // ========================

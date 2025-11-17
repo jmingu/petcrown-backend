@@ -1,12 +1,12 @@
 package kr.co.api.community.service;
 
-import kr.co.api.common.mapper.FileInfoMapper;
+import kr.co.api.common.repository.FileInfoRepository;
 import kr.co.api.community.domain.CommunityPost;
 import kr.co.api.community.dto.command.CommunityPostInfoDtailDto;
 import kr.co.api.community.dto.command.CommunityPostInfoDto;
 import kr.co.api.community.dto.command.CommunityPostRegistrationDto;
 import kr.co.api.community.dto.command.CommunityPostUpdateDto;
-import kr.co.api.community.mapper.CommunityPostMapper;
+import kr.co.api.community.repository.CommunityPostRepository;
 import kr.co.common.entity.community.CommunityPostEntity;
 import kr.co.common.entity.community.CommunityPostQueryDto;
 import kr.co.common.entity.file.FileInfoEntity;
@@ -29,8 +29,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CommunityPostService {
 
-    private final CommunityPostMapper postMapper;
-    private final FileInfoMapper fileInfoMapper;
+    private final CommunityPostRepository postRepository;
+    private final FileInfoRepository fileInfoRepository;
     private final ObjectStorageService objectStorageService;
 
     private static final String COMMUNITY_REF_TABLE = "community";
@@ -69,26 +69,26 @@ public class CommunityPostService {
                 null,  // deleteDate
                 null   // deleteUserId
         );
-        postMapper.insertPost(postEntity);
+        Long postId = postRepository.insertPost(postEntity);
 
         if (postRegistrationDto.getImageFiles() != null && !postRegistrationDto.getImageFiles().isEmpty()) {
-            savePostFiles(postEntity.getPostId(), postRegistrationDto.getImageFiles(), postRegistrationDto.getCreateUserId());
+            savePostFiles(postId, postRegistrationDto.getImageFiles(), postRegistrationDto.getCreateUserId());
         }
 
-        log.info("Community post created successfully: postId={}", postEntity.getPostId());
+        log.info("Community post created successfully: postId={}", postId);
     }
 
     @Transactional
     public CommunityPostInfoDtailDto getPostDetail(Long postId, Long userId) {
-        CommunityPostQueryDto queryDto = postMapper.selectByPostId(postId);
+        CommunityPostQueryDto queryDto = postRepository.selectByPostId(postId);
         if (queryDto == null) {
 
             throw new PetCrownException(BusinessCode.POST_NOT_FOUND);
         }
 
-        postMapper.incrementViewCount(postId);
+        postRepository.incrementViewCount(postId);
 
-        List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
+        List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
 
         // Entity → CommandDto 변환 (생성자 직접 호출)
         List<String> imageUrls = new ArrayList<>();
@@ -118,11 +118,11 @@ public class CommunityPostService {
 
     public List<CommunityPostInfoDto> getAllPosts(int page, int size) {
         int offset = (page - 1) * size;
-        List<CommunityPostQueryDto> queryDtos = postMapper.selectAllPosts(offset, size);
+        List<CommunityPostQueryDto> queryDtos = postRepository.selectAllPosts(offset, size);
 
         List<CommunityPostInfoDto> postInfoDtos = new ArrayList<>();
         for (CommunityPostQueryDto queryDto : queryDtos) {
-            List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
+            List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
 
             // Entity → CommandDto 변환 (생성자 직접 호출)
             List<String> imageUrls = new ArrayList<>();
@@ -151,12 +151,12 @@ public class CommunityPostService {
     }
 
     public int getAllPostsCount() {
-        return postMapper.countAllPosts();
+        return postRepository.countAllPosts();
     }
 
     @Transactional
     public void updatePost(CommunityPostUpdateDto postUpdateDto) {
-        CommunityPostQueryDto existingPost = postMapper.selectByPostId(postUpdateDto.getPostId());
+        CommunityPostQueryDto existingPost = postRepository.selectByPostId(postUpdateDto.getPostId());
         if (existingPost == null) {
             throw new PetCrownException(BusinessCode.POST_NOT_FOUND);
         }
@@ -172,11 +172,11 @@ public class CommunityPostService {
         );
         validatePostForUpdate(post);
 
-        postMapper.updatePost(postUpdateDto);
+        postRepository.updatePost(postUpdateDto);
 
         if (postUpdateDto.getImageFiles() != null && !postUpdateDto.getImageFiles().isEmpty()) {
             // 1. 기존 파일 조회
-            List<FileInfoEntity> existingFiles = fileInfoMapper.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postUpdateDto.getPostId());
+            List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postUpdateDto.getPostId());
 
             // 2. 새 파일 업로드 및 DB 저장
             savePostFiles(postUpdateDto.getPostId(), postUpdateDto.getImageFiles(), postUpdateDto.getUpdateUserId());
@@ -185,7 +185,7 @@ public class CommunityPostService {
             if (!existingFiles.isEmpty()) {
                 for (FileInfoEntity existingFile : existingFiles) {
                     // DB에서 삭제
-                    fileInfoMapper.deleteById(existingFile.getFileId(), postUpdateDto.getUpdateUserId());
+                    fileInfoRepository.deleteById(existingFile.getFileId(), postUpdateDto.getUpdateUserId());
 
                     // Object Storage에서 삭제
                     if (existingFile.getFileUrl() != null) {
@@ -205,13 +205,13 @@ public class CommunityPostService {
 
     @Transactional
     public void deletePost(Long postId, Long deleteUserId) {
-        CommunityPostQueryDto existingPost = postMapper.selectByPostId(postId);
+        CommunityPostQueryDto existingPost = postRepository.selectByPostId(postId);
         if (existingPost == null) {
             throw new PetCrownException(BusinessCode.POST_NOT_FOUND);
         }
 
         // 1. 기존 파일 조회 및 삭제 (Object Storage)
-        List<FileInfoEntity> existingFiles = fileInfoMapper.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
+        List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
         if (!existingFiles.isEmpty()) {
             for (FileInfoEntity existingFile : existingFiles) {
                 if (existingFile.getFileUrl() != null) {
@@ -226,32 +226,32 @@ public class CommunityPostService {
         }
 
         // 2. DB에서 파일 정보 삭제
-        fileInfoMapper.deleteByRefTableAndRefId(COMMUNITY_REF_TABLE, postId, deleteUserId);
+        fileInfoRepository.deleteByRefTableAndRefId(COMMUNITY_REF_TABLE, postId, deleteUserId);
 
         // 3. 게시글 삭제
-        postMapper.deleteById(postId, deleteUserId);
+        postRepository.deleteById(postId, deleteUserId);
 
         log.info("Community post deleted successfully: postId={}", postId);
     }
 
     @Transactional
     public void likePost(Long postId) {
-        CommunityPostQueryDto existingPost = postMapper.selectByPostId(postId);
+        CommunityPostQueryDto existingPost = postRepository.selectByPostId(postId);
         if (existingPost == null) {
             throw new PetCrownException(BusinessCode.POST_NOT_FOUND);
         }
 
-        postMapper.incrementLikeCount(postId);
+        postRepository.incrementLikeCount(postId);
         log.info("Community post liked: postId={}", postId);
     }
 
     public List<CommunityPostInfoDto> searchPostsByTitle(String title, int page, int size) {
         int offset = (page - 1) * size;
-        List<CommunityPostQueryDto> queryDtos = postMapper.searchByTitle(title, offset, size);
+        List<CommunityPostQueryDto> queryDtos = postRepository.searchByTitle(title, offset, size);
 
         List<CommunityPostInfoDto> postInfoDtos = new ArrayList<>();
         for (CommunityPostQueryDto queryDto : queryDtos) {
-            List<FileInfoEntity> fileInfoEntities = fileInfoMapper.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
+            List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
 
             // Entity → CommandDto 변환 (생성자 직접 호출)
             List<String> imageUrls = new ArrayList<>();
@@ -314,7 +314,7 @@ public class CommunityPostService {
         }
 
         if (!fileInfoEntities.isEmpty()) {
-            fileInfoMapper.insertFileInfoBatch(fileInfoEntities);
+            fileInfoRepository.insertFileInfoBatch(fileInfoEntities);
         }
     }
 

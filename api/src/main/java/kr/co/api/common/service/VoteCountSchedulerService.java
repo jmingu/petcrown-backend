@@ -1,7 +1,7 @@
 package kr.co.api.common.service;
 
 import kr.co.api.user.domain.model.UserVoteCount;
-import kr.co.api.user.mapper.UserVoteCountMapper;
+import kr.co.api.user.repository.UserVoteCountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class VoteCountSchedulerService {
 
-    private final UserVoteCountMapper userVoteCountMapper;
+    private final UserVoteCountRepository userVoteCountRepository;
 
     /**
      * 매일 자정에 모든 사용자의 투표 카운트를 1로 초기화
@@ -26,7 +26,7 @@ public class VoteCountSchedulerService {
             log.info("Starting daily vote count reset at midnight");
 
             // 모든 사용자의 투표 카운트를 1로 초기화
-            userVoteCountMapper.resetAllVoteCounts();
+            userVoteCountRepository.resetAllVoteCounts();
 
             log.info("Daily vote count reset completed successfully");
         } catch (Exception e) {

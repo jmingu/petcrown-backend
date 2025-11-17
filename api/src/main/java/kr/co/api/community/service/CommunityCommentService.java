@@ -4,8 +4,8 @@ import kr.co.api.community.domain.CommunityComment;
 import kr.co.api.community.dto.command.CommunityCommentInfoDto;
 import kr.co.api.community.dto.command.CommunityCommentRegistrationDto;
 import kr.co.api.community.dto.command.CommunityCommentUpdateDto;
-import kr.co.api.community.mapper.CommunityCommentMapper;
-import kr.co.api.community.mapper.CommunityPostMapper;
+import kr.co.api.community.repository.CommunityCommentRepository;
+import kr.co.api.community.repository.CommunityPostRepository;
 import kr.co.common.entity.community.CommunityCommentEntity;
 import kr.co.common.entity.community.CommunityCommentQueryDto;
 import kr.co.common.enums.BusinessCode;
@@ -24,8 +24,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CommunityCommentService {
 
-    private final CommunityCommentMapper commentMapper;
-    private final CommunityPostMapper postMapper;
+    private final CommunityCommentRepository commentRepository;
+    private final CommunityPostRepository postRepository;
 
     @Transactional
     public void createComment(CommunityCommentRegistrationDto commentRegistrationDto) {
@@ -41,7 +41,7 @@ public class CommunityCommentService {
             );
         } else {
             // 대댓글
-            CommunityCommentQueryDto parentComment = commentMapper.selectByCommentId(commentRegistrationDto.getParentCommentId());
+            CommunityCommentQueryDto parentComment = commentRepository.selectByCommentId(commentRegistrationDto.getParentCommentId());
             if (parentComment == null) {
                 throw new PetCrownException(BusinessCode.COMMENT_NOT_FOUND);
             }
@@ -76,23 +76,23 @@ public class CommunityCommentService {
                 null
         );
 
-        commentMapper.insertComment(commentEntity);
+        Long commentId = commentRepository.insertComment(commentEntity);
 
         // 게시글의 댓글 수 증가
-        postMapper.incrementCommentCount(commentRegistrationDto.getPostId());
+        postRepository.incrementCommentCount(commentRegistrationDto.getPostId());
 
-        log.info("Comment created successfully: commentId={}", commentEntity.getCommentId());
+        log.info("Comment created successfully: commentId={}", commentId);
     }
 
     public List<CommunityCommentInfoDto> getCommentsByPostId(Long postId, Long userId) {
         // 최상위 댓글만 조회
-        List<CommunityCommentQueryDto> comments = commentMapper.selectByPostId(postId);
+        List<CommunityCommentQueryDto> comments = commentRepository.selectByPostId(postId);
 
         List<CommunityCommentInfoDto> commentInfoDtos = new ArrayList<>();
 
         for (CommunityCommentQueryDto comment : comments) {
             // 각 댓글의 대댓글 조회
-            List<CommunityCommentQueryDto> replies = commentMapper.selectRepliesByParentCommentId(comment.getCommentId());
+            List<CommunityCommentQueryDto> replies = commentRepository.selectRepliesByParentCommentId(comment.getCommentId());
             List<CommunityCommentInfoDto> replyInfoDtos = new ArrayList<>();
 
             for (CommunityCommentQueryDto reply : replies) {
@@ -135,38 +135,38 @@ public class CommunityCommentService {
 
     @Transactional
     public void updateComment(CommunityCommentUpdateDto commentUpdateDto) {
-        CommunityCommentQueryDto existingComment = commentMapper.selectByCommentId(commentUpdateDto.getCommentId());
+        CommunityCommentQueryDto existingComment = commentRepository.selectByCommentId(commentUpdateDto.getCommentId());
         if (existingComment == null) {
             throw new PetCrownException(BusinessCode.COMMENT_NOT_FOUND);
         }
 
-        commentMapper.updateComment(commentUpdateDto);
+        commentRepository.updateComment(commentUpdateDto);
         log.info("Comment updated successfully: commentId={}", commentUpdateDto.getCommentId());
     }
 
     @Transactional
     public void deleteComment(Long commentId, Long deleteUserId) {
-        CommunityCommentQueryDto existingComment = commentMapper.selectByCommentId(commentId);
+        CommunityCommentQueryDto existingComment = commentRepository.selectByCommentId(commentId);
         if (existingComment == null) {
             throw new PetCrownException(BusinessCode.COMMENT_NOT_FOUND);
         }
 
-        commentMapper.deleteById(commentId, deleteUserId);
+        commentRepository.deleteById(commentId, deleteUserId);
 
         // 게시글의 댓글 수 감소
-        postMapper.decrementCommentCount(existingComment.getPostId());
+        postRepository.decrementCommentCount(existingComment.getPostId());
 
         log.info("Comment deleted successfully: commentId={}", commentId);
     }
 
     @Transactional
     public void likeComment(Long commentId) {
-        CommunityCommentQueryDto existingComment = commentMapper.selectByCommentId(commentId);
+        CommunityCommentQueryDto existingComment = commentRepository.selectByCommentId(commentId);
         if (existingComment == null) {
             throw new PetCrownException(BusinessCode.COMMENT_NOT_FOUND);
         }
 
-        commentMapper.incrementLikeCount(commentId);
+        commentRepository.incrementLikeCount(commentId);
         log.info("Comment liked: commentId={}", commentId);
     }
 }

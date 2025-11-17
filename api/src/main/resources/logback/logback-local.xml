@@ -14,6 +14,10 @@
     <!-- 패키지별 로깅 레벨 적용 -->
     <logger name="kr.co.api" level="${API_LOG_LEVEL}"/>
 
+    <!-- JOOQ 쿼리 로깅 -->
+    <logger name="org.jooq" level="DEBUG"/>
+    <logger name="org.jooq.tools.LoggerListener" level="DEBUG"/>
+
     <!-- Root 로거 설정 -->
     <root level="${LOG_LEVEL}">
         <appender-ref ref="CONSOLE"/>
