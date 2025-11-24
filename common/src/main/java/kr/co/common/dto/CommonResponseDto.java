@@ -1,13 +1,10 @@
-package kr.co.common.entity.common;
+package kr.co.common.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import kr.co.common.enums.CodeEnum;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.springframework.http.ResponseEntity;
 
 @Getter
 @Builder

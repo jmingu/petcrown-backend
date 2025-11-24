@@ -43,6 +43,21 @@ public class EmailVerification {
                 expiresDate
         );
     }
+
+    /**
+     * 이메일 인증 도메인 생성 (재전송)
+     */
+    public static EmailVerification createForRegistration() {
+        String verificationCode = generateVerificationCode();
+        LocalDateTime expiresDate = LocalDateTime.now().plusMinutes(5); // 10분 후 만료
+
+        return new EmailVerification(
+                null,
+                null,
+                verificationCode,
+                expiresDate
+        );
+    }
     
     /**
      * 이메일 인증 코드 생성 (6자리 랜덤 숫자)

@@ -13,7 +13,7 @@ import kr.co.api.event.dto.response.EventResponseDto;
 import kr.co.api.event.dto.response.EventsListResponseDto;
 import kr.co.api.event.service.EventService;
 import kr.co.common.contoller.BaseController;
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;

@@ -2,10 +2,10 @@ package kr.co.api.notice.service;
 
 import kr.co.api.notice.domain.model.Notice;
 import kr.co.api.notice.dto.command.NoticeInfoDto;
+import kr.co.api.notice.dto.command.NoticeQueryDto;
 import kr.co.api.notice.dto.command.NoticeRegistrationDto;
 import kr.co.api.notice.dto.command.NoticeUpdateDto;
 import kr.co.api.notice.repository.NoticeRepository;
-import kr.co.common.entity.notice.NoticeEntity;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,27 +45,8 @@ public class NoticeService {
         // 비즈니스 규칙 검증
         validateNoticeForRegistration(notice);
 
-        // Domain → Entity 변환 (생성자 직접 호출)
-        NoticeEntity noticeEntity = new NoticeEntity(
-                notice.getNoticeId(),
-                notice.getTitle() != null ? notice.getTitle().getValue() : null,
-                notice.getContent() != null ? notice.getContent().getValue() : null,
-                notice.getContentType() != null ? notice.getContentType().getValue() : null,
-                notice.getIsPinned(),
-                notice.getPinOrder(),
-                notice.getStartDate(),
-                notice.getEndDate(),
-                notice.getViewCount(),
-                LocalDateTime.now(),  // createDate
-                notice.getCreateUserId(),
-                LocalDateTime.now(),  // updatedDate
-                notice.getCreateUserId(),
-                null,  // deleteDate
-                null   // deleteUserId
-        );
-
-        // 영속성 저장
-        Long noticeId = noticeRepository.insertNotice(noticeEntity);
+        // Repository에 도메인 객체 직접 전달
+        Long noticeId = noticeRepository.insertNotice(notice);
 
         log.info("Notice created successfully: noticeId={}", noticeId);
     }
@@ -76,28 +56,28 @@ public class NoticeService {
      */
     @Transactional
     public NoticeInfoDto getNoticeDetail(Long noticeId) {
-        NoticeEntity noticeEntity = noticeRepository.selectByNoticeId(noticeId);
-        if (noticeEntity == null) {
+        NoticeQueryDto noticeQueryDto = noticeRepository.selectByNoticeId(noticeId);
+        if (noticeQueryDto == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
 
         // 조회수 증가
         noticeRepository.incrementViewCount(noticeId);
 
-        // Entity를 CommandDto로 변환 (생성자 직접 호출)
-        return convertToNoticeInfoDto(noticeEntity);
+        // Dto를 CommandDto로 변환 (생성자 직접 호출)
+        return convertToNoticeInfoDto(noticeQueryDto);
     }
 
     /**
      * 공지사항 조회 (조회수 증가 없음)
      */
     public NoticeInfoDto getNotice(Long noticeId) {
-        NoticeEntity noticeEntity = noticeRepository.selectByNoticeId(noticeId);
-        if (noticeEntity == null) {
+        NoticeQueryDto noticeQueryDto = noticeRepository.selectByNoticeId(noticeId);
+        if (noticeQueryDto == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
 
-        return convertToNoticeInfoDto(noticeEntity);
+        return convertToNoticeInfoDto(noticeQueryDto);
     }
 
     /**
@@ -105,9 +85,9 @@ public class NoticeService {
      */
     public List<NoticeInfoDto> getActiveNotices(int page, int size) {
         int offset = (page - 1) * size;
-        List<NoticeEntity> noticeEntities = noticeRepository.selectActiveNotices(offset, size);
+        List<NoticeQueryDto> noticeQueryDtos = noticeRepository.selectActiveNotices(offset, size);
 
-        return noticeEntities.stream()
+        return noticeQueryDtos.stream()
                 .map(this::convertToNoticeInfoDto)
                 .collect(Collectors.toList());
     }
@@ -116,9 +96,9 @@ public class NoticeService {
      * 상단 고정 공지사항 목록 조회
      */
     public List<NoticeInfoDto> getPinnedNotices() {
-        List<NoticeEntity> noticeEntities = noticeRepository.selectPinnedNotices();
+        List<NoticeQueryDto> noticeQueryDtos = noticeRepository.selectPinnedNotices();
 
-        return noticeEntities.stream()
+        return noticeQueryDtos.stream()
                 .map(this::convertToNoticeInfoDto)
                 .collect(Collectors.toList());
     }
@@ -128,9 +108,9 @@ public class NoticeService {
      */
     public List<NoticeInfoDto> getAllNotices(int page, int size) {
         int offset = (page - 1) * size;
-        List<NoticeEntity> noticeEntities = noticeRepository.selectAllNotices(offset, size);
+        List<NoticeQueryDto> noticeQueryDtos = noticeRepository.selectAllNotices(offset, size);
 
-        return noticeEntities.stream()
+        return noticeQueryDtos.stream()
                 .map(this::convertToNoticeInfoDto)
                 .collect(Collectors.toList());
     }
@@ -156,7 +136,7 @@ public class NoticeService {
     public void updateNotice(NoticeUpdateDto noticeUpdateDto) {
 
         // 기존 공지사항 조회
-        NoticeEntity existingNotice = noticeRepository.selectByNoticeId(noticeUpdateDto.getNoticeId());
+        NoticeQueryDto existingNotice = noticeRepository.selectByNoticeId(noticeUpdateDto.getNoticeId());
         if (existingNotice == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
@@ -187,7 +167,7 @@ public class NoticeService {
      */
     @Transactional
     public void deleteNotice(Long noticeId, Long deleteUserId) {
-        NoticeEntity existingNotice = noticeRepository.selectByNoticeId(noticeId);
+        NoticeQueryDto existingNotice = noticeRepository.selectByNoticeId(noticeId);
         if (existingNotice == null) {
             throw new PetCrownException(BusinessCode.NOTICE_NOT_FOUND);
         }
@@ -202,9 +182,9 @@ public class NoticeService {
      */
     public List<NoticeInfoDto> searchNoticesByTitle(String title, int page, int size) {
         int offset = (page - 1) * size;
-        List<NoticeEntity> noticeEntities = noticeRepository.searchByTitle(title, offset, size);
+        List<NoticeQueryDto> noticeQueryDtos = noticeRepository.searchByTitle(title, offset, size);
 
-        return noticeEntities.stream()
+        return noticeQueryDtos.stream()
                 .map(this::convertToNoticeInfoDto)
                 .collect(Collectors.toList());
     }
@@ -259,21 +239,21 @@ public class NoticeService {
     }
 
     /**
-     * NoticeEntity → NoticeInfoDto 변환 (생성자 직접 호출)
+     * NoticeQueryDto → NoticeInfoDto 변환 (생성자 직접 호출)
      */
-    private NoticeInfoDto convertToNoticeInfoDto(NoticeEntity noticeEntity) {
+    private NoticeInfoDto convertToNoticeInfoDto(NoticeQueryDto noticeQueryDto) {
         return new NoticeInfoDto(
-                noticeEntity.getNoticeId(),
-                noticeEntity.getTitle(),
-                noticeEntity.getContent(),
-                noticeEntity.getContentType(),
-                noticeEntity.getIsPinned(),
-                noticeEntity.getPinOrder(),
-                noticeEntity.getStartDate(),
-                noticeEntity.getEndDate(),
-                noticeEntity.getViewCount(),
-                noticeEntity.getCreateDate(),
-                noticeEntity.getCreateUserId()
+                noticeQueryDto.getNoticeId(),
+                noticeQueryDto.getTitle(),
+                noticeQueryDto.getContent(),
+                noticeQueryDto.getContentType(),
+                noticeQueryDto.getIsPinned(),
+                noticeQueryDto.getPinOrder(),
+                noticeQueryDto.getStartDate(),
+                noticeQueryDto.getEndDate(),
+                noticeQueryDto.getViewCount(),
+                noticeQueryDto.getCreateDate(),
+                noticeQueryDto.getCreateUserId()
         );
     }
 }

@@ -1,25 +1,23 @@
 package kr.co.api.vote.service;
 
+import kr.co.api.common.dto.FileInfoDto;
 import kr.co.api.common.repository.FileInfoRepository;
+import kr.co.api.pet.domain.Pet;
+import kr.co.api.user.domain.model.User;
 import kr.co.api.user.domain.model.UserVoteCount;
+import kr.co.api.user.dto.command.EmailGuestDto;
+import kr.co.api.user.dto.command.UserInfoDto;
+import kr.co.api.user.dto.command.UserVoteCountDto;
+import kr.co.api.user.domain.model.UserVoteCountHistory;
 import kr.co.api.user.repository.EmailGuestRepository;
 import kr.co.api.user.repository.UserRepository;
 import kr.co.api.user.repository.UserVoteCountRepository;
+import kr.co.api.vote.domain.VoteFileInfo;
+import kr.co.api.vote.domain.VoteWeekly;
 import kr.co.api.vote.domain.VotingEmail;
-import kr.co.api.vote.dto.command.VoteInfoDto;
-import kr.co.api.vote.dto.command.VoteListDto;
-import kr.co.api.vote.dto.command.VoteRegistrationDto;
-import kr.co.api.vote.dto.command.VoteUpdateDto;
+import kr.co.api.vote.dto.command.*;
 import kr.co.api.vote.repository.VoteHistoryRepository;
 import kr.co.api.vote.repository.VoteRepository;
-import kr.co.common.entity.file.FileInfoEntity;
-import kr.co.common.entity.user.EmailGuestEntity;
-import kr.co.common.entity.user.UserEntity;
-import kr.co.common.entity.user.UserVoteCountEntity;
-import kr.co.common.entity.user.UserVoteCountHistoryEntity;
-import kr.co.common.entity.vote.VoteFileInfoEntity;
-import kr.co.common.entity.vote.VoteHistoryEntity;
-import kr.co.common.entity.vote.VoteWeeklyEntity;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.service.ObjectStorageService;
@@ -65,15 +63,11 @@ public class VoteService {
         }
 
         // 3. 주별 투표 등록 제한 검증 (주 1회만 등록 가능)
-        int currentWeekVoteCount = voteRepository.countWeeklyVoteRegistrationByUser(
-            voteRegistrationDto.getUserId());
+        int currentWeekVoteCount = voteRepository.countWeeklyVoteRegistrationByUser(voteRegistrationDto.getUserId());
 
         if (currentWeekVoteCount > 0) {
             throw new PetCrownException(BusinessCode.WEEKLY_VOTE_REGISTRATION_LIMIT_EXCEEDED);
         }
-
-        log.debug("Weekly vote registration validation passed: userId={}, currentWeekCount={}",
-                voteRegistrationDto.getUserId(), currentWeekVoteCount);
 
         // 3. 이미지 처리 및 파일 정보 준비
         String imageUrl;
@@ -95,8 +89,8 @@ public class VoteService {
             imageUrl = voteRegistrationDto.getProfileImageUrl();
 
             // URL로 file_info 조회 (pet 테이블의 이미지)
-            List<FileInfoEntity> fileInfoList = fileInfoRepository.selectByRefTableAndRefId("pet", voteRegistrationDto.getPetId());
-            FileInfoEntity sourceFileInfo = fileInfoList.stream()
+            List<FileInfoDto> fileInfoList = fileInfoRepository.selectByRefTableAndRefId("pet", voteRegistrationDto.getPetId());
+            FileInfoDto sourceFileInfo = fileInfoList.stream()
                 .filter(f -> imageUrl.equals(f.getFileUrl()))
                 .findFirst()
                 .orElse(null);
@@ -120,62 +114,55 @@ public class VoteService {
         // 3. 주별 투표 등록 제한 검증 (주 1회만 등록 가능) - 삭제 후 재 등록했을땐 투표수 증가 방지
         int currentWeekVoteCountNoDelete = voteRepository.countWeeklyVoteRegistrationByUserNoDelete(voteRegistrationDto.getUserId());
 
-        // 4. Weekly 투표 등록 (weekStartDate 사용)
-        VoteWeeklyEntity voteWeeklyEntity =
-            new VoteWeeklyEntity(
-                voteRegistrationDto.getUserId(),
-                voteRegistrationDto.getUserId(),
-                weekStartDate,  // DB에서 조회한 weekStartDate 사용
-                voteRegistrationDto.getPetId(),
-                0,
-                0,
-                voteRegistrationDto.getPetModeId()
-            );
-        Long voteWeeklyId = voteRepository.insertVoteWeekly(voteWeeklyEntity);
+        // 4. CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        Pet pet = Pet.ofId(voteRegistrationDto.getPetId());
+        User user = User.ofId(voteRegistrationDto.getUserId());
+        VoteWeekly voteWeekly = VoteWeekly.createVote(
+            pet,
+            user,
+            weekStartDate,
+            voteRegistrationDto.getPetModeId().intValue()
+        );
 
-        // 5. 투표 파일 정보 등록
-        VoteFileInfoEntity voteFileInfoEntity =
-            new VoteFileInfoEntity(
-                voteRegistrationDto.getUserId(),
-                voteRegistrationDto.getUserId(),
-                "vote_weekly",
-                voteWeeklyId,
-                "IMAGE",
-                1,
-                imageUrl,
-                fileSize,
-                mimeType,
-                fileName,
-                originalFileName
-            );
-        voteRepository.insertVoteFileInfo(voteFileInfoEntity);
+        // 5. 영속성 저장 (도메인 객체 직접 전달)
+        Long voteWeeklyId = voteRepository.insertVoteWeekly(voteWeekly);
+
+        // 6. ID가 설정된 VoteWeekly 객체 생성
+        VoteWeekly savedVoteWeekly = voteWeekly.withId(voteWeeklyId);
+
+        // 7. 투표 파일 정보 도메인 생성 (정적 팩토리 메서드 사용)
+        VoteFileInfo voteFileInfo = kr.co.api.vote.domain.VoteFileInfo.createFileInfo(
+            savedVoteWeekly,
+            imageUrl,
+            fileSize,
+            mimeType,
+            fileName,
+            originalFileName
+        );
+
+        // 8. 영속성 저장 (도메인 객체 직접 전달)
+        voteRepository.insertVoteFileInfo(voteFileInfo);
 
         // 6. 사용자 투표 카운트 관리
-        UserVoteCountEntity userVoteCountEntity = userVoteCountRepository.selectByUserId(voteRegistrationDto.getUserId());
-        if (userVoteCountEntity == null) {
+        UserVoteCountDto userVoteCountDto = userVoteCountRepository.selectByUserId(voteRegistrationDto.getUserId());
+        if (userVoteCountDto == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
         UserVoteCount userVoteCount = UserVoteCount.of(
-            userVoteCountEntity.getUserId(),
-            userVoteCountEntity.getVoteCount(),
-            userVoteCountEntity.getCreateDate(),
-            userVoteCountEntity.getCreateUserId(),
-            userVoteCountEntity.getUpdateDate(),
-            userVoteCountEntity.getUpdateUserId()
+                User.ofId(userVoteCountDto.getUserId()),
+                userVoteCountDto.getVoteCount()
         );
 
-        userVoteCount.validateForRegistrationIncrement();
-        Integer beforeCount = userVoteCount.getVoteCount();
-        Integer afterCount = userVoteCount.calculateIncrementedCount();
+
 
         // 이번주 처음 등록일때만 투표수 증가 - 삭제 후 재 등록했을땐 투표수 증가 방지
         if (currentWeekVoteCountNoDelete == 0) {
-            userVoteCountRepository.incrementVoteCount(voteRegistrationDto.getUserId(), voteRegistrationDto.getUserId());
-            UserVoteCountHistoryEntity historyEntity = new UserVoteCountHistoryEntity(
-                    voteRegistrationDto.getUserId(), 1, beforeCount, afterCount, voteRegistrationDto.getUserId()
+            userVoteCountRepository.incrementVoteCount(voteRegistrationDto.getUserId());
+            UserVoteCountHistory history = UserVoteCountHistory.create(
+                    voteRegistrationDto.getUserId(), 1, userVoteCount.getVoteCount(), userVoteCount.getVoteCount() + 1
             );
-            userVoteCountRepository.insertVoteCountHistory(historyEntity);
+            userVoteCountRepository.insertVoteCountHistory(history);
         }
 
 
@@ -243,21 +230,16 @@ public class VoteService {
             String fileName = extractFileNameFromUrl(newImageUrl);
             String originalFileName = image.getOriginalFilename();
 
-            VoteFileInfoEntity voteFileInfoEntity =
-                new VoteFileInfoEntity(
-                    voteUpdateDto.getUserId(),
-                    voteUpdateDto.getUserId(),
-                    "vote_weekly",
+            VoteFileInfoDto voteFileInfoDto =
+                new VoteFileInfoDto(
                     voteUpdateDto.getVoteId(),
-                    "IMAGE",
-                    1,
                     newImageUrl,
                     image.getSize(),
                     image.getContentType(),
                     fileName,
                     originalFileName
                 );
-            voteRepository.updateVoteFileInfo(voteFileInfoEntity);
+            voteRepository.updateVoteFileInfo(voteFileInfoDto);
             log.info("새 이미지 업로드 및 DB 수정 완료: {}", newImageUrl);
 
             // 3) DB 수정 성공 후, Object Storage에서 기존 이미지만 삭제
@@ -272,14 +254,16 @@ public class VoteService {
         }
 
         // 5. Weekly 투표 update_date 갱신
-        VoteWeeklyEntity updateEntity =
-            new VoteWeeklyEntity(
+        VoteWeeklyDto updateDto = new VoteWeeklyDto(
                 voteUpdateDto.getVoteId(),
+                null,
                 voteUpdateDto.getUserId(),
-                voteUpdateDto.getUserId(),
-                null, null, 0, 0, voteUpdateDto.getPetModeId()
-            );
-        voteRepository.updateVoteWeekly(updateEntity);
+                null,
+                null,
+                null,
+                voteUpdateDto.getPetModeId() != null ? voteUpdateDto.getPetModeId().intValue() : null
+        );
+        voteRepository.updateVoteWeekly(updateDto);
 
         log.info("Vote updated successfully: voteId={}, userId={}",
             voteUpdateDto.getVoteId(), voteUpdateDto.getUserId());
@@ -341,7 +325,7 @@ public class VoteService {
         }
 
         // 3. 이메일 타입 결정 (회원/비회원)
-        UserEntity user = userRepository.selectByEmail(email);
+        UserInfoDto user = userRepository.selectByEmail(email);
         VotingEmail votingEmail;
         if (user != null) {
             votingEmail = VotingEmail.createForMember(email, user.getUserId());
@@ -355,49 +339,49 @@ public class VoteService {
 
             // 중복 투표 검증 (DB의 current_date 사용)
             int existingVoteCount = voteHistoryRepository.countTodayVoteByUser(
-                    votingEmail.getUserId(), voteId, "WEEKLY");
+                    votingEmail.getUser().getUserId(), voteId, "WEEKLY");
 
             if (existingVoteCount > 0) {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
             }
 
             // 투표 기록 생성 (historyDate는 Repository에서 current_date 사용)
-            VoteHistoryEntity voteHistoryEntity = new VoteHistoryEntity(
-                    votingEmail.getUserId(), voteId, "WEEKLY");
-            voteHistoryRepository.insertVoteHistory(voteHistoryEntity);
+            VoteHistoryDto voteHistoryDto = new VoteHistoryDto(
+                    votingEmail.getUser().getUserId(), voteId, null, "WEEKLY");
+            voteHistoryRepository.insertVoteHistory(voteHistoryDto);
 
             // Weekly 투표 카운트 증가
-            voteRepository.updateVoteWeeklyCount(voteId, votingEmail.getUserId());
+            voteRepository.updateVoteWeeklyCount(voteId, votingEmail.getUser().getUserId());
 
             // 사용자 투표 카운트 감소 (투표권 사용)
-            decrementUserVoteCount(votingEmail.getUserId());
+            decrementUserVoteCount(votingEmail.getUser().getUserId());
 
-            log.info("Member weekly vote cast: userId={}, voteId={}", votingEmail.getUserId(), voteId);
+            log.info("Member weekly vote cast: userId={}, voteId={}", votingEmail.getUser().getUserId(), voteId);
 
         } else {
             // 비회원 투표 처리 (DB의 current_date 사용)
-            EmailGuestEntity emailGuest = emailGuestRepository.selectTodayVerifiedEmail(
-                    votingEmail.getEmailAddress());
+            EmailGuestDto emailGuest = emailGuestRepository.selectTodayVerifiedEmail(
+                    votingEmail.getEmail().getValue());
             boolean isTodayVerified = (emailGuest != null);
             votingEmail.validateGuestVotingRight(isTodayVerified);
 
             // 중복 투표 검증 (DB의 current_date 사용)
             int existingVoteCount = voteHistoryRepository.countTodayVoteByEmail(
-                    votingEmail.getEmailAddress(), voteId, "WEEKLY");
+                    votingEmail.getEmail().getValue(), voteId, "WEEKLY");
 
             if (existingVoteCount > 0) {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
             }
 
             // 투표 기록 생성 (historyDate는 Repository에서 current_date 사용)
-            VoteHistoryEntity voteHistoryEntity = new VoteHistoryEntity(
-                    votingEmail.getEmailAddress(), voteId, "WEEKLY");
-            voteHistoryRepository.insertVoteHistory(voteHistoryEntity);
+            VoteHistoryDto voteHistoryDto = new VoteHistoryDto(
+                    null, voteId, votingEmail.getEmail().getValue(), "WEEKLY");
+            voteHistoryRepository.insertVoteHistory(voteHistoryDto);
 
             // Weekly 투표 카운트 증가
             voteRepository.updateVoteWeeklyCount(voteId, null);
 
-            log.info("Guest weekly vote cast: email={}, voteId={}", votingEmail.getEmailAddress(), voteId);
+            log.info("Guest weekly vote cast: email={}, voteId={}", votingEmail.getEmail().getValue(), voteId);
         }
 
         log.info("Weekly vote cast successfully: email={}, voteId={}, isMember={}",
@@ -422,7 +406,7 @@ public class VoteService {
         }
 
         // 3. Monthly 투표 존재 여부 확인 (WHERE 절에 date_trunc 직접 사용)
-        kr.co.common.entity.vote.VoteMonthlyEntity monthlyVote =
+        VoteMonthlyDto monthlyVote =
             voteRepository.selectVoteMonthlyByPetIdAndMonth(voteInfo.getPetId());
 
         if (monthlyVote == null) {
@@ -430,7 +414,7 @@ public class VoteService {
         }
 
         // 4. 이메일 타입 결정 (회원/비회원)
-        UserEntity user = userRepository.selectByEmail(email);
+        UserInfoDto user = userRepository.selectByEmail(email);
         VotingEmail votingEmail;
         if (user != null) {
             votingEmail = VotingEmail.createForMember(email, user.getUserId());
@@ -444,49 +428,49 @@ public class VoteService {
 
             // 중복 투표 검증 (DB의 current_date 사용)
             int existingVoteCount = voteHistoryRepository.countTodayVoteByUser(
-                    votingEmail.getUserId(), voteId, "MONTHLY");
+                    votingEmail.getUser().getUserId(), voteId, "MONTHLY");
 
             if (existingVoteCount > 0) {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
             }
 
             // 투표 기록 생성 (historyDate는 Repository에서 current_date 사용)
-            VoteHistoryEntity voteHistoryEntity = new VoteHistoryEntity(
-                    votingEmail.getUserId(), voteId, "MONTHLY");
-            voteHistoryRepository.insertVoteHistory(voteHistoryEntity);
+            VoteHistoryDto voteHistoryDto = new VoteHistoryDto(
+                    votingEmail.getUser().getUserId(), voteId, null, "MONTHLY");
+            voteHistoryRepository.insertVoteHistory(voteHistoryDto);
 
             // Monthly 투표 카운트 증가
-            voteRepository.updateVoteMonthlyCount(monthlyVote.getVoteMonthlyId(), votingEmail.getUserId());
+            voteRepository.updateVoteMonthlyCount(monthlyVote.getVoteMonthlyId(), votingEmail.getUser().getUserId());
 
             // 사용자 투표 카운트 감소 (투표권 사용)
-            decrementUserVoteCount(votingEmail.getUserId());
+            decrementUserVoteCount(votingEmail.getUser().getUserId());
 
-            log.info("Member monthly vote cast: userId={}, voteId={}", votingEmail.getUserId(), voteId);
+            log.info("Member monthly vote cast: userId={}, voteId={}", votingEmail.getUser().getUserId(), voteId);
 
         } else {
             // 비회원 투표 처리 (DB의 current_date 사용)
-            EmailGuestEntity emailGuest = emailGuestRepository.selectTodayVerifiedEmail(
-                    votingEmail.getEmailAddress());
+            EmailGuestDto emailGuest = emailGuestRepository.selectTodayVerifiedEmail(
+                    votingEmail.getEmail().getValue());
             boolean isTodayVerified = (emailGuest != null);
             votingEmail.validateGuestVotingRight(isTodayVerified);
 
             // 중복 투표 검증 (DB의 current_date 사용)
             int existingVoteCount = voteHistoryRepository.countTodayVoteByEmail(
-                    votingEmail.getEmailAddress(), voteId, "MONTHLY");
+                    votingEmail.getEmail().getValue(), voteId, "MONTHLY");
 
             if (existingVoteCount > 0) {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
             }
 
             // 투표 기록 생성 (historyDate는 Repository에서 current_date 사용)
-            VoteHistoryEntity voteHistoryEntity = new VoteHistoryEntity(
-                    votingEmail.getEmailAddress(), voteId, "MONTHLY");
-            voteHistoryRepository.insertVoteHistory(voteHistoryEntity);
+            VoteHistoryDto voteHistoryDto = new VoteHistoryDto(
+                    null, voteId, votingEmail.getEmail().getValue(), "MONTHLY");
+            voteHistoryRepository.insertVoteHistory(voteHistoryDto);
 
             // Monthly 투표 카운트 증가
             voteRepository.updateVoteMonthlyCount(monthlyVote.getVoteMonthlyId(), null);
 
-            log.info("Guest monthly vote cast: email={}, voteId={}", votingEmail.getEmailAddress(), voteId);
+            log.info("Guest monthly vote cast: email={}, voteId={}", votingEmail.getEmail().getValue(), voteId);
         }
 
         log.info("Monthly vote cast successfully: email={}, voteId={}, isMember={}",
@@ -497,18 +481,14 @@ public class VoteService {
      * 사용자 투표 카운트 감소 (공통 로직)
      */
     private void decrementUserVoteCount(Long userId) {
-        UserVoteCountEntity userVoteCountEntity = userVoteCountRepository.selectByUserId(userId);
-        if (userVoteCountEntity == null) {
+        UserVoteCountDto userVoteCountDto = userVoteCountRepository.selectByUserId(userId);
+        if (userVoteCountDto == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
         UserVoteCount userVoteCount = UserVoteCount.of(
-            userVoteCountEntity.getUserId(),
-            userVoteCountEntity.getVoteCount(),
-            userVoteCountEntity.getCreateDate(),
-            userVoteCountEntity.getCreateUserId(),
-            userVoteCountEntity.getUpdateDate(),
-            userVoteCountEntity.getUpdateUserId()
+            User.ofId(userVoteCountDto.getUserId()),
+            userVoteCountDto.getVoteCount()
         );
 
         userVoteCount.validateForCastingDecrement();
@@ -516,10 +496,10 @@ public class VoteService {
         Integer afterCount = userVoteCount.calculateDecrementedCount();
 
         userVoteCountRepository.decrementVoteCount(userId, userId);
-        UserVoteCountHistoryEntity historyEntity = new UserVoteCountHistoryEntity(
-            userId, -1, beforeCount, afterCount, userId
+        UserVoteCountHistory history = UserVoteCountHistory.create(
+            userId, -1, beforeCount, afterCount
         );
-        userVoteCountRepository.insertVoteCountHistory(historyEntity);
+        userVoteCountRepository.insertVoteCountHistory(history);
     }
 
     /**

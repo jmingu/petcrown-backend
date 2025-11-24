@@ -9,11 +9,16 @@ public class Email {
     private final String value;
 
     private Email(String email) {
-        ValidationUtils.validateEmail(email);
+
         this.value = email;
     }
 
     public static Email of(String email) {
+        ValidationUtils.validateEmail(email);
+        return new Email(email);
+    }
+
+    public static Email from(String email) {
         return new Email(email);
     }
 

@@ -52,6 +52,7 @@ public class ValidationUtils {
     /**
      * 문자열 검증 (null, 공백, 길이 제한)
      * koName, enName은 에러 메시지에 사용되는 이름
+     * min보다 크고 max보다 작고
      */
     public static void validateNameString(String value, String koName, String enName, int min, int max) {
         if (value == null) {

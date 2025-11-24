@@ -1,7 +1,8 @@
 package kr.co.api.notice.repository;
 
+import kr.co.api.notice.domain.model.Notice;
+import kr.co.api.notice.dto.command.NoticeQueryDto;
 import kr.co.api.notice.dto.command.NoticeUpdateDto;
-import kr.co.common.entity.notice.NoticeEntity;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -21,11 +22,11 @@ public class NoticeRepository {
     /**
      * 공지사항 저장 (생성된 noticeId 반환)
      */
-    public Long insertNotice(NoticeEntity notice) {
+    public Long insertNotice(Notice notice) {
         return dsl.insertInto(NOTICE)
-                .set(NOTICE.TITLE, notice.getTitle())
-                .set(NOTICE.CONTENT, notice.getContent())
-                .set(NOTICE.CONTENT_TYPE, notice.getContentType())
+                .set(NOTICE.TITLE, notice.getTitle() != null ? notice.getTitle().getValue() : null)
+                .set(NOTICE.CONTENT, notice.getContent() != null ? notice.getContent().getValue() : null)
+                .set(NOTICE.CONTENT_TYPE, notice.getContentType() != null ? notice.getContentType().getValue() : null)
                 .set(NOTICE.IS_PINNED, notice.getIsPinned())
                 .set(NOTICE.PIN_ORDER, notice.getPinOrder())
                 .set(NOTICE.START_DATE, notice.getStartDate())
@@ -43,20 +44,20 @@ public class NoticeRepository {
     /**
      * 공지사항 ID로 조회
      */
-    public NoticeEntity selectByNoticeId(Long noticeId) {
+    public NoticeQueryDto selectByNoticeId(Long noticeId) {
         return dsl.select()
                 .from(NOTICE)
                 .where(
                         NOTICE.NOTICE_ID.eq(noticeId)
                                 .and(NOTICE.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToNoticeEntity);
+                .fetchOne(this::mapToNoticeQueryDto);
     }
 
     /**
      * 활성화된 공지사항 목록 조회 (페이징)
      */
-    public List<NoticeEntity> selectActiveNotices(int offset, int limit) {
+    public List<NoticeQueryDto> selectActiveNotices(int offset, int limit) {
         return dsl.select()
                 .from(NOTICE)
                 .where(
@@ -74,13 +75,13 @@ public class NoticeRepository {
                 )
                 .offset(offset)
                 .limit(limit)
-                .fetch(this::mapToNoticeEntity);
+                .fetch(this::mapToNoticeQueryDto);
     }
 
     /**
      * 상단 고정 공지사항 목록 조회
      */
-    public List<NoticeEntity> selectPinnedNotices() {
+    public List<NoticeQueryDto> selectPinnedNotices() {
         return dsl.select()
                 .from(NOTICE)
                 .where(
@@ -96,13 +97,13 @@ public class NoticeRepository {
                         NOTICE.PIN_ORDER.asc(),
                         NOTICE.CREATE_DATE.desc()
                 )
-                .fetch(this::mapToNoticeEntity);
+                .fetch(this::mapToNoticeQueryDto);
     }
 
     /**
      * 전체 공지사항 목록 조회 (관리자용)
      */
-    public List<NoticeEntity> selectAllNotices(int offset, int limit) {
+    public List<NoticeQueryDto> selectAllNotices(int offset, int limit) {
         return dsl.select()
                 .from(NOTICE)
                 .where(NOTICE.DELETE_DATE.isNull())
@@ -113,7 +114,7 @@ public class NoticeRepository {
                 )
                 .offset(offset)
                 .limit(limit)
-                .fetch(this::mapToNoticeEntity);
+                .fetch(this::mapToNoticeQueryDto);
     }
 
     /**
@@ -194,7 +195,7 @@ public class NoticeRepository {
     /**
      * 제목으로 공지사항 검색
      */
-    public List<NoticeEntity> searchByTitle(String title, int offset, int limit) {
+    public List<NoticeQueryDto> searchByTitle(String title, int offset, int limit) {
         return dsl.select()
                 .from(NOTICE)
                 .where(
@@ -213,7 +214,7 @@ public class NoticeRepository {
                 )
                 .offset(offset)
                 .limit(limit)
-                .fetch(this::mapToNoticeEntity);
+                .fetch(this::mapToNoticeQueryDto);
     }
 
     /**
@@ -236,14 +237,14 @@ public class NoticeRepository {
     }
 
     /**
-     * Record를 NoticeEntity로 변환
+     * Record를 NoticeQueryDto로 변환
      */
-    private NoticeEntity mapToNoticeEntity(Record record) {
+    private NoticeQueryDto mapToNoticeQueryDto(Record record) {
         if (record == null) {
             return null;
         }
 
-        return new NoticeEntity(
+        return new NoticeQueryDto(
                 record.get(NOTICE.NOTICE_ID),
                 record.get(NOTICE.TITLE),
                 record.get(NOTICE.CONTENT),

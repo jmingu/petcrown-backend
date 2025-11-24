@@ -7,24 +7,28 @@ import lombok.Getter;
 @AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 @Getter
 public class Role {
-    private Integer roleId;
+    private final Integer roleId;
 
-    private String roleName;
+    private final String roleName;
 
-    private Integer level;
+    private final Integer level;
+    private final String isDefault;
 
-    /**
-     * RoleEntity로부터 Role 도메인 생성
-     */
     public static Role ofId(Integer roleId) {
         if (roleId == null) {
             return null;
         }
-        return new Role(roleId, null, null);
+        return new Role(roleId, null, null, null);
     }
 
-    /**
-     * role
-     */
+    public static Role of(Integer roleId, String roleName, Integer level, String isDefault) {
+        if (roleName == null) {
+
+        }
+        return new Role(null, null, null, null);
+    }
+
+
+
 
 }

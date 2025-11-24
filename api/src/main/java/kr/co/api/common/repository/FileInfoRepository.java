@@ -1,6 +1,6 @@
 package kr.co.api.common.repository;
 
-import kr.co.common.entity.file.FileInfoEntity;
+import kr.co.api.common.dto.FileInfoDto;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -20,9 +20,9 @@ public class FileInfoRepository {
     private final DSLContext dsl;
 
     /**
-     * 파일 정보 저장 (생성된 fileId 반환)
+     * 파일 정보 저장 (생성된 fileId 반환) - 내부용 Dto 사용
      */
-    public Long insertFileInfo(FileInfoEntity fileInfo) {
+    public Long insertFileInfo(FileInfoDto fileInfo) {
         return dsl.insertInto(FILE_INFO)
                 .set(FILE_INFO.REF_TABLE, kr.co.common.jooq.enums.RefTableEnum.valueOf(fileInfo.getRefTable()))
                 .set(FILE_INFO.REF_ID, fileInfo.getRefId())
@@ -43,9 +43,9 @@ public class FileInfoRepository {
     }
 
     /**
-     * 파일 정보 저장 (배치)
+     * 파일 정보 저장 (배치) - 내부용 Dto 사용
      */
-    public void insertFileInfoBatch(List<FileInfoEntity> fileInfoList) {
+    public void insertFileInfoBatch(List<FileInfoDto> fileInfoList) {
         if (fileInfoList == null || fileInfoList.isEmpty()) {
             return;
         }
@@ -71,9 +71,9 @@ public class FileInfoRepository {
     }
 
     /**
-     * 참조 테이블과 참조 ID로 파일 정보 조회
+     * 참조 테이블과 참조 ID로 파일 정보 조회 - 내부용 Dto 반환
      */
-    public List<FileInfoEntity> selectByRefTableAndRefId(String refTable, Long refId) {
+    public List<FileInfoDto> selectByRefTableAndRefId(String refTable, Long refId) {
         return dsl.select()
                 .from(FILE_INFO)
                 .where(
@@ -82,20 +82,20 @@ public class FileInfoRepository {
                                 .and(FILE_INFO.DELETE_DATE.isNull())
                 )
                 .orderBy(FILE_INFO.FILE_TYPE, FILE_INFO.CREATE_DATE)
-                .fetch(this::mapToFileInfoEntity);
+                .fetch(this::mapToFileInfoDto);
     }
 
     /**
-     * 파일 ID로 파일 정보 조회
+     * 파일 ID로 파일 정보 조회 - 내부용 Dto 반환
      */
-    public FileInfoEntity selectByFileId(Long fileId) {
+    public FileInfoDto selectByFileId(Long fileId) {
         return dsl.select()
                 .from(FILE_INFO)
                 .where(
                         FILE_INFO.FILE_ID.eq(fileId)
                                 .and(FILE_INFO.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToFileInfoEntity);
+                .fetchOne(this::mapToFileInfoDto);
     }
 
     /**
@@ -139,21 +139,15 @@ public class FileInfoRepository {
     }
 
     /**
-     * Record를 FileInfoEntity로 변환
+     * Record를 FileInfoDto로 변환
      */
-    private FileInfoEntity mapToFileInfoEntity(Record record) {
+    private FileInfoDto mapToFileInfoDto(Record record) {
         if (record == null) {
             return null;
         }
 
-        return new FileInfoEntity(
+        return new FileInfoDto(
                 record.get(FILE_INFO.FILE_ID),
-                record.get(FILE_INFO.CREATE_DATE),
-                record.get(FILE_INFO.CREATE_USER_ID),
-                record.get(FILE_INFO.UPDATED_DATE),
-                record.get(FILE_INFO.UPDATE_USER_ID),
-                record.get(FILE_INFO.DELETE_DATE),
-                record.get(FILE_INFO.DELETE_USER_ID),
                 record.get(FILE_INFO.REF_TABLE) != null ? record.get(FILE_INFO.REF_TABLE).getLiteral() : null,
                 record.get(FILE_INFO.REF_ID),
                 record.get(FILE_INFO.FILE_TYPE) != null ? record.get(FILE_INFO.FILE_TYPE).getLiteral() : null,
@@ -162,7 +156,8 @@ public class FileInfoRepository {
                 record.get(FILE_INFO.FILE_SIZE),
                 record.get(FILE_INFO.MIME_TYPE),
                 record.get(FILE_INFO.FILE_NAME),
-                record.get(FILE_INFO.ORIGINAL_FILE_NAME)
+                record.get(FILE_INFO.ORIGINAL_FILE_NAME),
+                record.get(FILE_INFO.CREATE_USER_ID)
         );
     }
 }

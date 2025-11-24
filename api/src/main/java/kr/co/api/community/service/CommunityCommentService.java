@@ -2,12 +2,11 @@ package kr.co.api.community.service;
 
 import kr.co.api.community.domain.CommunityComment;
 import kr.co.api.community.dto.command.CommunityCommentInfoDto;
+import kr.co.api.community.dto.command.CommunityCommentQueryDto;
 import kr.co.api.community.dto.command.CommunityCommentRegistrationDto;
 import kr.co.api.community.dto.command.CommunityCommentUpdateDto;
 import kr.co.api.community.repository.CommunityCommentRepository;
 import kr.co.api.community.repository.CommunityPostRepository;
-import kr.co.common.entity.community.CommunityCommentEntity;
-import kr.co.common.entity.community.CommunityCommentQueryDto;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import lombok.RequiredArgsConstructor;
@@ -60,23 +59,8 @@ public class CommunityCommentService {
             );
         }
 
-        CommunityCommentEntity commentEntity = new CommunityCommentEntity(
-                null,
-                comment.getPostId(),
-                comment.getUserId(),
-                comment.getParentCommentId(),
-                comment.getContent(),
-                comment.getLikeCount(),
-                comment.getDepth(),
-                null,
-                comment.getCreateUserId(),
-                null,
-                comment.getCreateUserId(),
-                null,
-                null
-        );
-
-        Long commentId = commentRepository.insertComment(commentEntity);
+        // Repository에 도메인 객체 직접 전달
+        Long commentId = commentRepository.insertComment(comment);
 
         // 게시글의 댓글 수 증가
         postRepository.incrementCommentCount(commentRegistrationDto.getPostId());

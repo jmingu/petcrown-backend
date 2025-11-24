@@ -1,8 +1,6 @@
 package kr.co.api.pet.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.pet.dto.request.MyPetChangeRequestDto;
 import kr.co.api.pet.dto.request.PetRegistrationRequestDto;
@@ -15,7 +13,7 @@ import kr.co.api.pet.dto.command.PetModeInfoDto;
 import kr.co.api.pet.dto.response.*;
 import kr.co.api.pet.service.PetService;
 import kr.co.common.contoller.BaseController;
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -24,7 +22,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -13,7 +13,7 @@ import kr.co.api.notice.dto.response.NoticesListResponseDto;
 import kr.co.api.notice.dto.response.NoticeResponseDto;
 import kr.co.api.notice.service.NoticeService;
 import kr.co.common.contoller.BaseController;
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

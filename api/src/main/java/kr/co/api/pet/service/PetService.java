@@ -1,25 +1,20 @@
 package kr.co.api.pet.service;
 
+import kr.co.api.common.dto.FileInfoDto;
 import kr.co.api.common.repository.FileInfoRepository;
-import kr.co.api.pet.dto.command.PetRegistrationDto;
-import kr.co.api.pet.dto.command.PetUpdateDto;
-import kr.co.api.pet.dto.command.PetInfoDto;
-import kr.co.api.pet.dto.command.SpeciesInfoDto;
-import kr.co.api.pet.dto.command.BreedInfoDto;
-import kr.co.api.pet.dto.command.PetModeInfoDto;
-import kr.co.api.pet.repository.PetRepository;
-import kr.co.api.pet.repository.PetModeRepository;
-import kr.co.api.pet.domain.Pet;
 import kr.co.api.pet.domain.Breed;
 import kr.co.api.pet.domain.Ownership;
-import kr.co.api.pet.domain.vo.PetName;
+import kr.co.api.pet.domain.Pet;
 import kr.co.api.pet.domain.vo.PetGender;
+import kr.co.api.pet.domain.vo.PetName;
+import kr.co.api.pet.dto.command.*;
+import kr.co.api.pet.repository.PetModeRepository;
+import kr.co.api.pet.repository.PetRepository;
 import kr.co.api.user.domain.model.User;
+import kr.co.api.vote.dto.command.VoteWeeklyDto;
 import kr.co.api.vote.repository.VoteRepository;
-import kr.co.common.entity.file.FileInfoEntity;
-import kr.co.common.service.ObjectStorageService;
 import kr.co.common.exception.PetCrownException;
-import kr.co.common.entity.pet.PetEntity;
+import kr.co.common.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,10 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.UUID;
 
 import static kr.co.common.enums.BusinessCode.*;
 
@@ -62,24 +54,8 @@ public class PetService {
                 petRegistrationDto.getName()
         );
 
-        // 2. Domain → Entity 변환하여 저장 (정적 팩토리 메서드 사용)
-        PetEntity petEntity = PetEntity.createPetEntity(
-                pet.getPetId(),
-                pet.getBreed() != null ? pet.getBreed().getBreedId() : null,
-                pet.getCustomBreed(),
-                pet.getOwnership() != null ? pet.getOwnership().getOwnershipId() : null,
-                pet.getUserId(),
-                pet.getNameValue(),
-                pet.getBirthDate(),
-                pet.getGenderValue(),
-                pet.getWeightValue(),
-                pet.getHeightValue(),
-                pet.getIsNeutered(),
-                pet.getMicrochipId(),
-                pet.getDescription()
-        );
 
-        Long petId = petRepository.insertPetEntity(petEntity);
+        Long petId = petRepository.insertPetEntity(pet);
 
         // 3. 이미지 업로드 및 FileInfoEntity 저장
         if (image != null && !image.isEmpty()) {
@@ -87,10 +63,10 @@ public class PetService {
             String folderPath = generatePetImagePath();
             String imageUrl = objectStorageService.uploadFile(image, folderPath);
 
-            FileInfoEntity fileInfoEntity = createFileInfoEntity(
+            FileInfoDto fileInfoDto = createFileInfoDto(
                 petId, "IMAGE", imageUrl, image, petRegistrationDto.getUserId()
             );
-            Long fileId = fileInfoRepository.insertFileInfo(fileInfoEntity);
+            Long fileId = fileInfoRepository.insertFileInfo(fileInfoDto);
 
             log.info("Pet image registered: petId={}, fileId={}, imageUrl={}", petId, fileId, imageUrl);
         }
@@ -137,71 +113,44 @@ public class PetService {
             throw new PetCrownException(PET_NOT_OWNED);
         }
 
-        // 3. 기존 펫을 도메인 객체로 생성
-        Pet existingPet = Pet.getPetAllFiled(
-                existingPetInfo.getPetId(),
-                Breed.getBreedAllFiled(existingPetInfo.getBreedId(), null, null),
-                existingPetInfo.getCustomBreed(),
-                new Ownership(existingPetInfo.getOwnershipId()),
-                User.ofId(existingPetInfo.getUserId()),
-                new PetName(existingPetInfo.getName()),
-                existingPetInfo.getBirthDate(),
-                existingPetInfo.getGender() == null ? null : new PetGender(existingPetInfo.getGender()),
+        // 3. 업데이트용 Pet 도메인 바로 생성
+        Pet updatedPet = Pet.getPetAllFiled(
+                petUpdateDto.getPetId(),
+                petUpdateDto.getBreedId() != null ? Breed.getBreedAllFiled(petUpdateDto.getBreedId(), null, null) : null,
+                petUpdateDto.getCustomBreed(),
+                new Ownership(existingPetInfo.getOwnershipId()),  // ownership은 변경 불가
+                User.ofId(petUpdateDto.getUserId()),
+                petUpdateDto.getName() != null ? new PetName(petUpdateDto.getName()) : null,
+                petUpdateDto.getBirthDate(),
+                petUpdateDto.getGender() != null ? new PetGender(petUpdateDto.getGender()) : null,
                 null, null,
                 null,
                 null,
-                existingPetInfo.getMicrochipId(),
-                existingPetInfo.getDescription()
+                petUpdateDto.getMicrochipId(),
+                petUpdateDto.getDescription()
         );
 
-        // 4. Domain의 updateBasicInfo 메서드로 업데이트된 Pet 생성
-        Pet updatedPet = existingPet.updateBasicInfo(
-                petUpdateDto.getBreedId(),
-                petUpdateDto.getCustomBreed(),
-                petUpdateDto.getName(),
-                petUpdateDto.getBirthDate(),
-                petUpdateDto.getGender(),
-                petUpdateDto.getDescription(),
-                petUpdateDto.getMicrochipId()
-        );
+        petRepository.updatePetEntity(updatedPet);
 
-        // 5. Domain → Entity 변환하여 저장 (정적 팩토리 메서드 사용)
-        PetEntity petEntity = PetEntity.createPetEntity(
-                updatedPet.getPetId(),
-                updatedPet.getBreed() != null ? updatedPet.getBreed().getBreedId() : null,
-                updatedPet.getCustomBreed(),
-                updatedPet.getOwnership() != null ? updatedPet.getOwnership().getOwnershipId() : null,
-                updatedPet.getUserId(),
-                updatedPet.getNameValue(),
-                updatedPet.getBirthDate(),
-                updatedPet.getGenderValue(),
-                updatedPet.getWeightValue(),
-                updatedPet.getHeightValue(),
-                updatedPet.getIsNeutered(),
-                updatedPet.getMicrochipId(),
-                updatedPet.getDescription()
-        );
-        petRepository.updatePetEntity(petEntity);
-
-        // 6. 이미지가 제공되면 새로 업로드 및 FileInfoEntity 처리
+        // 6. 이미지가 제공되면 새로 업로드 및 FileInfoDto 처리
         if (image != null && !image.isEmpty()) {
             // 1) 기존 이미지 조회
-            List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(PET_REF_TABLE, petUpdateDto.getPetId());
+            List<FileInfoDto> existingFiles = fileInfoRepository.selectByRefTableAndRefId(PET_REF_TABLE, petUpdateDto.getPetId());
 
             // 2) 새 이미지 업로드 - pet/yyyymmdd_uuid(8자리) 경로 생성
             String folderPath = generatePetImagePath();
             String newImageUrl = objectStorageService.uploadFile(image, folderPath);
 
-            // 3) 새 이미지 FileInfoEntity 저장
-            FileInfoEntity fileInfoEntity = createFileInfoEntity(
+            // 3) 새 이미지 FileInfoDto 저장
+            FileInfoDto fileInfoDto = createFileInfoDto(
                 petUpdateDto.getPetId(), "IMAGE", newImageUrl, image, petUpdateDto.getUserId()
             );
-            fileInfoRepository.insertFileInfo(fileInfoEntity);
+            fileInfoRepository.insertFileInfo(fileInfoDto);
             log.info("새 이미지 업로드 및 DB 저장 완료: {}", newImageUrl);
 
             // 4) 새 이미지 저장 성공 후, 기존 이미지만 개별 삭제
             if (!existingFiles.isEmpty()) {
-                for (FileInfoEntity existingFile : existingFiles) {
+                for (FileInfoDto existingFile : existingFiles) {
                     // DB에서 기존 파일 정보 논리 삭제 (개별)
                     fileInfoRepository.deleteById(existingFile.getFileId(), petUpdateDto.getUserId());
 
@@ -241,7 +190,7 @@ public class PetService {
             LocalDate today = LocalDate.now();
             LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
 
-            kr.co.common.entity.vote.VoteWeeklyEntity existingWeeklyVote =
+            VoteWeeklyDto existingWeeklyVote =
                 voteRepository.selectVoteWeeklyByPetIdAndWeek(petId, weekStart);
 
             // 현재 주에 활성화된 투표가 있으면 삭제 불가
@@ -255,10 +204,10 @@ public class PetService {
             log.warn("Vote check failed during pet deletion, continuing with deletion: petId={}, error={}", petId, e.getMessage());
         }
 
-        // FileInfoEntity 삭제 (이미지 파일도 함께 삭제)
-        List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(PET_REF_TABLE, petId);
+        // FileInfoDto 삭제 (이미지 파일도 함께 삭제)
+        List<FileInfoDto> existingFiles = fileInfoRepository.selectByRefTableAndRefId(PET_REF_TABLE, petId);
         if (!existingFiles.isEmpty()) {
-            for (FileInfoEntity existingFile : existingFiles) {
+            for (FileInfoDto existingFile : existingFiles) {
                 if (existingFile.getFileUrl() != null) {
                     try {
                         objectStorageService.deleteFileFromUrl(existingFile.getFileUrl());
@@ -277,22 +226,14 @@ public class PetService {
     }
 
     /**
-     * FileInfoEntity 생성
+     * FileInfoDto 생성
      */
-    private FileInfoEntity createFileInfoEntity(Long petId, String fileType, String fileUrl,
-                                                MultipartFile file, Long createUserId) {
-        LocalDateTime now = LocalDateTime.now();
+    private FileInfoDto createFileInfoDto(Long petId, String fileType, String fileUrl,
+                                          MultipartFile file, Long createUserId) {
         String fileName = extractFileNameFromUrl(fileUrl);
         String originalFileName = file.getOriginalFilename();
 
-        return new FileInfoEntity(
-                null,                       // fileId
-                now,                        // createDate
-                createUserId,               // createUserId
-                now,                        // updatedDate
-                createUserId,               // updateUserId
-                null,                       // deleteDate
-                null,                       // deleteUserId
+        return new FileInfoDto(
                 PET_REF_TABLE,              // refTable
                 petId,                      // refId
                 fileType,                   // fileType
@@ -301,7 +242,8 @@ public class PetService {
                 file.getSize(),             // fileSize
                 file.getContentType(),      // mimeType
                 fileName,                   // fileName
-                originalFileName            // originalFileName
+                originalFileName,           // originalFileName
+                createUserId                // createUserId
         );
     }
 

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.api.common.annotation.AuthRequired;
 import kr.co.common.contoller.BaseController;
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

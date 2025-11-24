@@ -1,6 +1,6 @@
 package kr.co.common.contoller;
 
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import kr.co.common.enums.CodeEnum;
 import org.springframework.http.ResponseEntity;
 

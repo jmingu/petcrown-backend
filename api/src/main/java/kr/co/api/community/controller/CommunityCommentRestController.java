@@ -11,7 +11,7 @@ import kr.co.api.community.dto.request.CommunityCommentUpdateRequestDto;
 import kr.co.api.community.dto.response.CommunityCommentResponseDto;
 import kr.co.api.community.service.CommunityCommentService;
 import kr.co.common.contoller.BaseController;
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

@@ -6,10 +6,9 @@ import kr.co.api.community.dto.command.CommunityPostInfoDtailDto;
 import kr.co.api.community.dto.command.CommunityPostInfoDto;
 import kr.co.api.community.dto.command.CommunityPostRegistrationDto;
 import kr.co.api.community.dto.command.CommunityPostUpdateDto;
+import kr.co.api.common.dto.FileInfoDto;
+import kr.co.api.community.dto.command.CommunityPostQueryDto;
 import kr.co.api.community.repository.CommunityPostRepository;
-import kr.co.common.entity.community.CommunityPostEntity;
-import kr.co.common.entity.community.CommunityPostQueryDto;
-import kr.co.common.entity.file.FileInfoEntity;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.service.ObjectStorageService;
@@ -49,27 +48,8 @@ public class CommunityPostService {
         );
         validatePostForRegistration(post);
 
-        // Domain → Entity 변환 (생성자 직접 호출)
-        CommunityPostEntity postEntity = new CommunityPostEntity(
-                post.getPostId(),
-                post.getUserId(),
-                post.getCategory(),
-                post.getTitle() != null ? post.getTitle().getValue() : null,
-                post.getContent() != null ? post.getContent().getValue() : null,
-                post.getContentType() != null ? post.getContentType().getValue() : null,
-                post.getViewCount(),
-                post.getLikeCount(),
-                post.getCommentCount(),
-                post.getIsPinned(),
-                post.getPinOrder(),
-                LocalDateTime.now(),  // createDate
-                post.getCreateUserId(),
-                LocalDateTime.now(),  // updateDate
-                post.getCreateUserId(),
-                null,  // deleteDate
-                null   // deleteUserId
-        );
-        Long postId = postRepository.insertPost(postEntity);
+        // Repository에 도메인 객체 직접 전달
+        Long postId = postRepository.insertPost(post);
 
         if (postRegistrationDto.getImageFiles() != null && !postRegistrationDto.getImageFiles().isEmpty()) {
             savePostFiles(postId, postRegistrationDto.getImageFiles(), postRegistrationDto.getCreateUserId());
@@ -88,12 +68,12 @@ public class CommunityPostService {
 
         postRepository.incrementViewCount(postId);
 
-        List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
+        List<FileInfoDto> fileInfoDtos = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
 
-        // Entity → CommandDto 변환 (생성자 직접 호출)
+        // Dto → CommandDto 변환 (생성자 직접 호출)
         List<String> imageUrls = new ArrayList<>();
-        for (FileInfoEntity fileInfoEntity : fileInfoEntities) {
-            imageUrls.add(fileInfoEntity.getFileUrl());
+        for (FileInfoDto fileInfoDto : fileInfoDtos) {
+            imageUrls.add(fileInfoDto.getFileUrl());
         }
 
         return new CommunityPostInfoDtailDto(
@@ -122,11 +102,11 @@ public class CommunityPostService {
 
         List<CommunityPostInfoDto> postInfoDtos = new ArrayList<>();
         for (CommunityPostQueryDto queryDto : queryDtos) {
-            List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
+            List<FileInfoDto> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
 
             // Entity → CommandDto 변환 (생성자 직접 호출)
             List<String> imageUrls = new ArrayList<>();
-            for (FileInfoEntity fileInfoEntity : fileInfoEntities) {
+            for (FileInfoDto fileInfoEntity : fileInfoEntities) {
                 imageUrls.add(fileInfoEntity.getFileUrl());
             }
 
@@ -176,14 +156,14 @@ public class CommunityPostService {
 
         if (postUpdateDto.getImageFiles() != null && !postUpdateDto.getImageFiles().isEmpty()) {
             // 1. 기존 파일 조회
-            List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postUpdateDto.getPostId());
+            List<FileInfoDto> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postUpdateDto.getPostId());
 
             // 2. 새 파일 업로드 및 DB 저장
             savePostFiles(postUpdateDto.getPostId(), postUpdateDto.getImageFiles(), postUpdateDto.getUpdateUserId());
 
             // 3. 기존 파일 삭제 (DB + Object Storage)
             if (!existingFiles.isEmpty()) {
-                for (FileInfoEntity existingFile : existingFiles) {
+                for (FileInfoDto existingFile : existingFiles) {
                     // DB에서 삭제
                     fileInfoRepository.deleteById(existingFile.getFileId(), postUpdateDto.getUpdateUserId());
 
@@ -211,9 +191,9 @@ public class CommunityPostService {
         }
 
         // 1. 기존 파일 조회 및 삭제 (Object Storage)
-        List<FileInfoEntity> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
+        List<FileInfoDto> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postId);
         if (!existingFiles.isEmpty()) {
-            for (FileInfoEntity existingFile : existingFiles) {
+            for (FileInfoDto existingFile : existingFiles) {
                 if (existingFile.getFileUrl() != null) {
                     try {
                         objectStorageService.deleteFileFromUrl(existingFile.getFileUrl());
@@ -251,11 +231,11 @@ public class CommunityPostService {
 
         List<CommunityPostInfoDto> postInfoDtos = new ArrayList<>();
         for (CommunityPostQueryDto queryDto : queryDtos) {
-            List<FileInfoEntity> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
+            List<FileInfoDto> fileInfoEntities = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, queryDto.getPostId());
 
             // Entity → CommandDto 변환 (생성자 직접 호출)
             List<String> imageUrls = new ArrayList<>();
-            for (FileInfoEntity fileInfoEntity : fileInfoEntities) {
+            for (FileInfoDto fileInfoEntity : fileInfoEntities) {
                 imageUrls.add(fileInfoEntity.getFileUrl());
             }
 
@@ -296,42 +276,34 @@ public class CommunityPostService {
             return;
         }
 
-        List<FileInfoEntity> fileInfoEntities = new ArrayList<>();
+        List<FileInfoDto> fileInfoList = new ArrayList<>();
 
         for (MultipartFile imageFile : imageFiles) {
             if (imageFile != null && !imageFile.isEmpty()) {
                 // ObjectStorageService를 사용하여 네이버 클라우드에 업로드
                 String imageUrl = objectStorageService.uploadFile(imageFile, COMMUNITY_FOLDER_PATH);
 
-                // FileInfoEntity 생성
-                FileInfoEntity fileInfoEntity = createFileInfoEntity(
+                // FileInfoDto 생성
+                FileInfoDto fileInfoDto = createFileInfoDto(
                     postId, "IMAGE", imageUrl, imageFile, createUserId
                 );
-                fileInfoEntities.add(fileInfoEntity);
+                fileInfoList.add(fileInfoDto);
 
                 log.info("Community post image uploaded: postId={}, imageUrl={}", postId, imageUrl);
             }
         }
 
-        if (!fileInfoEntities.isEmpty()) {
-            fileInfoRepository.insertFileInfoBatch(fileInfoEntities);
+        if (!fileInfoList.isEmpty()) {
+            fileInfoRepository.insertFileInfoBatch(fileInfoList);
         }
     }
 
-    private FileInfoEntity createFileInfoEntity(Long postId, String fileType, String fileUrl,
-                                                MultipartFile file, Long createUserId) {
-        LocalDateTime now = LocalDateTime.now();
+    private FileInfoDto createFileInfoDto(Long postId, String fileType, String fileUrl,
+                                          MultipartFile file, Long createUserId) {
         String fileName = extractFileNameFromUrl(fileUrl);
         String originalFileName = file.getOriginalFilename();
 
-        return new FileInfoEntity(
-                null,                       // fileId
-                now,                        // createDate
-                createUserId,               // createUserId
-                now,                        // updatedDate
-                createUserId,               // updateUserId
-                null,                       // deleteDate
-                null,                       // deleteUserId
+        return new FileInfoDto(
                 COMMUNITY_REF_TABLE,        // refTable
                 postId,                     // refId
                 fileType,                   // fileType
@@ -340,7 +312,8 @@ public class CommunityPostService {
                 file.getSize(),             // fileSize
                 file.getContentType(),      // mimeType
                 fileName,                   // fileName
-                originalFileName            // originalFileName
+                originalFileName,           // originalFileName
+                createUserId                // createUserId
         );
     }
 

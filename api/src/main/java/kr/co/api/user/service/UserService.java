@@ -4,20 +4,14 @@ import kr.co.api.common.property.JwtProperty;
 import kr.co.api.common.service.EmailService;
 import kr.co.api.common.util.JwtUtil;
 import kr.co.api.pet.repository.PetRepository;
-import kr.co.api.user.domain.model.Company;
-import kr.co.api.user.domain.model.EmailVerification;
-import kr.co.api.user.domain.model.Role;
-import kr.co.api.user.domain.model.User;
+import kr.co.api.user.domain.model.*;
 import kr.co.api.user.domain.vo.Email;
 import kr.co.api.user.domain.vo.Nickname;
 import kr.co.api.user.domain.vo.Password;
 import kr.co.api.user.dto.command.*;
+import kr.co.api.user.dto.response.LoginResponseDto;
+import kr.co.api.user.dto.response.UserInfoResponseDto;
 import kr.co.api.user.repository.*;
-import kr.co.common.entity.standard.company.CompanyEntity;
-import kr.co.common.entity.standard.role.RoleEntity;
-import kr.co.common.entity.user.EmailVerificationEntity;
-import kr.co.common.entity.user.UserEntity;
-import kr.co.common.entity.user.UserVoteCountEntity;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import kr.co.common.util.CryptoUtil;
@@ -26,8 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 import static kr.co.common.enums.BusinessCode.*;
 import static kr.co.common.enums.CodeEnum.AUTHENTICATION_ERROR;
@@ -57,9 +49,9 @@ public class UserService {
 
         Email emailObject = Email.of(email);
 
-        UserEntity userEntity = userRepository.selectByEmail(emailObject.getValue());
+        UserInfoDto userInfoDto = userRepository.selectByEmail(emailObject.getValue());
 
-        if (userEntity != null) {
+        if (userInfoDto != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
         }
         
@@ -69,11 +61,12 @@ public class UserService {
     /**
      * 닉네임 중복 확인
      */
-    public void checkNicknameDuplicate(String nickname) {
+    public void checkNicknameDuplicate(String nicknameValue) {
 
-        Nickname nicknameObject = Nickname.of(nickname);
-        UserEntity userEntity = userRepository.selectByNickname(nicknameObject.getValue());
-        if (userEntity != null) {
+        Nickname nickname =  Nickname.of(nicknameValue);
+
+        UserInfoDto userInfoDto = userRepository.selectByNickname(nickname.getValue());
+        if (userInfoDto != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
         }
 
@@ -85,6 +78,16 @@ public class UserService {
      */
     @Transactional
     public void createUser(UserRegistrationDto userRegistrationDto) {
+        // 기본 조회
+        Role defaultRole = roleRepository.selectDefaultRole();
+        if (defaultRole == null) {
+            throw new PetCrownException(MISSING_REQUIRED_VALUE);
+        }
+
+        Company defaultCompany = companyRepository.selectDefaultCompany();
+        if (defaultCompany == null) {
+            throw new PetCrownException(MISSING_REQUIRED_VALUE);
+        }
 
         // CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
         User user = User.createUserByEmail(
@@ -92,18 +95,20 @@ public class UserService {
                 userRegistrationDto.getName(),
                 userRegistrationDto.getNickname(),
                 userRegistrationDto.getPassword(),
-                userRegistrationDto.getPasswordCheck()
+                userRegistrationDto.getPasswordCheck(),
+                defaultRole,
+                defaultCompany
         );
 
         // 이메일 검증
-        UserEntity emailUserEntity = userRepository.selectByEmail(user.getEmail().getValue());
-        if (emailUserEntity != null) {
+        UserInfoDto userEmailInfoDto = userRepository.selectByEmail(user.getEmail().getValue());
+        if (userEmailInfoDto != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_EMAIL);
         }
 
         // 닉네임 검증
-        UserEntity nicknameUserEntity = userRepository.selectByNickname(user.getNickname().getValue());
-        if (nicknameUserEntity != null) {
+        UserInfoDto userInfoDto = userRepository.selectByNickname(user.getNickname().getValue());
+        if (userInfoDto != null) {
             throw new PetCrownException(BusinessCode.DUPLICATE_NICKNAME);
         }
 
@@ -112,74 +117,22 @@ public class UserService {
         User encodedPasswordUser = user.withEncodedPassword(encodedPassword);
 
         // 사용자 저장
-        // 기본 조회
-        RoleEntity defaultRole = roleRepository.selectDefaultRole();
-        if (defaultRole == null) {
-            throw new PetCrownException(MISSING_REQUIRED_VALUE);
-        }
+        User saveUser = userRepository.insertUser(encodedPasswordUser);
+        log.debug("Saved userId ==> {}", saveUser.getUserId());
 
-        CompanyEntity defaultCompany = companyRepository.selectDefaultCompany();
-        if (defaultCompany == null) {
-            throw new PetCrownException(MISSING_REQUIRED_VALUE);
-        }
-
-        // Domain → Entity 변환 (생성자 직접 호출)
-        UserEntity userEntity = new UserEntity(
-                encodedPasswordUser.getUserId(),  // userId
-                encodedPasswordUser.getEmail().getValue(),  // email
-                encodedPasswordUser.getUserUuid(),  // userUuid
-                encodedPasswordUser.getPassword().getValue(),  // password
-                defaultRole.getRoleId(),  // roleId
-                encodedPasswordUser.getName().getValue(),  // name
-                encodedPasswordUser.getNickname().getValue(),  // nickname
-                encodedPasswordUser.getPhoneNumber() != null ? encodedPasswordUser.getPhoneNumber().getValue() : null,  // phoneNumber
-                encodedPasswordUser.getBirthDate(),  // birthDate
-                encodedPasswordUser.getGender() != null ? encodedPasswordUser.getGender().getValue() : null,  // gender
-                null,  // height
-                null,  // weight
-                "EMAIL",  // loginType
-                encodedPasswordUser.getEmail().getValue(),  // loginId
-                "N",  // isEmailVerified
-                "N",  // isPhoneNumberVerified
-                defaultCompany.getCompanyId(),  // companyId
-                null,  // description
-                null,  // profileImageUrl
-                LocalDateTime.now(),  // createDate
-                encodedPasswordUser.getUserId(),  // createUserId
-                LocalDateTime.now(),  // updateDate
-                encodedPasswordUser.getUserId(),  // updateUserId
-                null,  // deleteDate
-                null   // deleteUserId
-        );
-
-        Long userId = userRepository.insertUser(userEntity);
-        log.debug("Saved userId ==> {}", userId);
-
-        User savedUser = encodedPasswordUser.withUserId(userId);
 
         // 이메일 인증 코드 생성
-        EmailVerification emailVerification = EmailVerification.createForRegistration(savedUser);
+        EmailVerification emailVerification = EmailVerification.createForRegistration(saveUser);
 
-        // EmailVerification을 Entity로 변환 (생성자 직접 호출)
-        EmailVerificationEntity emailVerificationEntity = new EmailVerificationEntity(
-                emailVerification.getEmailVerificationId(),  // emailVerificationId
-                emailVerification.getUserId(),  // userId
-                emailVerification.getVerificationCode(),  // verificationCode
-                emailVerification.getExpiresDate(),  // expiresDate
-                LocalDateTime.now(),  // createDate
-                savedUser.getUserId(),  // createUserId
-                LocalDateTime.now(),  // updateDate
-                savedUser.getUserId()  // updateUserId
-        );
 
         // 이메일 인증코드 저장
-        emailVerificationRepository.insertEmailVerification(emailVerificationEntity);
+        emailVerificationRepository.insertEmailVerification(emailVerification);
         log.debug("Email verification code generated and saved for: {}", user.getEmail().getValue());
 
 
         // 사용자 투표 카운트 초기화
-        UserVoteCountEntity userVoteCountEntity = new UserVoteCountEntity(savedUser.getUserId());
-        userVoteCountRepository.insertUserVoteCount(userVoteCountEntity);
+        UserVoteCount userVoteCount = UserVoteCount.createForRegistration(saveUser);
+        userVoteCountRepository.insertUserVoteCount(userVoteCount);
 
         // 이메일 인증 코드 발송
         emailService.sendVerificationEmailAsync(user.getEmail().getValue(), emailVerification.getVerificationCode());
@@ -192,8 +145,8 @@ public class UserService {
     @Transactional
     public void verifyEmailCode(String email, String code) {
 
-        User user = User.ofEmail(email);
-        EmailVerificationCodeDto emailVerificationCodeDto = emailVerificationRepository.selectEmailCodeByEmail(user.getEmail().getValue());
+        Email emailObject = Email.of(email);
+        EmailVerificationCodeDto emailVerificationCodeDto = emailVerificationRepository.selectEmailCodeByEmail(emailObject.getValue());
 
         // 존재하는 이메일인지 검증
         if(emailVerificationCodeDto == null) {
@@ -205,17 +158,14 @@ public class UserService {
             throw new PetCrownException(ALREADY_VERIFIED);
         }
 
-        // 유저 객체 생성
-        User withUser = user.withUserId(emailVerificationCodeDto.getUserId());
-
         // 이메일 검증 객체 생성
-        EmailVerification verifacationCode = EmailVerification.createVerifacationCode(emailVerificationCodeDto.getEmailVerificationId(), withUser, emailVerificationCodeDto.getVerificationCode(), emailVerificationCodeDto.getExpiresDate());
+        EmailVerification verifacationCode = EmailVerification.createVerifacationCode(emailVerificationCodeDto.getEmailVerificationId(), null, emailVerificationCodeDto.getVerificationCode(), emailVerificationCodeDto.getExpiresDate());
 
         // 코드 검증
         verifacationCode.verifyCode(code);
 
         // 검증 끝나면 검증 완료로 업데이트
-        userRepository.updateEmailVerificationStatus(verifacationCode.getUserId());
+        userRepository.updateEmailVerificationStatus(emailVerificationCodeDto.getUserId());
 
 
     }
@@ -229,21 +179,19 @@ public class UserService {
         Email email = Email.of(emailValue);
 
         // 이메일로 가입 사용자인지 이메일로 검증
-        UserEntity emailUserEntity = userRepository.selectByEmail(email.getValue());
-        if (emailUserEntity == null) {
+        UserInfoDto userInfoDto = userRepository.selectByEmail(email.getValue());
+        if (userInfoDto == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
-        User user = User.ofId(emailUserEntity.getUserId());
-
         // 이메일 인증 코드 생성
-        EmailVerification emailVerification = EmailVerification.createForRegistration(user);
+        EmailVerification emailVerification = EmailVerification.createForRegistration();
 
         // 이메일 인증코드를 새 인증코드로 수정
-        emailVerificationRepository.updateVerificationNewCode(emailVerification.getUserId(), emailVerification.getVerificationCode(), emailVerification.getExpiresDate());
+        emailVerificationRepository.updateVerificationNewCode(userInfoDto.getUserId(), emailVerification.getVerificationCode(), emailVerification.getExpiresDate());
 
         // 이메일 인증 코드 발송
-        emailService.sendVerificationEmailAsync(emailUserEntity.getEmail(), emailVerification.getVerificationCode());
+        emailService.sendVerificationEmailAsync(userInfoDto.getEmail(), emailVerification.getVerificationCode());
     }
 
     /**
@@ -254,36 +202,24 @@ public class UserService {
         Email email = Email.of(emailValue);
 
         // 이메일로 가입 사용자인지 이메일로 검증
-        UserEntity emailUserEntity = userRepository.selectByEmail(email.getValue());
-        if (emailUserEntity == null) {
+        UserInfoDto userInfoDto = userRepository.selectByEmail(email.getValue());
+        if (userInfoDto == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
-        // Entity → Domain 변환 (정적 팩토리 메서드 사용)
-        User userDomain = User.getUserAllFiled(
-                emailUserEntity.getUserId(),
-                Email.of(emailUserEntity.getEmail()),
-                emailUserEntity.getUserUuid(),
-                kr.co.api.user.domain.vo.UserName.of(emailUserEntity.getName()),
-                Nickname.of(emailUserEntity.getNickname()),
-                Password.of(emailUserEntity.getPassword()),
-                Role.ofId(emailUserEntity.getRoleId()),  // role
-                emailUserEntity.getPhoneNumber() != null ? kr.co.api.user.domain.vo.PhoneNumber.of(emailUserEntity.getPhoneNumber()) : null,
-                emailUserEntity.getBirthDate(),
-                emailUserEntity.getGender() != null ? kr.co.api.user.domain.vo.Gender.of(emailUserEntity.getGender()) : null,
-                emailUserEntity.getLoginType(),  // loginType
-                emailUserEntity.getLoginId(),
-                emailUserEntity.getIsEmailVerified(),
-                emailUserEntity.getIsPhoneNumberVerified(),
-                Company.ofId(emailUserEntity.getCompanyId()),  // company
-                emailUserEntity.getHeight(),
-                emailUserEntity.getWeight(),
-                emailUserEntity.getDescription()
+        // Entity → Domain 변환 (내부에서 이메일 검증 확인)
+        User userDomain = User.loginUser(
+                userInfoDto.getUserId(),
+                userInfoDto.getEmail(),
+                userInfoDto.getPassword(),
+                userInfoDto.getName(),
+                userInfoDto.getNickname(),
+                userInfoDto.getPhoneNumber(),
+                userInfoDto.getProfileImageUrl(),
+                userInfoDto.getBirthDate(),
+                userInfoDto.getGender(),
+                userInfoDto.getIsEmailVerified()
         );
-
-        // 이메일 검증된 사용자인지 검증
-        userDomain.validateEmailVerified();
-
 
         // 비밀번호 확인
         if (!passwordEncoder.matches(password, userDomain.getPassword().getValue())) {
@@ -301,30 +237,23 @@ public class UserService {
         // 리프레시 토큰발행
         String refreshToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(userDomain.getUserId(), jwtProperty.getExpiredRefreshTime(), "refresh"),jwtProperty.getTokenRefreshDecryptKey());
 
-        return new LoginTokenDto(accessToken, refreshToken);
+
+        return new LoginTokenDto(
+                accessToken,
+                refreshToken
+        );
     }
 
     /**
      * 사용자 정보 조회
      */
     public UserInfoDto getUserInfo(Long userId) {
-        UserEntity userEntity = userRepository.selectByUserId(userId);
-        if (userEntity == null) {
+        UserInfoDto userInfoDto = userRepository.selectByUserId(userId);
+        if (userInfoDto == null) {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
-        // UserEntity → UserInfoDto 변환 (생성자 직접 호출)
-        return new UserInfoDto(
-                userEntity.getUserId(),
-                userEntity.getEmail(),
-                userEntity.getName(),
-                userEntity.getNickname(),
-                userEntity.getPhoneNumber(),
-                userEntity.getProfileImageUrl(),
-                userEntity.getBirthDate(),
-                userEntity.getGender(),
-                userEntity.getIsEmailVerified()
-        );
+        return userInfoDto;
     }
 
     /**
@@ -384,8 +313,10 @@ public class UserService {
         String newRefreshToken = CryptoUtil.encrypt(jwtUtil.makeAuthToken(userId, jwtProperty.getExpiredRefreshTime(), "refresh"),jwtProperty.getTokenRefreshDecryptKey());
 
 
-
-        return new LoginTokenDto(newAccessToken, newRefreshToken);
+        return new LoginTokenDto(
+                newAccessToken,
+                newRefreshToken
+        );
     }
     
 
@@ -397,43 +328,35 @@ public class UserService {
     public void updateUserInfo(UserUpdateDto userUpdateDto) {
 
         // 기존 사용자 조회
-        UserEntity existingUser = userRepository.selectByUserId(userUpdateDto.getUserId());
+        UserInfoDto existingUser = userRepository.selectByUserId(userUpdateDto.getUserId());
         if (existingUser == null) {
             throw new PetCrownException(MEMBER_NOT_FOUND);
         }
 
         // 닉네임 변경시 중복 검사 (기존 닉네임과 다른 경우에만)
         if (!existingUser.getNickname().equals(userUpdateDto.getNickname())) {
-            UserEntity duplicateUser = userRepository.selectByNickname(userUpdateDto.getNickname());
-            if (duplicateUser != null) {
+            UserInfoDto userInfoDto = userRepository.selectByNickname(userUpdateDto.getNickname());
+            if (userInfoDto != null) {
                 throw new PetCrownException(DUPLICATE_NICKNAME);
             }
         }
 
-        // 사용자 정보 업데이트
-        userRepository.updateUserInfo(userUpdateDto);
+        // 내부용 Dto → Domain 변환 (정적 팩토리 메서드 사용)
+        User userToUpdate = User.forUpdate(
+                userUpdateDto.getUserId(),
+                userUpdateDto.getName(),
+                userUpdateDto.getNickname(),
+                userUpdateDto.getPhoneNumber(),
+                userUpdateDto.getBirthDate(),
+                userUpdateDto.getGender()
+        );
+
+        // 사용자 정보 업데이트 (도메인으로 전달)
+        userRepository.updateUserInfo(userToUpdate);
 
         log.info("User info updated successfully: userId={}", userUpdateDto.getUserId());
     }
 
-    /**
-     * 로컬 환경인지 확인하는 메서드
-     */
-    private boolean isLocalEnvironment() {
-        // 현재 활성 프로파일이 local이거나 dev인 경우 또는 서버 포트가 8080인 경우
-        String[] activeProfiles = org.springframework.core.env.Environment.class.isInstance(this) ? 
-            new String[0] : System.getProperty("spring.profiles.active", "").split(",");
-        
-        for (String profile : activeProfiles) {
-            if ("local".equals(profile.trim()) || "dev".equals(profile.trim())) {
-                return true;
-            }
-        }
-        
-        // 포트 8080으로 실행 중인지 확인
-        String serverPort = System.getProperty("server.port", "8080");
-        return "8080".equals(serverPort);
-    }
 
     /**
      * 비밀번호 변경
@@ -442,28 +365,30 @@ public class UserService {
     public void updatePassword(PasswordUpdateDto passwordUpdateDto) {
 
         // 기존 사용자 조회
-        UserEntity existingUser = userRepository.selectByUserId(passwordUpdateDto.getUserId());
+        UserInfoDto existingUser = userRepository.selectByUserId(passwordUpdateDto.getUserId());
         if (existingUser == null) {
             throw new PetCrownException(MEMBER_NOT_FOUND);
         }
 
-        // 현재 비밀번호 VO 생성 및 검증
-        Password currentPassword = Password.of(passwordUpdateDto.getCurrentPassword());
-        if (!passwordEncoder.matches(currentPassword.getValue(), existingUser.getPassword())) {
+        // 현재 비밀번호 검증
+        if (!passwordEncoder.matches(passwordUpdateDto.getCurrentPassword(), existingUser.getPassword())) {
             throw new PetCrownException(INVALID_PASSWORD_ERROR);
         }
 
         // 새 비밀번호 VO 생성 (비밀번호 확인 포함 - VO에서 검증됨)
         Password newPassword = Password.createPasswordCheck(
-                passwordUpdateDto.getNewPassword(), 
+                passwordUpdateDto.getNewPassword(),
                 passwordUpdateDto.getNewPasswordConfirm()
         );
 
         // 새 비밀번호 암호화
         String encodedNewPassword = passwordEncoder.encode(newPassword.getValue());
 
-        // 비밀번호 업데이트
-        userRepository.updatePassword(passwordUpdateDto.getUserId(), encodedNewPassword);
+        // 내부용 Dto → Domain 변환 (정적 팩토리 메서드 사용)
+        User userToUpdate = User.forPasswordUpdate(passwordUpdateDto.getUserId(), encodedNewPassword);
+
+        // 비밀번호 업데이트 (도메인으로 전달)
+        userRepository.updatePassword(userToUpdate);
 
         log.info("Password updated successfully: userId={}", passwordUpdateDto.getUserId());
     }
@@ -475,13 +400,13 @@ public class UserService {
     public void resetPassword(PasswordResetDto passwordResetDto) {
 
         // 이메일, 이름으로 사용자 조회
-        UserEntity userEntity = userRepository.selectByEmailAndName(
+        UserInfoDto userInfoDto = userRepository.selectByEmailAndName(
                 passwordResetDto.getEmail(),
                 passwordResetDto.getName()
         );
 
         // 사용자 정보가 없으면 예외
-        if (userEntity == null) {
+        if (userInfoDto == null) {
             throw new PetCrownException(MEMBER_NOT_FOUND);
         }
 
@@ -491,13 +416,16 @@ public class UserService {
         // 임시 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(temporaryPassword);
 
-        // 비밀번호 업데이트
-        userRepository.updatePassword(userEntity.getUserId(), encodedPassword);
+        // 내부용 Dto → Domain 변환 (정적 팩토리 메서드 사용)
+        User userToUpdate = User.forPasswordUpdate(userInfoDto.getUserId(), encodedPassword);
+
+        // 비밀번호 업데이트 (도메인으로 전달)
+        userRepository.updatePassword(userToUpdate);
 
         // 임시 비밀번호 이메일 발송
-        emailService.sendTemporaryPasswordEmailAsync(userEntity.getEmail(), temporaryPassword);
+        emailService.sendTemporaryPasswordEmailAsync(userInfoDto.getEmail(), temporaryPassword);
 
-        log.info("Temporary password issued successfully: email={}", userEntity.getEmail());
+        log.info("Temporary password issued successfully: email={}", userInfoDto.getEmail());
     }
 
     /**
@@ -509,14 +437,13 @@ public class UserService {
     public void deleteUser(UserDeletionDto userDeletionDto) {
 
         // 기존 사용자 조회
-        UserEntity existingUser = userRepository.selectByUserId(userDeletionDto.getUserId());
+        UserInfoDto existingUser = userRepository.selectByUserId(userDeletionDto.getUserId());
         if (existingUser == null) {
             throw new PetCrownException(MEMBER_NOT_FOUND);
         }
 
         // 비밀번호 검증
-        Password password = Password.of(userDeletionDto.getPassword());
-        if (!passwordEncoder.matches(password.getValue(), existingUser.getPassword())) {
+        if (!passwordEncoder.matches(userDeletionDto.getPassword(), existingUser.getPassword())) {
             throw new PetCrownException(INVALID_PASSWORD_ERROR);
         }
 
@@ -524,16 +451,16 @@ public class UserService {
         petRepository.deleteAllPetsByUserId(userDeletionDto.getUserId(), userDeletionDto.getUserId());
         log.info("All pets deleted for user: userId={}", userDeletionDto.getUserId());
 
-        // 2. 암호화된 비밀번호를 dto에 포함시켜 소프트 삭제 수행
-        UserDeletionDto deletionDtoWithEncodedPassword = new UserDeletionDto(
+        // 2. 내부용 Dto → Domain 변환 (정적 팩토리 메서드 사용, 암호화된 비밀번호 사용)
+        User userToDelete = User.forDeletion(
                 userDeletionDto.getUserId(),
                 userDeletionDto.getEmail(),
                 userDeletionDto.getName(),
                 existingUser.getPassword() // 이미 암호화된 비밀번호
         );
 
-        // 3. userId, email, name, password 모두 일치하는 경우에만 소프트 삭제
-        int deletedCount = userRepository.softDeleteUser(deletionDtoWithEncodedPassword);
+        // 3. userId, email, name, password 모두 일치하는 경우에만 소프트 삭제 (도메인으로 전달)
+        int deletedCount = userRepository.softDeleteUser(userToDelete);
 
         if (deletedCount == 0) {
             // 조건이 하나라도 일치하지 않으면 삭제 실패
@@ -542,36 +469,5 @@ public class UserService {
 
         log.info("User soft deleted successfully: userId={}, email={}", userDeletionDto.getUserId(), userDeletionDto.getEmail());
     }
-//
-//    // ========================
-//    // 비즈니스 로직 메서드들
-//    // ========================
-//
-//    /**
-//     * 사용자 등록 검증
-//     */
-//    private void validateUserRegistration(User user) {
-//        if (user == null) {
-//            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
-//        }
-//
-//        // 필수 값 검증 (도메인 객체에서 처리할 수 있는 것들은 도메인에서 처리)
-////        user.validateRequiredFields();
-//    }
-//
-//    /**
-//     * 사용자 업데이트 검증
-//     */
-//    private void validateUserUpdate(User existingUser, User updatedUser) {
-//        if (existingUser == null || updatedUser == null) {
-//            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
-//        }
-//
-//        if (!existingUser.getUserId().equals(updatedUser.getUserId())) {
-//            throw new PetCrownException(BusinessCode.INVALID_USER_UPDATE);
-//        }
-//
-//        // 필수 값 검증
-////        updatedUser.validateRequiredFields();
-//    }
+
 }

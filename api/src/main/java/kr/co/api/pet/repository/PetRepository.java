@@ -1,11 +1,11 @@
 package kr.co.api.pet.repository;
 
+import kr.co.api.pet.domain.Pet;
 import kr.co.api.pet.dto.command.BreedInfoDto;
 import kr.co.api.pet.dto.command.PetInfoDto;
 import kr.co.api.pet.dto.command.PetRegistrationDto;
 import kr.co.api.pet.dto.command.PetUpdateDto;
 import kr.co.api.pet.dto.command.SpeciesInfoDto;
-import kr.co.common.entity.pet.PetEntity;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -47,24 +47,24 @@ public class PetRepository {
     /**
      * 펫 등록 (Entity 기반) - 생성된 petId 반환
      */
-    public Long insertPetEntity(PetEntity petEntity) {
+    public Long insertPetEntity(Pet pet) {
         return dsl.insertInto(PET)
-                .set(PET.BREED_ID, petEntity.getBreedId() != null ? petEntity.getBreedId().longValue() : null)
-                .set(PET.CUSTOM_BREED, petEntity.getCustomBreed())
-                .set(PET.OWNERSHIP_ID, petEntity.getOwnershipId() != null ? petEntity.getOwnershipId().longValue() : null)
-                .set(PET.USER_ID, petEntity.getUserId())
-                .set(PET.NAME, petEntity.getName())
-                .set(PET.BIRTH_DATE, petEntity.getBirthDate())
-                .set(PET.GENDER, petEntity.getGender())
-                .set(PET.WEIGHT, petEntity.getWeight() != null ? BigDecimal.valueOf(petEntity.getWeight()) : null)
-                .set(PET.HEIGHT, petEntity.getHeight() != null ? BigDecimal.valueOf(petEntity.getHeight()) : null)
-                .set(PET.IS_NEUTERED, petEntity.getIsNeutered())
-                .set(PET.MICROCHIP_ID, petEntity.getMicrochipId())
-                .set(PET.DESCRIPTION, petEntity.getDescription())
-                .set(PET.CREATE_DATE, petEntity.getCreateDate())
-                .set(PET.CREATE_USER_ID, petEntity.getCreateUserId())
-                .set(PET.UPDATE_DATE, petEntity.getUpdateDate())
-                .set(PET.UPDATE_USER_ID, petEntity.getUpdateUserId())
+                .set(PET.BREED_ID, pet.getBreed() != null ? pet.getBreed().getBreedId() : (Long) null)
+                .set(PET.CUSTOM_BREED, pet.getCustomBreed())
+                .set(PET.OWNERSHIP_ID, pet.getOwnership() != null ? pet.getOwnership().getOwnershipId() :(Long) null)
+                .set(PET.USER_ID, pet.getUserId())
+                .set(PET.NAME, pet.getName().getValue())
+                .set(PET.BIRTH_DATE, pet.getBirthDate())
+                .set(PET.GENDER, pet.getGender().getCode())
+                .set(PET.WEIGHT, pet.getWeight())
+                .set(PET.HEIGHT, pet.getHeight())
+                .set(PET.IS_NEUTERED, pet.getIsNeutered())
+                .set(PET.MICROCHIP_ID, pet.getMicrochipId())
+                .set(PET.DESCRIPTION, pet.getDescription())
+                .set(PET.CREATE_DATE, currentLocalDateTime())
+                .set(PET.CREATE_USER_ID, pet.getUserId())
+                .set(PET.UPDATE_DATE, currentLocalDateTime())
+                .set(PET.UPDATE_USER_ID, pet.getUserId())
                 .returningResult(PET.PET_ID)
                 .fetchOne()
                 .getValue(PET.PET_ID);
@@ -187,24 +187,24 @@ public class PetRepository {
     /**
      * 펫 정보 수정 (Entity 기반)
      */
-    public void updatePetEntity(PetEntity petEntity) {
+    public void updatePetEntity(Pet pet) {
         dsl.update(PET)
-                .set(PET.BREED_ID, petEntity.getBreedId() != null ? petEntity.getBreedId().longValue() : null)
-                .set(PET.CUSTOM_BREED, petEntity.getCustomBreed())
-                .set(PET.OWNERSHIP_ID, petEntity.getOwnershipId() != null ? petEntity.getOwnershipId().longValue() : null)
-                .set(PET.NAME, petEntity.getName())
-                .set(PET.BIRTH_DATE, petEntity.getBirthDate())
-                .set(PET.GENDER, petEntity.getGender())
-                .set(PET.WEIGHT, petEntity.getWeight() != null ? BigDecimal.valueOf(petEntity.getWeight()) : null)
-                .set(PET.HEIGHT, petEntity.getHeight() != null ? BigDecimal.valueOf(petEntity.getHeight()) : null)
-                .set(PET.IS_NEUTERED, petEntity.getIsNeutered())
-                .set(PET.MICROCHIP_ID, petEntity.getMicrochipId())
-                .set(PET.DESCRIPTION, petEntity.getDescription())
-                .set(PET.UPDATE_DATE, petEntity.getUpdateDate())
-                .set(PET.UPDATE_USER_ID, petEntity.getUpdateUserId())
+                .set(PET.BREED_ID, pet.getBreed() != null ? pet.getBreed().getBreedId() : (Long)null)
+                .set(PET.CUSTOM_BREED, pet.getCustomBreed())
+                .set(PET.OWNERSHIP_ID, pet.getOwnership() != null ? pet.getOwnership().getOwnershipId(): (Long)null)
+                .set(PET.NAME, pet.getName().getValue())
+                .set(PET.BIRTH_DATE, pet.getBirthDate())
+                .set(PET.GENDER, pet.getGender().getCode())
+                .set(PET.WEIGHT, pet.getWeight())
+                .set(PET.HEIGHT, pet.getHeight())
+                .set(PET.IS_NEUTERED, pet.getIsNeutered())
+                .set(PET.MICROCHIP_ID, pet.getMicrochipId())
+                .set(PET.DESCRIPTION, pet.getDescription())
+                .set(PET.UPDATE_DATE, currentLocalDateTime())
+                .set(PET.UPDATE_USER_ID, pet.getUserId())
                 .where(
-                        PET.PET_ID.eq(petEntity.getPetId())
-                                .and(PET.USER_ID.eq(petEntity.getUserId()))
+                        PET.PET_ID.eq(pet.getPetId())
+                                .and(PET.USER_ID.eq(pet.getUserId()))
                                 .and(PET.DELETE_DATE.isNull())
                 )
                 .execute();

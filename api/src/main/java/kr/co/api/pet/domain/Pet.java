@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Period;
 
@@ -16,20 +17,20 @@ import java.time.Period;
 @Getter
 public class Pet {
 
-    private Long petId;
-    private Breed breed;
-    private String customBreed;
-    private Ownership ownership;
-    private User user;
-    private PetName name;
-    private LocalDate birthDate;
-    private PetGender gender;
-    private Weight weight;
-    private Height height;
-    private String isNeutered;
-    private String profileImageUrl;
-    private String microchipId;
-    private String description;
+    private final Long petId;
+    private final Breed breed;
+    private final String customBreed;
+    private final Ownership ownership;
+    private final User user;
+    private final PetName name;
+    private final LocalDate birthDate;
+    private final PetGender gender;
+    private final Weight weight;
+    private final Height height;
+    private final String isNeutered;
+    private final String profileImageUrl;
+    private final String microchipId;
+    private final String description;
 
 
     /**
@@ -83,52 +84,8 @@ public class Pet {
         }
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
-    
-    /**
-     * 강아지 여부 확인 (1살 미만)
-     */
-    public boolean isPuppy() {
-        return getAge() < 1;
-    }
-    
-    /**
-     * 시니어 여부 확인 (7살 이상)
-     */
-    public boolean isSenior() {
-        return getAge() >= 7;
-    }
-    
-    /**
-     * 중성화 여부 확인
-     */
-    public boolean isNeutered() {
-        return "Y".equals(isNeutered);
-    }
-    
-    /**
-     * 펫 정보 업데이트
-     */
-    public void updatePetInfo(PetName name, PetGender gender, Weight weight, Height height, String description) {
-        this.name = name;
-        this.gender = gender;
-        this.weight = weight;
-        this.height = height;
-        this.description = description;
-    }
-    
-    /**
-     * 프로필 이미지 업데이트
-     */
-    public void updateProfileImage(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
-    }
-    
-    /**
-     * 중성화 상태 업데이트
-     */
-    public void updateNeuteredStatus(boolean isNeutered) {
-        this.isNeutered = isNeutered ? "Y" : "N";
-    }
+
+
     
     /**
      * 펫 기본 정보 업데이트 (품종, 이름, 생년월일, 성별, 설명, 마이크로칩 ID)
@@ -186,12 +143,18 @@ public class Pet {
     public Double getWeightValue() {
         return weight != null ? weight.getDoubleValue() : null;
     }
+    public BigDecimal getWeight() {
+        return weight != null ? weight.getValue() : null;
+    }
     
     /**
      * 키 값 반환 (기존 호환성을 위해)
      */
     public Double getHeightValue() {
         return height != null ? height.getDoubleValue() : null;
+    }
+    public BigDecimal getHeight() {
+        return height != null ? height.getValue() : null;
     }
 
     /**

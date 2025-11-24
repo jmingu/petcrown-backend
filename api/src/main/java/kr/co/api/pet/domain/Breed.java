@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 
 @AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 @Getter
 public class Breed {
     private Integer breedId;
@@ -14,6 +13,7 @@ public class Breed {
     private Species species;
 
     private String name;
+
 
 
     /**

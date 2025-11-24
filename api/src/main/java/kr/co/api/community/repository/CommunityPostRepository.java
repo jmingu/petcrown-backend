@@ -1,8 +1,8 @@
 package kr.co.api.community.repository;
 
+import kr.co.api.community.domain.CommunityPost;
+import kr.co.api.community.dto.command.CommunityPostQueryDto;
 import kr.co.api.community.dto.command.CommunityPostUpdateDto;
-import kr.co.common.entity.community.CommunityPostEntity;
-import kr.co.common.entity.community.CommunityPostQueryDto;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -22,23 +22,23 @@ public class CommunityPostRepository {
     /**
      * 커뮤니티 게시글 저장 (생성된 postId 반환)
      */
-    public Long insertPost(CommunityPostEntity post) {
+    public Long insertPost(CommunityPost post) {
         return dsl.insertInto(COMMUNITY_POST)
-                .set(COMMUNITY_POST.USER_ID, post.getUserId())
+                .set(COMMUNITY_POST.USER_ID, post.getUser().getUserId())
                 .set(COMMUNITY_POST.CATEGORY, post.getCategory() != null ?
                         kr.co.common.jooq.enums.CommunityCategoryEnum.valueOf(post.getCategory()) : null)
-                .set(COMMUNITY_POST.TITLE, post.getTitle())
-                .set(COMMUNITY_POST.CONTENT, post.getContent())
-                .set(COMMUNITY_POST.CONTENT_TYPE, post.getContentType())
+                .set(COMMUNITY_POST.TITLE, post.getTitle() != null ? post.getTitle().getValue() : null)
+                .set(COMMUNITY_POST.CONTENT, post.getContent() != null ? post.getContent().getValue() : null)
+                .set(COMMUNITY_POST.CONTENT_TYPE, post.getContentType() != null ? post.getContentType().getValue() : null)
                 .set(COMMUNITY_POST.VIEW_COUNT, post.getViewCount())
                 .set(COMMUNITY_POST.LIKE_COUNT, post.getLikeCount())
                 .set(COMMUNITY_POST.COMMENT_COUNT, post.getCommentCount())
                 .set(COMMUNITY_POST.IS_PINNED, post.getIsPinned())
                 .set(COMMUNITY_POST.PIN_ORDER, post.getPinOrder())
                 .set(COMMUNITY_POST.CREATE_DATE, currentLocalDateTime())
-                .set(COMMUNITY_POST.CREATE_USER_ID, post.getCreateUserId())
+                .set(COMMUNITY_POST.CREATE_USER_ID, post.getCreateUser().getUserId())
                 .set(COMMUNITY_POST.UPDATE_DATE, currentLocalDateTime())
-                .set(COMMUNITY_POST.UPDATE_USER_ID, post.getCreateUserId())
+                .set(COMMUNITY_POST.UPDATE_USER_ID, post.getCreateUser().getUserId())
                 .returningResult(COMMUNITY_POST.POST_ID)
                 .fetchOne()
                 .getValue(COMMUNITY_POST.POST_ID);

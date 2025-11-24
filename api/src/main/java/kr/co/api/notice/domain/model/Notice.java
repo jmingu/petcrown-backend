@@ -103,4 +103,22 @@ public class Notice {
     public boolean isPinned() {
         return "Y".equals(this.isPinned);
     }
+
+    /**
+     * ID가 설정된 새 객체 반환 (불변성 유지)
+     */
+    public Notice withId(Long noticeId) {
+        return new Notice(
+            noticeId,
+            this.title,
+            this.content,
+            this.contentType,
+            this.isPinned,
+            this.pinOrder,
+            this.startDate,
+            this.endDate,
+            this.viewCount,
+            this.createUserId
+        );
+    }
 }

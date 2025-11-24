@@ -88,4 +88,20 @@ public class Event {
 
         return true;
     }
+
+    /**
+     * ID가 설정된 새 객체 반환 (불변성 유지)
+     */
+    public Event withId(Long eventId) {
+        return new Event(
+            eventId,
+            this.title,
+            this.content,
+            this.contentType,
+            this.startDate,
+            this.endDate,
+            this.viewCount,
+            this.createUserId
+        );
+    }
 }

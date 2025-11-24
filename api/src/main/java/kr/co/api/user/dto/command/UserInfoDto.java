@@ -11,6 +11,7 @@ public class UserInfoDto {
 
     private final Long userId;
     private final String email;
+    private final String password;
     private final String name;
     private final String nickname;
     private final String phoneNumber;

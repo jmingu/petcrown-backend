@@ -1,40 +1,38 @@
 package kr.co.api.vote.domain;
 
+import kr.co.api.user.domain.model.User;
+import kr.co.api.user.domain.vo.Email;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.time.LocalDate;
-
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class VotingEmail {
 
-    private final String emailAddress;
+    private final Email email;
     private final boolean isMember;
-    private final Long userId;
+    private final User user;
 
     /**
      * 회원 이메일로 생성
      */
     public static VotingEmail createForMember(String emailAddress, Long userId) {
-        validateEmailAddress(emailAddress);
-        if (userId == null) {
-            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
-        }
+        Email email = Email.of(emailAddress);
+        User user = User.ofId(userId);
 
-        return new VotingEmail(emailAddress, true, userId);
+        return new VotingEmail(email, true, user);
     }
 
     /**
      * 비회원 이메일로 생성
      */
     public static VotingEmail createForGuest(String emailAddress) {
-        validateEmailAddress(emailAddress);
+        Email email = Email.of(emailAddress);
 
-        return new VotingEmail(emailAddress, false, null);
+        return new VotingEmail(email, false, null);
     }
 
     /**
@@ -59,7 +57,7 @@ public class VotingEmail {
             throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
         }
 
-        if (userId == null) {
+        if (user == null || user.getUserId() == null) {
             throw new PetCrownException(BusinessCode.INVALID_USER_UPDATE);
         }
     }
@@ -74,20 +72,6 @@ public class VotingEmail {
 
         if (!isTodayVerified) {
             throw new PetCrownException(BusinessCode.EMAIL_NOT_VERIFIED_TODAY);
-        }
-    }
-
-    /**
-     * 이메일 주소 유효성 검증
-     */
-    private static void validateEmailAddress(String emailAddress) {
-        if (emailAddress == null || emailAddress.trim().isEmpty()) {
-            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
-        }
-
-        // 간단한 이메일 형식 검증
-        if (!emailAddress.contains("@")) {
-            throw new PetCrownException(BusinessCode.INVALID_FORMAT);
         }
     }
 }

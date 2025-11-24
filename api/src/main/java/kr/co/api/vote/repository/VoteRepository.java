@@ -1,9 +1,9 @@
 package kr.co.api.vote.repository;
 
 import kr.co.api.vote.dto.command.VoteInfoDto;
-import kr.co.common.entity.vote.VoteFileInfoEntity;
-import kr.co.common.entity.vote.VoteMonthlyEntity;
-import kr.co.common.entity.vote.VoteWeeklyEntity;
+import kr.co.api.vote.dto.command.VoteFileInfoDto;
+import kr.co.api.vote.dto.command.VoteMonthlyDto;
+import kr.co.api.vote.dto.command.VoteWeeklyDto;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -25,17 +25,17 @@ public class VoteRepository {
     /**
      * Weekly 투표 등록
      */
-    public Long insertVoteWeekly(VoteWeeklyEntity voteWeeklyEntity) {
+    public Long insertVoteWeekly(kr.co.api.vote.domain.VoteWeekly voteWeekly) {
         return dsl.insertInto(VOTE_WEEKLY)
-                .set(VOTE_WEEKLY.WEEK_START_DATE, voteWeeklyEntity.getWeekStartDate())
-                .set(VOTE_WEEKLY.PET_ID, voteWeeklyEntity.getPetId())
-                .set(VOTE_WEEKLY.VOTE_COUNT, voteWeeklyEntity.getVoteCount())
-                .set(VOTE_WEEKLY.VIEW_COUNT, Long.valueOf(voteWeeklyEntity.getViewCount()))
-                .set(VOTE_WEEKLY.MODE_ID, voteWeeklyEntity.getModeId())
-                .set(VOTE_WEEKLY.CREATE_DATE, voteWeeklyEntity.getCreateDate())
-                .set(VOTE_WEEKLY.CREATE_USER_ID, voteWeeklyEntity.getCreateUserId())
-                .set(VOTE_WEEKLY.UPDATE_DATE, voteWeeklyEntity.getUpdateDate())
-                .set(VOTE_WEEKLY.UPDATE_USER_ID, voteWeeklyEntity.getUpdateUserId())
+                .set(VOTE_WEEKLY.WEEK_START_DATE, voteWeekly.getWeekStartDate())
+                .set(VOTE_WEEKLY.PET_ID, voteWeekly.getPet().getPetId())
+                .set(VOTE_WEEKLY.VOTE_COUNT, voteWeekly.getVoteCount())
+                .set(VOTE_WEEKLY.VIEW_COUNT, voteWeekly.getViewCount())
+                .set(VOTE_WEEKLY.MODE_ID, voteWeekly.getModeId())
+                .set(VOTE_WEEKLY.CREATE_DATE, currentLocalDateTime())
+                .set(VOTE_WEEKLY.CREATE_USER_ID, voteWeekly.getUser().getUserId())
+                .set(VOTE_WEEKLY.UPDATE_DATE, currentLocalDateTime())
+                .set(VOTE_WEEKLY.UPDATE_USER_ID, voteWeekly.getUser().getUserId())
                 .returningResult(VOTE_WEEKLY.VOTE_WEEKLY_ID)
                 .fetchOne(VOTE_WEEKLY.VOTE_WEEKLY_ID);
     }
@@ -43,65 +43,62 @@ public class VoteRepository {
     /**
      * Monthly 투표 등록
      */
-    public int insertVoteMonthly(VoteMonthlyEntity voteMonthlyEntity) {
-        Long voteMonthlyId = dsl.insertInto(VOTE_MONTHLY)
-                .set(VOTE_MONTHLY.MONTHLY_START_DATE, voteMonthlyEntity.getMonthStartDate())
-                .set(VOTE_MONTHLY.PET_ID, voteMonthlyEntity.getPetId())
-                .set(VOTE_MONTHLY.VOTE_COUNT, voteMonthlyEntity.getVoteCount())
-                .set(VOTE_MONTHLY.VIEW_COUNT, Long.valueOf(voteMonthlyEntity.getViewCount()))
-                .set(VOTE_MONTHLY.MODE_ID, voteMonthlyEntity.getModeId())
-                .set(VOTE_MONTHLY.CREATE_DATE, voteMonthlyEntity.getCreateDate())
-                .set(VOTE_MONTHLY.CREATE_USER_ID, voteMonthlyEntity.getCreateUserId())
-                .set(VOTE_MONTHLY.UPDATE_DATE, voteMonthlyEntity.getUpdateDate())
-                .set(VOTE_MONTHLY.UPDATE_USER_ID, voteMonthlyEntity.getUpdateUserId())
+    public Long insertVoteMonthly(VoteMonthlyDto voteMonthlyDto) {
+        return dsl.insertInto(VOTE_MONTHLY)
+                .set(VOTE_MONTHLY.MONTHLY_START_DATE, voteMonthlyDto.getMonthStartDate())
+                .set(VOTE_MONTHLY.PET_ID, voteMonthlyDto.getPetId())
+                .set(VOTE_MONTHLY.VOTE_COUNT, voteMonthlyDto.getVoteCount())
+                .set(VOTE_MONTHLY.VIEW_COUNT, voteMonthlyDto.getViewCount())
+                .set(VOTE_MONTHLY.MODE_ID, voteMonthlyDto.getModeId())
+                .set(VOTE_MONTHLY.CREATE_DATE, currentLocalDateTime())
+                .set(VOTE_MONTHLY.CREATE_USER_ID, 0L)
+                .set(VOTE_MONTHLY.UPDATE_DATE, currentLocalDateTime())
+                .set(VOTE_MONTHLY.UPDATE_USER_ID, 0L)
                 .returningResult(VOTE_MONTHLY.VOTE_MONTHLY_ID)
                 .fetchOne(VOTE_MONTHLY.VOTE_MONTHLY_ID);
-
-        return voteMonthlyId != null ? voteMonthlyId.intValue() : 0;
     }
 
     /**
      * 투표 파일 정보 등록
      */
-    public int insertVoteFileInfo(VoteFileInfoEntity voteFileInfoEntity) {
-        Long voteFileId = dsl.insertInto(VOTE_FILE_INFO)
-                .set(VOTE_FILE_INFO.REF_TABLE, kr.co.common.jooq.enums.RefTableEnum.valueOf(voteFileInfoEntity.getRefTable()))
-                .set(VOTE_FILE_INFO.REF_ID, voteFileInfoEntity.getRefId())
-                .set(VOTE_FILE_INFO.FILE_TYPE, kr.co.common.jooq.enums.FileTypeEnum.valueOf(voteFileInfoEntity.getFileType()))
-                .set(VOTE_FILE_INFO.SORT_ORDER, voteFileInfoEntity.getSortOrder())
-                .set(VOTE_FILE_INFO.FILE_URL, voteFileInfoEntity.getFileUrl())
-                .set(VOTE_FILE_INFO.FILE_SIZE, voteFileInfoEntity.getFileSize())
-                .set(VOTE_FILE_INFO.MIME_TYPE, voteFileInfoEntity.getMimeType())
-                .set(VOTE_FILE_INFO.FILE_NAME, voteFileInfoEntity.getFileName())
-                .set(VOTE_FILE_INFO.ORIGINAL_FILE_NAME, voteFileInfoEntity.getOriginalFileName())
-                .set(VOTE_FILE_INFO.CREATE_DATE, voteFileInfoEntity.getCreateDate())
-                .set(VOTE_FILE_INFO.CREATE_USER_ID, voteFileInfoEntity.getCreateUserId())
-                .set(VOTE_FILE_INFO.UPDATED_DATE, voteFileInfoEntity.getUpdatedDate())
-                .set(VOTE_FILE_INFO.UPDATE_USER_ID, voteFileInfoEntity.getUpdateUserId())
+    public Long insertVoteFileInfo(kr.co.api.vote.domain.VoteFileInfo voteFileInfo) {
+        return dsl.insertInto(VOTE_FILE_INFO)
+                .set(VOTE_FILE_INFO.REF_TABLE, kr.co.common.jooq.enums.RefTableEnum.vote_weekly)
+                .set(VOTE_FILE_INFO.REF_ID, voteFileInfo.getVoteWeekly().getVoteWeeklyId())
+                .set(VOTE_FILE_INFO.FILE_TYPE, kr.co.common.jooq.enums.FileTypeEnum.IMAGE)
+                .set(VOTE_FILE_INFO.SORT_ORDER, 1)
+                .set(VOTE_FILE_INFO.FILE_URL, voteFileInfo.getFileUrl())
+                .set(VOTE_FILE_INFO.FILE_SIZE, voteFileInfo.getFileSize())
+                .set(VOTE_FILE_INFO.MIME_TYPE, voteFileInfo.getMimeType())
+                .set(VOTE_FILE_INFO.FILE_NAME, voteFileInfo.getFileName())
+                .set(VOTE_FILE_INFO.ORIGINAL_FILE_NAME, voteFileInfo.getOriginalFileName())
+                .set(VOTE_FILE_INFO.CREATE_DATE, currentLocalDateTime())
+                .set(VOTE_FILE_INFO.CREATE_USER_ID, 0L)
+                .set(VOTE_FILE_INFO.UPDATED_DATE, currentLocalDateTime())
+                .set(VOTE_FILE_INFO.UPDATE_USER_ID, 0L)
                 .returningResult(VOTE_FILE_INFO.VOTE_FILE_ID)
                 .fetchOne(VOTE_FILE_INFO.VOTE_FILE_ID);
-
-        return voteFileId != null ? voteFileId.intValue() : 0;
     }
 
     /**
      * Weekly 투표 조회 (petId와 weekStartDate로)
      */
-    public VoteWeeklyEntity selectVoteWeeklyByPetIdAndWeek(Long petId, LocalDate weekStartDate) {
+    public VoteWeeklyDto selectVoteWeeklyByPetIdAndWeek(Long petId, LocalDate weekStartDate) {
         return dsl.select()
                 .from(VOTE_WEEKLY)
                 .where(
                         VOTE_WEEKLY.PET_ID.eq(petId)
-                                .and(VOTE_WEEKLY.WEEK_START_DATE.eq(weekStartDate))
+                                .and(function("date_trunc", LocalDate.class, inline("week"), VOTE_WEEKLY.WEEK_START_DATE)
+                                        .eq(function("date_trunc", LocalDate.class, inline("week"), val(weekStartDate))))
                                 .and(VOTE_WEEKLY.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToVoteWeeklyEntity);
+                .fetchOne(this::mapToVoteWeeklyDto);
     }
 
     /**
      * Monthly 투표 조회 (petId와 현재 월) - DB의 date_trunc 사용
      */
-    public VoteMonthlyEntity selectVoteMonthlyByPetIdAndMonth(Long petId) {
+    public VoteMonthlyDto selectVoteMonthlyByPetIdAndMonth(Long petId) {
         return dsl.select()
                 .from(VOTE_MONTHLY)
                 .where(
@@ -112,7 +109,7 @@ public class VoteRepository {
                                 ))
                                 .and(VOTE_MONTHLY.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToVoteMonthlyEntity);
+                .fetchOne(this::mapToVoteMonthlyDto);
     }
 
     /**
@@ -401,18 +398,18 @@ public class VoteRepository {
     /**
      * 투표 파일 정보 수정
      */
-    public void updateVoteFileInfo(VoteFileInfoEntity voteFileInfoEntity) {
+    public void updateVoteFileInfo(VoteFileInfoDto voteFileInfoDto) {
         dsl.update(VOTE_FILE_INFO)
-                .set(VOTE_FILE_INFO.FILE_URL, voteFileInfoEntity.getFileUrl())
-                .set(VOTE_FILE_INFO.FILE_SIZE, voteFileInfoEntity.getFileSize())
-                .set(VOTE_FILE_INFO.MIME_TYPE, voteFileInfoEntity.getMimeType())
-                .set(VOTE_FILE_INFO.FILE_NAME, voteFileInfoEntity.getFileName())
-                .set(VOTE_FILE_INFO.ORIGINAL_FILE_NAME, voteFileInfoEntity.getOriginalFileName())
+                .set(VOTE_FILE_INFO.FILE_URL, voteFileInfoDto.getFileUrl())
+                .set(VOTE_FILE_INFO.FILE_SIZE, voteFileInfoDto.getFileSize())
+                .set(VOTE_FILE_INFO.MIME_TYPE, voteFileInfoDto.getMimeType())
+                .set(VOTE_FILE_INFO.FILE_NAME, voteFileInfoDto.getFileName())
+                .set(VOTE_FILE_INFO.ORIGINAL_FILE_NAME, voteFileInfoDto.getOriginalFileName())
                 .set(VOTE_FILE_INFO.UPDATED_DATE, currentLocalDateTime())
-                .set(VOTE_FILE_INFO.UPDATE_USER_ID, voteFileInfoEntity.getUpdateUserId())
+                .set(VOTE_FILE_INFO.UPDATE_USER_ID, 0L)
                 .where(
-                        VOTE_FILE_INFO.REF_TABLE.eq(kr.co.common.jooq.enums.RefTableEnum.valueOf(voteFileInfoEntity.getRefTable()))
-                                .and(VOTE_FILE_INFO.REF_ID.eq(voteFileInfoEntity.getRefId()))
+                        VOTE_FILE_INFO.REF_TABLE.eq(kr.co.common.jooq.enums.RefTableEnum.vote_weekly)
+                                .and(VOTE_FILE_INFO.REF_ID.eq(voteFileInfoDto.getVoteWeeklyId()))
                                 .and(VOTE_FILE_INFO.DELETE_DATE.isNull())
                 )
                 .execute();
@@ -476,12 +473,12 @@ public class VoteRepository {
     /**
      * Weekly 투표 수정
      */
-    public void updateVoteWeekly(VoteWeeklyEntity voteWeeklyEntity) {
+    public void updateVoteWeekly(VoteWeeklyDto voteWeeklyDto) {
         dsl.update(VOTE_WEEKLY)
-                .set(VOTE_WEEKLY.MODE_ID, voteWeeklyEntity.getModeId())
+                .set(VOTE_WEEKLY.MODE_ID, voteWeeklyDto.getModeId())
                 .set(VOTE_WEEKLY.UPDATE_DATE, currentLocalDateTime())
-                .set(VOTE_WEEKLY.UPDATE_USER_ID, voteWeeklyEntity.getUpdateUserId())
-                .where(VOTE_WEEKLY.VOTE_WEEKLY_ID.eq(voteWeeklyEntity.getVoteWeeklyId()))
+                .set(VOTE_WEEKLY.UPDATE_USER_ID, voteWeeklyDto.getUserId())
+                .where(VOTE_WEEKLY.VOTE_WEEKLY_ID.eq(voteWeeklyDto.getVoteWeeklyId()))
                 .execute();
     }
 
@@ -508,41 +505,39 @@ public class VoteRepository {
     }
 
     /**
-     * Record를 VoteWeeklyEntity로 변환
+     * Record를 VoteWeeklyDto로 변환
      */
-    private VoteWeeklyEntity mapToVoteWeeklyEntity(Record record) {
+    private VoteWeeklyDto mapToVoteWeeklyDto(Record record) {
         if (record == null) {
             return null;
         }
 
-        return new VoteWeeklyEntity(
+        return new VoteWeeklyDto(
                 record.get(VOTE_WEEKLY.VOTE_WEEKLY_ID),
-                record.get(VOTE_WEEKLY.CREATE_USER_ID),
-                record.get(VOTE_WEEKLY.UPDATE_USER_ID),
-                record.get(VOTE_WEEKLY.WEEK_START_DATE),
                 record.get(VOTE_WEEKLY.PET_ID),
-                record.get(VOTE_WEEKLY.VOTE_COUNT) != null ? record.get(VOTE_WEEKLY.VOTE_COUNT).intValue() : 0,
-                record.get(VOTE_WEEKLY.VIEW_COUNT) != null ? record.get(VOTE_WEEKLY.VIEW_COUNT).intValue() : 0,
-                record.get(VOTE_WEEKLY.MODE_ID) != null ? record.get(VOTE_WEEKLY.MODE_ID).intValue() : 0
+                record.get(VOTE_WEEKLY.CREATE_USER_ID),
+                record.get(VOTE_WEEKLY.WEEK_START_DATE),
+                record.get(VOTE_WEEKLY.VOTE_COUNT),
+                record.get(VOTE_WEEKLY.VIEW_COUNT),
+                record.get(VOTE_WEEKLY.MODE_ID)
         );
     }
 
     /**
-     * Record를 VoteMonthlyEntity로 변환
+     * Record를 VoteMonthlyDto로 변환
      */
-    private VoteMonthlyEntity mapToVoteMonthlyEntity(Record record) {
+    private VoteMonthlyDto mapToVoteMonthlyDto(Record record) {
         if (record == null) {
             return null;
         }
 
-        return new VoteMonthlyEntity(
-                record.get(VOTE_MONTHLY.CREATE_USER_ID),
-                record.get(VOTE_MONTHLY.UPDATE_USER_ID),
+        return new VoteMonthlyDto(
+                record.get(VOTE_MONTHLY.VOTE_MONTHLY_ID),
                 record.get(VOTE_MONTHLY.MONTHLY_START_DATE),
                 record.get(VOTE_MONTHLY.PET_ID),
-                record.get(VOTE_MONTHLY.VOTE_COUNT) != null ? record.get(VOTE_MONTHLY.VOTE_COUNT).intValue() : 0,
-                record.get(VOTE_MONTHLY.VIEW_COUNT) != null ? record.get(VOTE_MONTHLY.VIEW_COUNT).intValue() : 0,
-                record.get(VOTE_MONTHLY.MODE_ID) != null ? record.get(VOTE_MONTHLY.MODE_ID).intValue() : 0
+                record.get(VOTE_MONTHLY.VOTE_COUNT),
+                record.get(VOTE_MONTHLY.VIEW_COUNT),
+                record.get(VOTE_MONTHLY.MODE_ID)
         );
     }
 

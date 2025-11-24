@@ -10,7 +10,7 @@ import kr.co.api.user.dto.response.UserInfoResponseDto;
 import kr.co.api.user.service.UserService;
 import kr.co.api.user.service.VotingEmailVerificationService;
 import kr.co.common.contoller.BaseController;
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -95,13 +95,10 @@ public class UserRestController extends BaseController {
     @PostMapping("/v1/login")
     public ResponseEntity<CommonResponseDto> login(@RequestBody LoginRequestDto request) throws Exception{
 
-        LoginTokenDto login = userService.login(request.getEmail(), request.getPassword());
-        LoginResponseDto responseDto = new LoginResponseDto(
-                login.getAccessToken(),
-                login.getRefreshToken()
-        );
+        LoginTokenDto loginTokenDto = userService.login(request.getEmail(), request.getPassword());
 
-        return success(responseDto);
+
+        return success(new LoginResponseDto(loginTokenDto.getAccessToken(), loginTokenDto.getRefreshToken()));
     }
 
 
@@ -110,7 +107,8 @@ public class UserRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> getUserInfo(Principal principal) {
 
         UserInfoDto userInfoDto = userService.getUserInfo(Long.parseLong(principal.getName()));
-        UserInfoResponseDto responseDto = new UserInfoResponseDto(
+
+        return success(new UserInfoResponseDto(
                 userInfoDto.getUserId(),
                 userInfoDto.getEmail(),
                 userInfoDto.getName(),
@@ -120,22 +118,18 @@ public class UserRestController extends BaseController {
                 userInfoDto.getBirthDate(),
                 userInfoDto.getGender(),
                 userInfoDto.getIsEmailVerified()
-        );
-
-        return success(responseDto);
+        ));
     }
+
     @AuthRequired(authSkip = true)
     @Operation(summary = "토큰 갱신", description = "토큰 갱신")
     @PostMapping("/v1/refresh-token")
     public ResponseEntity<CommonResponseDto> refreshToken(@RequestBody RefreshTokenRequestDto requestDto) throws Exception {
 
-        LoginTokenDto login = userService.refreshToken(requestDto.getAccessToken(), requestDto.getRefreshToken());
-        LoginResponseDto responseDto = new LoginResponseDto(
-                login.getAccessToken(),
-                login.getRefreshToken()
-        );
+        LoginTokenDto loginTokenDto = userService.refreshToken(requestDto.getAccessToken(), requestDto.getRefreshToken());
 
-        return success(responseDto);
+
+        return success(new LoginResponseDto(loginTokenDto.getAccessToken(), loginTokenDto.getRefreshToken()));
     }
 
 

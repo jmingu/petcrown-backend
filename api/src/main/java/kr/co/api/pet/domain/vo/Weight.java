@@ -40,7 +40,11 @@ public class Weight {
     public Double getDoubleValue() {
         return value.doubleValue();
     }
-    
+
+    public BigDecimal getValue() {
+        return value;
+    }
+
     public boolean isUnderweight() {
         return value.doubleValue() < 2.0;
     }

@@ -8,7 +8,7 @@ import kr.co.api.vote.dto.response.VoteRankingResponseDto;
 import kr.co.api.vote.dto.response.VotePetResponseDto;
 import kr.co.api.vote.service.VoteRankingService;
 import kr.co.common.contoller.BaseController;
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

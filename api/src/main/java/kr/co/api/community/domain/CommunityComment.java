@@ -1,5 +1,6 @@
 package kr.co.api.community.domain;
 
+import kr.co.api.user.domain.model.User;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
 import lombok.AllArgsConstructor;
@@ -10,13 +11,13 @@ import lombok.Getter;
 public class CommunityComment {
 
     private final Long commentId;
-    private final Long postId;
-    private final Long userId;
+    private final CommunityPost post;
+    private final User user;
     private final Long parentCommentId;
     private final String content;
     private final Long likeCount;
     private final Integer depth;
-    private final Long createUserId;
+    private final User createUser;
 
     /**
      * ID로만 댓글 생성 (최소 정보)
@@ -40,7 +41,11 @@ public class CommunityComment {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
 
-        return new CommunityComment(null, postId, userId, null, content.trim(), 0L, 0, createUserId);
+        CommunityPost post = CommunityPost.ofId(postId);
+        User user = User.ofId(userId);
+        User createUser = User.ofId(createUserId);
+
+        return new CommunityComment(null, post, user, null, content.trim(), 0L, 0, createUser);
     }
 
     /**
@@ -56,17 +61,21 @@ public class CommunityComment {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
         }
 
-        return new CommunityComment(null, postId, userId, parentCommentId, content.trim(), 0L, 1, createUserId);
+        CommunityPost post = CommunityPost.ofId(postId);
+        User user = User.ofId(userId);
+        User createUser = User.ofId(createUserId);
+
+        return new CommunityComment(null, post, user, parentCommentId, content.trim(), 0L, 1, createUser);
     }
 
     /**
      * 모든 필드로 댓글 생성
      */
-    public static CommunityComment getAllFields(Long commentId, Long postId, Long userId,
+    public static CommunityComment getAllFields(Long commentId, CommunityPost post, User user,
                                                Long parentCommentId, String content, Long likeCount,
-                                               Integer depth, Long createUserId) {
-        return new CommunityComment(commentId, postId, userId, parentCommentId, content,
-                                    likeCount, depth, createUserId);
+                                               Integer depth, User createUser) {
+        return new CommunityComment(commentId, post, user, parentCommentId, content,
+                                    likeCount, depth, createUser);
     }
 
     /**
@@ -74,8 +83,8 @@ public class CommunityComment {
      */
     public CommunityComment incrementLikeCount() {
         Long newLikeCount = this.likeCount != null ? this.likeCount + 1 : 1L;
-        return new CommunityComment(this.commentId, this.postId, this.userId, this.parentCommentId,
-                                    this.content, newLikeCount, this.depth, this.createUserId);
+        return new CommunityComment(this.commentId, this.post, this.user, this.parentCommentId,
+                                    this.content, newLikeCount, this.depth, this.createUser);
     }
 
     /**
@@ -89,7 +98,23 @@ public class CommunityComment {
      * 작성자 확인
      */
     public boolean isAuthor(Long userId) {
-        return this.userId != null && this.userId.equals(userId);
+        return this.user != null && this.user.getUserId() != null && this.user.getUserId().equals(userId);
+    }
+
+    /**
+     * ID가 설정된 새 객체 반환 (불변성 유지)
+     */
+    public CommunityComment withId(Long commentId) {
+        return new CommunityComment(
+            commentId,
+            this.post,
+            this.user,
+            this.parentCommentId,
+            this.content,
+            this.likeCount,
+            this.depth,
+            this.createUser
+        );
     }
 
     /**

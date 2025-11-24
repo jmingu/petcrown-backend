@@ -1,8 +1,8 @@
 package kr.co.api.community.repository;
 
+import kr.co.api.community.domain.CommunityComment;
+import kr.co.api.community.dto.command.CommunityCommentQueryDto;
 import kr.co.api.community.dto.command.CommunityCommentUpdateDto;
-import kr.co.common.entity.community.CommunityCommentEntity;
-import kr.co.common.entity.community.CommunityCommentQueryDto;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -22,18 +22,18 @@ public class CommunityCommentRepository {
     /**
      * 댓글 저장 (생성된 commentId 반환)
      */
-    public Long insertComment(CommunityCommentEntity comment) {
+    public Long insertComment(CommunityComment comment) {
         return dsl.insertInto(COMMUNITY_COMMENT)
-                .set(COMMUNITY_COMMENT.POST_ID, comment.getPostId())
-                .set(COMMUNITY_COMMENT.USER_ID, comment.getUserId())
+                .set(COMMUNITY_COMMENT.POST_ID, comment.getPost().getPostId())
+                .set(COMMUNITY_COMMENT.USER_ID, comment.getUser().getUserId())
                 .set(COMMUNITY_COMMENT.PARENT_COMMENT_ID, comment.getParentCommentId())
                 .set(COMMUNITY_COMMENT.CONTENT, comment.getContent())
                 .set(COMMUNITY_COMMENT.LIKE_COUNT, comment.getLikeCount())
                 .set(COMMUNITY_COMMENT.DEPTH, comment.getDepth())
                 .set(COMMUNITY_COMMENT.CREATE_DATE, currentLocalDateTime())
-                .set(COMMUNITY_COMMENT.CREATE_USER_ID, comment.getCreateUserId())
+                .set(COMMUNITY_COMMENT.CREATE_USER_ID, comment.getCreateUser().getUserId())
                 .set(COMMUNITY_COMMENT.UPDATE_DATE, currentLocalDateTime())
-                .set(COMMUNITY_COMMENT.UPDATE_USER_ID, comment.getCreateUserId())
+                .set(COMMUNITY_COMMENT.UPDATE_USER_ID, comment.getCreateUser().getUserId())
                 .returningResult(COMMUNITY_COMMENT.COMMENT_ID)
                 .fetchOne()
                 .getValue(COMMUNITY_COMMENT.COMMENT_ID);

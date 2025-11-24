@@ -10,11 +10,16 @@ public class Nickname {
     private final String value;
 
     private Nickname(String nickname) {
-        ValidationUtils.validateNameString(nickname, "닉네임", "nickname", 2, 10);
+
         this.value = nickname;
     }
 
     public static Nickname of(String nickname) {
+        ValidationUtils.validateNameString(nickname, "닉네임", "nickname", 2, 10);
+        return new Nickname(nickname);
+    }
+
+    public static Nickname from(String nickname) {
         return new Nickname(nickname);
     }
 

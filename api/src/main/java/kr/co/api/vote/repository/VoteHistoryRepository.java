@@ -1,6 +1,6 @@
 package kr.co.api.vote.repository;
 
-import kr.co.common.entity.vote.VoteHistoryEntity;
+import kr.co.api.vote.dto.command.VoteHistoryDto;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
@@ -19,14 +19,14 @@ public class VoteHistoryRepository {
     /**
      * 투표 기록 저장 (DB의 current_date 사용)
      */
-    public void insertVoteHistory(VoteHistoryEntity voteHistoryEntity) {
+    public void insertVoteHistory(VoteHistoryDto voteHistoryDto) {
         dsl.insertInto(VOTE_HISTORY)
-                .set(VOTE_HISTORY.USER_ID, voteHistoryEntity.getUserId())
-                .set(VOTE_HISTORY.VOTE_ID, voteHistoryEntity.getVoteId())
+                .set(VOTE_HISTORY.USER_ID, voteHistoryDto.getUserId())
+                .set(VOTE_HISTORY.VOTE_ID, voteHistoryDto.getVoteId())
                 .set(VOTE_HISTORY.HISTORY_DATE, currentDate().cast(LocalDate.class))  // DB 기준 날짜 사용
-                .set(VOTE_HISTORY.EMAIL, voteHistoryEntity.getEmail())
+                .set(VOTE_HISTORY.EMAIL, voteHistoryDto.getEmail())
                 .set(VOTE_HISTORY.CREATE_DATE, currentLocalDateTime())  // DB 기준 시간 사용
-                .set(VOTE_HISTORY.VOTE_CYCLE, kr.co.common.jooq.enums.VoteCycleType.valueOf(voteHistoryEntity.getVoteCycle()))
+                .set(VOTE_HISTORY.VOTE_CYCLE, kr.co.common.jooq.enums.VoteCycleType.valueOf(voteHistoryDto.getVoteCycle()))
                 .execute();
     }
 

@@ -1,7 +1,8 @@
 package kr.co.api.event.repository;
 
+import kr.co.api.event.domain.Event;
+import kr.co.api.event.dto.command.EventQueryDto;
 import kr.co.api.event.dto.command.EventUpdateDto;
-import kr.co.common.entity.event.EventEntity;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -21,11 +22,11 @@ public class EventRepository {
     /**
      * 이벤트 저장 (생성된 eventId 반환)
      */
-    public Long insertEvent(EventEntity event) {
+    public Long insertEvent(Event event) {
         return dsl.insertInto(EVENT)
-                .set(EVENT.TITLE, event.getTitle())
-                .set(EVENT.CONTENT, event.getContent())
-                .set(EVENT.CONTENT_TYPE, event.getContentType())
+                .set(EVENT.TITLE, event.getTitle() != null ? event.getTitle().getValue() : null)
+                .set(EVENT.CONTENT, event.getContent() != null ? event.getContent().getValue() : null)
+                .set(EVENT.CONTENT_TYPE, event.getContentType() != null ? event.getContentType().getValue() : null)
                 .set(EVENT.START_DATE, event.getStartDate())
                 .set(EVENT.END_DATE, event.getEndDate())
                 .set(EVENT.VIEW_COUNT, event.getViewCount())
@@ -41,20 +42,20 @@ public class EventRepository {
     /**
      * 이벤트 ID로 조회
      */
-    public EventEntity selectByEventId(Long eventId) {
+    public EventQueryDto selectByEventId(Long eventId) {
         return dsl.select()
                 .from(EVENT)
                 .where(
                         EVENT.EVENT_ID.eq(eventId)
                                 .and(EVENT.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToEventEntity);
+                .fetchOne(this::mapToEventQueryDto);
     }
 
     /**
      * 활성화된 이벤트 목록 조회 (페이징)
      */
-    public List<EventEntity> selectActiveEvents(int offset, int limit) {
+    public List<EventQueryDto> selectActiveEvents(int offset, int limit) {
         return dsl.select()
                 .from(EVENT)
                 .where(
@@ -68,20 +69,20 @@ public class EventRepository {
                 .orderBy(EVENT.CREATE_DATE.desc())
                 .offset(offset)
                 .limit(limit)
-                .fetch(this::mapToEventEntity);
+                .fetch(this::mapToEventQueryDto);
     }
 
     /**
      * 전체 이벤트 목록 조회 (관리자용)
      */
-    public List<EventEntity> selectAllEvents(int offset, int limit) {
+    public List<EventQueryDto> selectAllEvents(int offset, int limit) {
         return dsl.select()
                 .from(EVENT)
                 .where(EVENT.DELETE_DATE.isNull())
                 .orderBy(EVENT.CREATE_DATE.desc())
                 .offset(offset)
                 .limit(limit)
-                .fetch(this::mapToEventEntity);
+                .fetch(this::mapToEventQueryDto);
     }
 
     /**
@@ -160,7 +161,7 @@ public class EventRepository {
     /**
      * 제목으로 이벤트 검색
      */
-    public List<EventEntity> searchByTitle(String title, int offset, int limit) {
+    public List<EventQueryDto> searchByTitle(String title, int offset, int limit) {
         return dsl.select()
                 .from(EVENT)
                 .where(
@@ -175,7 +176,7 @@ public class EventRepository {
                 .orderBy(EVENT.CREATE_DATE.desc())
                 .offset(offset)
                 .limit(limit)
-                .fetch(this::mapToEventEntity);
+                .fetch(this::mapToEventQueryDto);
     }
 
     /**
@@ -198,14 +199,14 @@ public class EventRepository {
     }
 
     /**
-     * Record를 EventEntity로 변환
+     * Record를 EventQueryDto로 변환
      */
-    private EventEntity mapToEventEntity(Record record) {
+    private EventQueryDto mapToEventQueryDto(Record record) {
         if (record == null) {
             return null;
         }
 
-        return new EventEntity(
+        return new EventQueryDto(
                 record.get(EVENT.EVENT_ID),
                 record.get(EVENT.TITLE),
                 record.get(EVENT.CONTENT),

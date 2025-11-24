@@ -40,7 +40,11 @@ public class Height {
     public Double getDoubleValue() {
         return value.doubleValue();
     }
-    
+
+    public BigDecimal getValue() {
+        return value;
+    }
+
     @Override
     public String toString() {
         return value.toString() + "cm";

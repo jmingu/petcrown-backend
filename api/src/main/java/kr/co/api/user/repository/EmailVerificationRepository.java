@@ -1,7 +1,7 @@
 package kr.co.api.user.repository;
 
+import kr.co.api.user.domain.model.EmailVerification;
 import kr.co.api.user.dto.command.EmailVerificationCodeDto;
-import kr.co.common.entity.user.EmailVerificationEntity;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -21,13 +21,13 @@ public class EmailVerificationRepository {
     /**
      * 이메일 인증 정보 저장
      */
-    public void insertEmailVerification(EmailVerificationEntity emailVerification) {
+    public void insertEmailVerification(EmailVerification emailVerification) {
         dsl.insertInto(EMAIL_VERIFICATION)
                 .set(EMAIL_VERIFICATION.USER_ID, emailVerification.getUserId())
                 .set(EMAIL_VERIFICATION.VERIFICATION_CODE, emailVerification.getVerificationCode())
                 .set(EMAIL_VERIFICATION.EXPIRES_DATE, emailVerification.getExpiresDate())
-                .set(EMAIL_VERIFICATION.CREATE_USER_ID, emailVerification.getCreateUserId())
-                .set(EMAIL_VERIFICATION.UPDATE_USER_ID, emailVerification.getUpdateUserId())
+                .set(EMAIL_VERIFICATION.CREATE_USER_ID, emailVerification.getUserId())
+                .set(EMAIL_VERIFICATION.UPDATE_USER_ID, emailVerification.getUserId())
                 .execute();
     }
 
@@ -46,7 +46,14 @@ public class EmailVerificationRepository {
                         a.EMAIL.eq(email)
                                 .and(a.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToEmailVerificationCodeDto);
+                .fetchOne(record -> new EmailVerificationCodeDto(
+                        record.get(USER.USER_ID),
+                        record.get(USER.EMAIL),
+                        record.get(USER.IS_EMAIL_VERIFIED),
+                        record.get(EMAIL_VERIFICATION.EMAIL_VERIFICATION_ID),
+                        record.get(EMAIL_VERIFICATION.VERIFICATION_CODE),
+                        record.get(EMAIL_VERIFICATION.EXPIRES_DATE)
+                ));
     }
 
     /**
@@ -62,21 +69,5 @@ public class EmailVerificationRepository {
                 .execute();
     }
 
-    /**
-     * Record를 EmailVerificationCodeDto로 변환
-     */
-    private EmailVerificationCodeDto mapToEmailVerificationCodeDto(Record record) {
-        if (record == null) {
-            return null;
-        }
 
-        return new EmailVerificationCodeDto(
-                record.get(USER.USER_ID),
-                record.get(USER.EMAIL),
-                record.get(USER.IS_EMAIL_VERIFIED),
-                record.get(EMAIL_VERIFICATION.EMAIL_VERIFICATION_ID),
-                record.get(EMAIL_VERIFICATION.VERIFICATION_CODE),
-                record.get(EMAIL_VERIFICATION.EXPIRES_DATE)
-        );
-    }
 }

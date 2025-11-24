@@ -12,7 +12,8 @@
       "Bash(javac:*)",
       "Bash(Select-String -Pattern \"PetRepository|BUILD\")",
       "Bash(.gradlew.bat build:*)",
-      "Bash(Select-String -Pattern \"error:|BUILD\")"
+      "Bash(Select-String -Pattern \"error:|BUILD\")",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

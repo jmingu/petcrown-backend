@@ -1,7 +1,7 @@
 package kr.co.common.exception;
 
 
-import kr.co.common.entity.common.CommonResponseDto;
+import kr.co.common.dto.CommonResponseDto;
 import kr.co.common.enums.CodeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

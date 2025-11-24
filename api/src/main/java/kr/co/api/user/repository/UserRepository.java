@@ -1,22 +1,21 @@
 package kr.co.api.user.repository;
 
+import kr.co.api.user.domain.model.User;
 import kr.co.api.user.dto.command.UserDeletionDto;
+import kr.co.api.user.dto.command.UserInfoDto;
 import kr.co.api.user.dto.command.UserUpdateDto;
-import kr.co.common.entity.user.UserEntity;
 import kr.co.common.jooq.enums.UserLoginTypeEnum;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
-import org.jooq.Record;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import static kr.co.common.jooq.Tables.*;
-import static kr.co.common.jooq.enums.RefTableEnum.*;
-import static kr.co.common.jooq.enums.FileTypeEnum.*;
-import static org.jooq.impl.DSL.*;
 import java.math.BigDecimal;
+
+import static kr.co.common.jooq.Tables.FILE_INFO;
+import static kr.co.common.jooq.Tables.USER;
+import static kr.co.common.jooq.enums.FileTypeEnum.IMAGE;
+import static kr.co.common.jooq.enums.RefTableEnum.user;
+import static org.jooq.impl.DSL.currentLocalDateTime;
 
 @Repository
 @RequiredArgsConstructor
@@ -27,38 +26,42 @@ public class UserRepository {
     /**
      * 사용자 저장 (생성된 userId 반환)
      */
-    public Long insertUser(UserEntity user) {
-        return dsl.insertInto(USER)
-                .set(USER.EMAIL, user.getEmail())
+    public User insertUser(User user) {
+        Long generatedId =  dsl.insertInto(USER)
+                .set(USER.EMAIL, user.getEmail().getValue())
                 .set(USER.USER_UUID, user.getUserUuid())
-                .set(USER.PASSWORD, user.getPassword())
-                .set(USER.ROLE_ID, user.getRoleId())
-                .set(USER.NAME, user.getName())
-                .set(USER.NICKNAME, user.getNickname())
-                .set(USER.PHONE_NUMBER, user.getPhoneNumber())
+                .set(USER.PASSWORD, user.getPassword().getValue())
+                .set(USER.ROLE_ID, user.getRole().getRoleId())
+                .set(USER.NAME, user.getName().getValue())
+                .set(USER.NICKNAME, user.getNickname().getValue())
+                .set(USER.PHONE_NUMBER, user.getPhoneNumber() == null ? null : user.getPhoneNumber().getValue())
                 .set(USER.BIRTH_DATE, user.getBirthDate())
-                .set(USER.GENDER, user.getGender())
+                .set(USER.GENDER, user.getGender() == null ? null : user.getGender().getValue())
                 .set(USER.HEIGHT, user.getHeight() != null ? BigDecimal.valueOf(user.getHeight()) : null)
                 .set(USER.WEIGHT, user.getWeight() != null ? BigDecimal.valueOf(user.getWeight()) : null)
                 .set(USER.LOGIN_TYPE, user.getLoginType() != null ? UserLoginTypeEnum.valueOf(user.getLoginType()) : null)
                 .set(USER.LOGIN_ID, user.getLoginId())
                 .set(USER.IS_EMAIL_VERIFIED, user.getIsEmailVerified())
-                .set(USER.COMPANY_ID, user.getCompanyId())
+                .set(USER.COMPANY_ID, user.getCompany().getCompanyId())
                 .set(USER.DESCRIPTION, user.getDescription())
                 .set(USER.CREATE_DATE, currentLocalDateTime())
-                .set(USER.CREATE_USER_ID, user.getCreateUserId())
+                .set(USER.CREATE_USER_ID, (Long) null)
                 .set(USER.UPDATE_DATE, currentLocalDateTime())
-                .set(USER.UPDATE_USER_ID, user.getUpdateUserId())
+                .set(USER.UPDATE_USER_ID, (Long) null)
                 .set(USER.IS_PHONE_NUMBER_VERIFIED, user.getIsPhoneNumberVerified())
                 .returningResult(USER.USER_ID)  // 생성된 ID 반환
                 .fetchOne()
                 .getValue(USER.USER_ID);
+
+        // 생성된 ID를 Domain 객체에 반영
+        return user.withUserId(generatedId);
+
     }
 
     /**
      * 닉네임으로 사용자 존재 여부 확인
      */
-    public UserEntity selectByNickname(String nickname) {
+    public UserInfoDto selectByNickname(String nickname) {
         var u = USER.as("u");
         var f = FILE_INFO.as("f");
 
@@ -75,13 +78,24 @@ public class UserRepository {
                         u.NICKNAME.eq(nickname)
                                 .and(u.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToUserEntity);
+                .fetchOne(record -> new UserInfoDto(
+                        record.get(USER.USER_ID),
+                        record.get(USER.EMAIL),
+                        record.get(USER.PASSWORD),
+                        record.get(USER.NAME),
+                        record.get(USER.NICKNAME),
+                        record.get(USER.PHONE_NUMBER),
+                        record.get(FILE_INFO.FILE_URL),
+                        record.get(USER.BIRTH_DATE),
+                        record.get(USER.GENDER),
+                        record.get(USER.IS_EMAIL_VERIFIED)
+                ));
     }
 
     /**
      * 이메일로 사용자 조회
      */
-    public UserEntity selectByEmail(String email) {
+    public UserInfoDto selectByEmail(String email) {
         var u = USER.as("u");
         var f = FILE_INFO.as("f");
 
@@ -98,7 +112,18 @@ public class UserRepository {
                         u.EMAIL.eq(email)
                                 .and(u.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToUserEntity);
+                .fetchOne(record -> new UserInfoDto(
+                        record.get(USER.USER_ID),
+                        record.get(USER.EMAIL),
+                        record.get(USER.PASSWORD),
+                        record.get(USER.NAME),
+                        record.get(USER.NICKNAME),
+                        record.get(USER.PHONE_NUMBER),
+                        record.get(FILE_INFO.FILE_URL),
+                        record.get(USER.BIRTH_DATE),
+                        record.get(USER.GENDER),
+                        record.get(USER.IS_EMAIL_VERIFIED)
+                ));
     }
 
     /**
@@ -116,7 +141,7 @@ public class UserRepository {
     /**
      * ID로 사용자 조회
      */
-    public UserEntity selectByUserId(Long userId) {
+    public UserInfoDto selectByUserId(Long userId) {
         var u = USER.as("u");
         var f = FILE_INFO.as("f");
 
@@ -133,35 +158,46 @@ public class UserRepository {
                         u.USER_ID.eq(userId)
                                 .and(u.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToUserEntity);
+                .fetchOne(record -> new UserInfoDto(
+                        record.get(USER.USER_ID),
+                        record.get(USER.EMAIL),
+                        record.get(USER.PASSWORD),
+                        record.get(USER.NAME),
+                        record.get(USER.NICKNAME),
+                        record.get(USER.PHONE_NUMBER),
+                        record.get(FILE_INFO.FILE_URL),
+                        record.get(USER.BIRTH_DATE),
+                        record.get(USER.GENDER),
+                        record.get(USER.IS_EMAIL_VERIFIED)
+                ));
     }
 
     /**
-     * 사용자 정보 수정
+     * 사용자 정보 수정 - 도메인으로 파라미터 받기
      */
-    public void updateUserInfo(UserUpdateDto userUpdateDto) {
+    public void updateUserInfo(User user) {
         dsl.update(USER)
-                .set(USER.NAME, userUpdateDto.getName())
-                .set(USER.NICKNAME, userUpdateDto.getNickname())
-                .set(USER.PHONE_NUMBER, userUpdateDto.getPhoneNumber())
-                .set(USER.BIRTH_DATE, userUpdateDto.getBirthDate())
-                .set(USER.GENDER, userUpdateDto.getGender())
+                .set(USER.NAME, user.getName().getValue())
+                .set(USER.NICKNAME, user.getNickname().getValue())
+                .set(USER.PHONE_NUMBER, user.getPhoneNumber() != null ? user.getPhoneNumber().getValue() : null)
+                .set(USER.BIRTH_DATE, user.getBirthDate())
+                .set(USER.GENDER, user.getGender() != null ? user.getGender().getValue() : null)
                 .set(USER.UPDATE_DATE, currentLocalDateTime())
-                .set(USER.UPDATE_USER_ID, userUpdateDto.getUserId())
-                .where(USER.USER_ID.eq(userUpdateDto.getUserId())
+                .set(USER.UPDATE_USER_ID, user.getUserId())
+                .where(USER.USER_ID.eq(user.getUserId())
                         .and(USER.DELETE_DATE.isNull()))
                 .execute();
     }
 
     /**
-     * 비밀번호 변경
+     * 비밀번호 변경 - 도메인으로 파라미터 받기
      */
-    public void updatePassword(Long userId, String password) {
+    public void updatePassword(User user) {
         dsl.update(USER)
-                .set(USER.PASSWORD, password)
+                .set(USER.PASSWORD, user.getPassword().getValue())
                 .set(USER.UPDATE_DATE, currentLocalDateTime())
-                .set(USER.UPDATE_USER_ID, userId)
-                .where(USER.USER_ID.eq(userId)
+                .set(USER.UPDATE_USER_ID, user.getUserId())
+                .where(USER.USER_ID.eq(user.getUserId())
                         .and(USER.DELETE_DATE.isNull()))
                 .execute();
     }
@@ -169,7 +205,7 @@ public class UserRepository {
     /**
      * 이메일, 이름으로 사용자 조회 (비밀번호 찾기용)
      */
-    public UserEntity selectByEmailAndName(String email, String name) {
+    public UserInfoDto selectByEmailAndName(String email, String name) {
         var u = USER.as("u");
         var f = FILE_INFO.as("f");
 
@@ -187,7 +223,18 @@ public class UserRepository {
                                 .and(u.NAME.eq(name))
                                 .and(u.DELETE_DATE.isNull())
                 )
-                .fetchOne(this::mapToUserEntity);
+                .fetchOne(record -> new UserInfoDto(
+                        record.get(USER.USER_ID),
+                        record.get(USER.EMAIL),
+                        record.get(USER.PASSWORD),
+                        record.get(USER.NAME),
+                        record.get(USER.NICKNAME),
+                        record.get(USER.PHONE_NUMBER),
+                        record.get(FILE_INFO.FILE_URL),
+                        record.get(USER.BIRTH_DATE),
+                        record.get(USER.GENDER),
+                        record.get(USER.IS_EMAIL_VERIFIED)
+                ));
     }
 
     /**
@@ -202,56 +249,21 @@ public class UserRepository {
     }
 
     /**
-     * 사용자 정보 검증 및 소프트 삭제 (userId, email, name, password 모두 일치해야 삭제)
+     * 사용자 정보 검증 및 소프트 삭제 - 도메인으로 파라미터 받기
+     * (userId, email, name, password 모두 일치해야 삭제)
      */
-    public int softDeleteUser(UserDeletionDto userDeletionDto) {
+    public int softDeleteUser(User user) {
         return dsl.update(USER)
                 .set(USER.DELETE_DATE, currentLocalDateTime())
-                .set(USER.DELETE_USER_ID, userDeletionDto.getUserId())
+                .set(USER.DELETE_USER_ID, user.getUserId())
                 .set(USER.UPDATE_DATE, currentLocalDateTime())
-                .set(USER.UPDATE_USER_ID, userDeletionDto.getUserId())
-                .where(USER.USER_ID.eq(userDeletionDto.getUserId())
-                        .and(USER.EMAIL.eq(userDeletionDto.getEmail()))
-                        .and(USER.NAME.eq(userDeletionDto.getName()))
-                        .and(USER.PASSWORD.eq(userDeletionDto.getPassword()))
+                .set(USER.UPDATE_USER_ID, user.getUserId())
+                .where(USER.USER_ID.eq(user.getUserId())
+                        .and(USER.EMAIL.eq(user.getEmail().getValue()))
+                        .and(USER.NAME.eq(user.getName().getValue()))
+                        .and(USER.PASSWORD.eq(user.getPassword().getValue()))
                         .and(USER.DELETE_DATE.isNull()))
                 .execute();
     }
 
-    /**
-     * Record를 UserEntity로 변환
-     */
-    private UserEntity mapToUserEntity(Record record) {
-        if (record == null) {
-            return null;
-        }
-
-        return new UserEntity(
-                record.get(USER.USER_ID),
-                record.get(USER.EMAIL),
-                record.get(USER.USER_UUID),
-                record.get(USER.PASSWORD),
-                record.get(USER.ROLE_ID),
-                record.get(USER.NAME),
-                record.get(USER.NICKNAME),
-                record.get(USER.PHONE_NUMBER),
-                record.get(USER.BIRTH_DATE),
-                record.get(USER.GENDER),
-                record.get(USER.HEIGHT) != null ? record.get(USER.HEIGHT).doubleValue() : null,
-                record.get(USER.WEIGHT) != null ? record.get(USER.WEIGHT).doubleValue() : null,
-                record.get(USER.LOGIN_TYPE) != null ? record.get(USER.LOGIN_TYPE).getLiteral() : null,
-                record.get(USER.LOGIN_ID),
-                record.get(USER.IS_EMAIL_VERIFIED),
-                record.get(USER.IS_PHONE_NUMBER_VERIFIED),
-                record.get(USER.COMPANY_ID),
-                record.get(USER.DESCRIPTION),
-                record.get(FILE_INFO.FILE_URL),
-                record.get(USER.CREATE_DATE),
-                record.get(USER.CREATE_USER_ID),
-                record.get(USER.UPDATE_DATE),
-                record.get(USER.UPDATE_USER_ID),
-                record.get(USER.DELETE_DATE),
-                record.get(USER.DELETE_USER_ID)
-        );
-    }
 }

@@ -11,39 +11,31 @@ api/src/main/java/kr/co/api/{domain}/
 │   ├── model/          # 도메인 엔티티
 │   └── vo/             # 값 객체 (Value Objects)
 ├── dto/                # 데이터 전송 객체
-│   ├── command/        # 서비스 레이어용 커맨드 DTO
+│   ├── command/        # 서비스 레이어용 내부 DTO
 │   ├── request/        # HTTP 요청 DTO
 │   └── response/       # HTTP 응답 DTO
-├── mapper/             # MyBatis 매퍼 인터페이스
+├── repository/         # JOOQ 레포지토리 인터페이스
 └── service/            # 비즈니스 로직 서비스
 ```
 
-## 🔄 데이터 흐름 패턴
+## 🔄 데이터 흐름 패턴 (JOOQ 기반)
 
-### Controller → Service 데이터 전달 규칙
+### 전체 흐름
 
-#### 3개 이하 파라미터: 직접 전달
-```java
-// ✅ Good: 2개 파라미터
-@GetMapping("/v1/check-email")
-public ResponseEntity<CommonResponseDto> checkEmailDuplicate(@RequestParam String email) {
-    userService.checkEmailDuplicate(email);
-    return success();
-}
-
-// ✅ Good: 3개 파라미터
-public ResponseEntity<CommonResponseDto> verifyEmailCode(@RequestBody EmailVerificationRequestDto request) {
-    userService.verifyEmailCode(request.getEmail(), request.getCode());
-    return success();
-}
+```
+Client → RequestDto → Controller → 내부용 Dto → Service (Domain 생성/비즈니스 로직)
+→ Repository (Domain 저장/조회) → 내부용 Dto → Service → ResponseDto → Controller → Client
 ```
 
-#### 3개 초과 파라미터: Command DTO 사용
+### Controller 레이어
+
+**역할**: 클라이언트 요청/응답 처리, DTO 변환
+
 ```java
-// ✅ Good: RequestDto → CommandDto 생성자 직접 호출
+// ✅ Good: RequestDto → 내부용 Dto → Service → 내부용 Dto → ResponseDto
 @PostMapping("/v1")
 public ResponseEntity<CommonResponseDto> createUser(@RequestBody UserRegistrationRequestDto request) {
-    // RequestDto → CommandDto 변환 (생성자 직접 호출)
+    // 1. RequestDto → 내부용 Dto (생성자 직접 호출)
     UserRegistrationDto userRegistrationDto = new UserRegistrationDto(
         request.getEmail(),
         request.getName(),
@@ -51,22 +43,34 @@ public ResponseEntity<CommonResponseDto> createUser(@RequestBody UserRegistratio
         request.getPassword(),
         request.getPasswordCheck()
     );
+
+    // 2. Service 호출
     userService.createUser(userRegistrationDto);
+
     return success();
 }
 
-// ✅ Good: Service 응답 → ResponseDto 생성자 직접 호출
+// ✅ Good: Service에서 내부용 Dto 받아서 ResponseDto로 변환
 @PostMapping("/v1/login")
 public ResponseEntity<CommonResponseDto> login(@RequestBody LoginRequestDto request) throws Exception {
+    // 1. Service에서 내부용 Dto 반환
     LoginTokenDto loginTokenDto = userService.login(request.getEmail(), request.getPassword());
-    // CommandDto → ResponseDto 변환 (생성자 직접 호출)
+
+    // 2. 내부용 Dto → ResponseDto 변환 (생성자 직접 호출)
     LoginResponseDto responseDto = new LoginResponseDto(
         loginTokenDto.getAccessToken(),
         loginTokenDto.getRefreshToken()
     );
+
     return success(responseDto);
 }
 ```
+
+**Controller 규칙**:
+- 파라미터 3개 이하: 직접 전달
+- 파라미터 3개 초과: 내부용 Dto 사용
+- RequestDto → 내부용 Dto 변환은 Controller에서 처리
+- 내부용 Dto → ResponseDto 변환은 Controller에서 처리
 
 ## 🏗️ Domain Driven Design (DDD) 패턴
 
@@ -156,7 +160,9 @@ public class UserRegistrationDto {
 - 서비스 레이어에서 사용하는 내부 DTO
 - **불변 객체**: 모든 필드는 `final`로 선언 
 
-## 🛠️ Service 레이어 패턴
+## 🛠️ Service 레이어 패턴 (JOOQ 기반)
+
+**역할**: 도메인 생성, 비즈니스 로직 담당
 
 ### 서비스 메서드 구조
 ```java
@@ -165,10 +171,12 @@ public class UserRegistrationDto {
 @Transactional(readOnly = true)
 public class UserService {
 
+    private final UserRepository userRepository;
+
     @Transactional
     public void createUser(UserRegistrationDto userRegistrationDto) {
 
-        // 1. CommandDto → Domain 변환 (정적 팩토리 메서드 사용)
+        // 1. 내부용 Dto → Domain 변환 (정적 팩토리 메서드 사용)
         User user = User.createUserByEmail(
             userRegistrationDto.getEmail(),
             userRegistrationDto.getName(),
@@ -177,127 +185,130 @@ public class UserService {
             userRegistrationDto.getPasswordCheck()
         );
 
-        // 2. 비즈니스 규칙 검증
-        validateUserForRegistration(user);
+        // 2. 비즈니스 규칙 검증 (도메인 객체에 위임)
+        user.validateForRegistration();
 
-        // 3. 외부 의존성 조회 (기본값, 참조 데이터 등)
-        RoleEntity defaultRole = roleMapper.selectDefaultRole()
-                .orElseThrow(() -> new PetCrownException(MISSING_REQUIRED_VALUE));
+        // 3. Repository를 통해 도메인 저장 (Repository가 JOOQ Record로 변환)
+        userRepository.save(user);
 
-        // 4. Domain → Entity 변환 (생성자 직접 호출)
-        UserEntity userEntity = new UserEntity(
-            user.getUserId(),
-            user.getEmail().getValue(),
-            user.getUserUuid(),
-            user.getPassword().getValue(),
-            defaultRole.getRoleId(),
-            user.getName().getValue(),
-            user.getNickname().getValue(),
-            user.getPhoneNumber() != null ? user.getPhoneNumber().getValue() : null,
-            user.getBirthDate(),
-            user.getGender() != null ? user.getGender().getValue() : null
-            // ... 기타 필드
-        );
-
-        // 5. 영속성 저장
-        userMapper.insertUser(userEntity);
-
-        // 6. 후속 처리 (이메일 발송, 알림 등)
+        // 4. 후속 처리 (이메일 발송, 알림 등)
         // ...
+    }
+
+    public UserDetailDto getUserById(Long userId) {
+        // Repository에서 내부용 Dto 또는 Domain 반환
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new PetCrownException(USER_NOT_FOUND));
     }
 }
 ```
-- @Transactional(readOnly = true) 상단 선언
+
+**Service 규칙**:
+- @Transactional(readOnly = true) 클래스 상단 선언
 - insert, update는 메서드단에 @Transactional 재선언
+- 도메인 생성 및 비즈니스 로직 담당
+- Repository를 통해 영속성 처리
+- 내부용 Dto 또는 Domain으로 데이터 주고받기
 
-## 🗃️ 데이터베이스 접근 패턴
+## 🗃️ Repository 레이어 패턴 (JOOQ 기반)
 
-### MyBatis Mapper 사용
+**역할**: 데이터베이스 접근, 도메인 ↔ JOOQ Record 변환
+
+### Repository 인터페이스
 ```java
-@Mapper
-public interface UserMapper {
+public interface UserRepository {
 
-    void insertUser(UserEntity userEntity);
+    // 등록 - 도메인으로 파라미터 받기
+    void save(User user);
 
-    UserEntity selectByEmail(String email);
+    // 수정 - 도메인, 파라미터, 내부용 Dto로 파라미터 받기
+    void update(User user);
+    void update(Long userId, String name, String nickname);
+    void update(UserListDto userDto);
 
-    UserEntity selectByUserId(Long userId);
+    // 조회 - 내부용 Dto 또는 Domain 반환
+    Optional<UserDetailDto> findById(Long userId);
 
-    void updateUserInfo(UserUpdateDto userUpdateDto);
+    Optional<User> findByEmail(String email);
+
+    List<UserListDto> findAll();
+
+    // 삭제 - 기본 타입 사용
+    void deleteById(Long userId);
 }
 ```
-- Entity, commandDto 사용, 3개이하는 그냥 파라미터 사용
 
-### Entity 설계 원칙 (중요)
+### Repository 구현 예시
+```java
+@Repository
+@RequiredArgsConstructor
+public class UserRepositoryImpl implements UserRepository {
 
-#### Entity는 DB 테이블과 1:1 매칭
-- **Entity는 반드시 DB 테이블 구조와 정확히 일치해야 한다**
-- **Claude는 Entity 파일을 절대 수정하지 않는다**
-  - Entity는 개발자가 수동으로 DB 컬럼과 동일하게 작성
-  - 필드 추가, 수정, 삭제 금지
-- **JOIN용 필드를 Entity에 추가하지 않는다**
+    private final DSLContext dsl;
 
-  ```java
-  // ❌ Bad: JOIN 결과를 Entity에 추가
-  public class CommunityPostEntity {
-      private Long postId;
-      private Long userId;
-      private String userName;  // ❌ community_post 테이블에 없는 컬럼
-  }
+    @Override
+    public void save(User user) {
+        // Domain → JOOQ Record 변환
+        UserRecord record = dsl.newRecord(USER);
+        record.setEmail(user.getEmail().getValue());
+        record.setName(user.getName().getValue());
+        record.setNickname(user.getNickname().getValue());
+        record.setPassword(user.getPassword().getValue());
+        // ... 기타 필드
 
-  // ✅ Good: DB 테이블과 정확히 일치
-  public class CommunityPostEntity {
-      private Long postId;
-      private Long userId;
-      // userName은 없음 (테이블에 없으므로)
-  }
-  ```
+        record.store();  // INSERT
+    }
 
-#### JOIN 결과 처리 방법
-- **조회 전용 DTO를 생성하여 사용한다**
+    @Override
+    public void update(User user) {
+        // Domain → JOOQ Record 변환 및 UPDATE
+        dsl.update(USER)
+            .set(USER.NAME, user.getName().getValue())
+            .set(USER.NICKNAME, user.getNickname().getValue())
+            .where(USER.USER_ID.eq(user.getUserId()))
+            .execute();
+    }
 
-  ```xml
-  <!-- ❌ Bad: Entity에 없는 필드 매핑 시도 -->
-  <select id="selectPost" resultType="kr.co.common.entity.community.CommunityPostEntity">
-      SELECT cp.*, u.name
-      FROM community_post cp
-      LEFT JOIN "user" u ON cp.user_id = u.user_id
-  </select>
+    @Override
+    public Optional<UserDetailDto> findById(Long userId) {
+        // JOOQ 조회 → 내부용 Dto 반환
+        return dsl.select(
+                USER.USER_ID,
+                USER.EMAIL,
+                USER.NAME,
+                USER.NICKNAME
+            )
+            .from(USER)
+            .where(USER.USER_ID.eq(userId))
+            .fetchOptional(record -> new UserDetailDto(
+                record.get(USER.USER_ID),
+                record.get(USER.EMAIL),
+                record.get(USER.NAME),
+                record.get(USER.NICKNAME)
+            ));
+    }
 
-  <!-- ✅ Good: 조회 전용 DTO 사용 -->
-  <select id="selectPost" resultType="kr.co.common.entity.community.CommunityPostQueryDto">
-      SELECT
-          cp.post_id,
-          cp.user_id,
-          cp.category,
-          cp.title,
-          cp.content,
-          u.name as user_name
-      FROM community_post cp
-      LEFT JOIN "user" u ON cp.user_id = u.user_id
-  </select>
-  ```
+    @Override
+    public Optional<User> findByEmail(String email) {
+        // JOOQ 조회 → Domain 반환
+        return dsl.selectFrom(USER)
+            .where(USER.EMAIL.eq(email))
+            .fetchOptional(record -> User.of(
+                record.getUserId(),
+                record.getEmail(),
+                record.getName(),
+                record.getNickname()
+            ));
+    }
+}
+```
 
-  ```java
-  // common/src/main/java/kr/co/common/entity/community/CommunityPostQueryDto.java
-  @Getter
-  @AllArgsConstructor
-  public class CommunityPostQueryDto {
-      private Long postId;
-      private Long userId;
-      private String category;
-      private String title;
-      private String content;
-      private String userName;  // ✅ JOIN 결과 필드
-  }
-  ```
-
-#### Entity와 DB 컬럼 매핑 규칙
-- Entity 필드명 = DB 컬럼명 (camelCase ↔ snake_case 자동 변환)
-- Entity 필드와 DB 컬럼 예시:
-  - `UserEntity.name` → `user.name`
-  - `UserEntity.phoneNumber` → `user.phone_number`
-  - `PetEntity.petName` → `pet.pet_name`
+**Repository 규칙**:
+- **등록/수정**: 도메인으로 파라미터 받기 (Repository 내부에서 JOOQ Record로 변환)
+- **조회**: 내부용 Dto 또는 Domain으로 반환
+- **삭제**: 기본 타입(Long, String 등) 사용
+- JOOQ DSLContext를 활용한 타입 안전 쿼리
+- JOIN이 필요한 경우 내부용 Dto로 반환
 
 ## 🚨 예외 처리 패턴
 
@@ -317,35 +328,40 @@ public void validateEmailVerified() {
 }
 ```
 
-## 📋 개발 체크리스트
+## 📋 개발 체크리스트 (JOOQ 기반)
 
 ### 새로운 기능 개발 시 확인사항
 
 #### 1. 패키지 구조 확인
-- [ ] controller, service, domain, dto, mapper 패키지 구조 준수
+- [ ] controller, service, domain, dto, repository 패키지 구조 준수
 
 #### 2. Controller 레이어
-- [ ] 3개 초과 파라미터 시 Command DTO 사용
-- [ ] RequestDto → CommandDto 변환은 생성자 직접 호출
-- [ ] CommandDto → ResponseDto 변환은 생성자 직접 호출
+- [ ] RequestDto → 내부용 Dto 변환 (생성자 직접 호출)
+- [ ] 내부용 Dto → ResponseDto 변환 (생성자 직접 호출)
+- [ ] 파라미터 3개 이하: 직접 전달, 3개 초과: 내부용 Dto 사용
 - [ ] @AuthRequired 어노테이션 적절히 설정
 - [ ] Swagger 어노테이션 추가
 
 #### 3. Service 레이어
 - [ ] @Transactional 적절히 설정 (readOnly, 전파 옵션 등)
-- [ ] CommandDto → Domain 변환은 정적 팩토리 메서드 사용
+- [ ] 내부용 Dto → Domain 변환은 정적 팩토리 메서드 사용
 - [ ] 비즈니스 로직은 Domain 객체에 캡슐화
-- [ ] Domain → Entity 변환은 생성자 직접 호출
-- [ ] Entity → CommandDto 변환은 생성자 직접 호출
+- [ ] Repository를 통해 도메인 저장/조회
 
-#### 4. Domain 레이어
+#### 4. Repository 레이어
+- [ ] 등록/수정: 도메인으로 파라미터 받기
+- [ ] 조회: 내부용 Dto 또는 Domain 반환
+- [ ] JOOQ DSLContext 활용한 타입 안전 쿼리
+- [ ] Domain ↔ JOOQ Record 변환 로직 구현
+
+#### 5. Domain 레이어
 - [ ] 불변 객체 설계 (final 필드)
 - [ ] 정적 팩토리 메서드 사용
 - [ ] Value Objects 적극 활용
 - [ ] 비즈니스 규칙 도메인 내부에 구현
 
-#### 5. DTO 설계
-- [ ] Command DTO는 불변 객체로 설계
+#### 6. DTO 설계
+- [ ] 내부용 Dto는 불변 객체로 설계
 - [ ] Request/Response DTO는 HTTP 스펙에 맞게 설계
 - [ ] 적절한 validation 어노테이션 추가
 - [ ] **리스트 응답은 반드시 필드로 한 번 더 감싸서 반환** (확장성 확보)

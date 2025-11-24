@@ -33,6 +33,11 @@ logging:
   level:
     kr.co.api.user.repository: DEBUG
 
+# Swagger UI 설정
+springdoc:
+  swagger-ui:
+    persistAuthorization: true
+
 # JOOQ (MyBatis 설정 제거됨)
 
 ---

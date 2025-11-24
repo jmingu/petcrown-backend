@@ -9,13 +9,16 @@ public class UserName {
     private final String value;
     
     private UserName(String name) {
-        ValidationUtils.validateNameString(name, "이름", "name",2, 10);
         this.value = name;
     }
 
     public static UserName of(String name) {
+        ValidationUtils.validateNameString(name, "이름", "name",1, 10);
         return new UserName(name);
     }
-    
+
+    public static UserName from(String name) {
+        return new UserName(name); // 검증 없음
+    }
 
 }
