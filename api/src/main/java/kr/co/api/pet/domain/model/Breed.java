@@ -1,8 +1,9 @@
-package kr.co.api.pet.domain;
+package kr.co.api.pet.domain.model;
 
+import kr.co.common.enums.BusinessCode;
+import kr.co.common.exception.PetCrownException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 
 @AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
@@ -14,6 +15,17 @@ public class Breed {
 
     private String name;
 
+    /**
+     *
+     */
+    public static Breed ofId(Integer breedId) {
+
+        if (breedId == null) {
+            throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
+
+        }
+        return new Breed(breedId, null, null);
+    }
 
 
     /**

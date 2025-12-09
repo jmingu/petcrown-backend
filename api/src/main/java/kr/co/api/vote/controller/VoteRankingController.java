@@ -43,6 +43,7 @@ public class VoteRankingController extends BaseController {
                 .map(dto -> new VotePetResponseDto(
                         dto.getVoteId(),
                         dto.getPetId(),
+                        dto.getNickname(),
                         dto.getName(),
                         dto.getGender(),
                         dto.getBirthDate(),
@@ -82,6 +83,7 @@ public class VoteRankingController extends BaseController {
                 .map(dto -> new VotePetResponseDto(
                         dto.getVoteId(),
                         dto.getPetId(),
+                        dto.getNickname(),
                         dto.getName(),
                         dto.getGender(),
                         dto.getBirthDate(),

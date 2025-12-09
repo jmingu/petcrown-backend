@@ -79,6 +79,7 @@ public class VoteController extends BaseController {
                 .map(dto -> new VotePetResponseDto(
                         dto.getVoteId(),
                         dto.getPetId(),
+                        dto.getNickname(),
                         dto.getName(),
                         dto.getGender(),
                         dto.getBirthDate(),
@@ -121,6 +122,7 @@ public class VoteController extends BaseController {
         VotePetResponseDto responseDto = new VotePetResponseDto(
                 voteInfoDto.getVoteId(),
                 voteInfoDto.getPetId(),
+                voteInfoDto.getNickname(),
                 voteInfoDto.getName(),
                 voteInfoDto.getGender(),
                 voteInfoDto.getBirthDate(),
@@ -210,7 +212,7 @@ public class VoteController extends BaseController {
             @PathVariable Long voteId,
             @RequestBody VoteRequestDto request) {
 
-        voteService.castVoteMonthly(voteId, request.getEmail());
+        voteService.castVoteWeekly(voteId, request.getEmail());
 
         return success();
     }

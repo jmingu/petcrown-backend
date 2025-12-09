@@ -2,7 +2,7 @@ package kr.co.api.vote.service;
 
 import kr.co.api.common.dto.FileInfoDto;
 import kr.co.api.common.repository.FileInfoRepository;
-import kr.co.api.pet.domain.Pet;
+import kr.co.api.pet.domain.model.Pet;
 import kr.co.api.user.domain.model.User;
 import kr.co.api.user.domain.model.UserVoteCount;
 import kr.co.api.user.dto.command.EmailGuestDto;
@@ -12,9 +12,9 @@ import kr.co.api.user.domain.model.UserVoteCountHistory;
 import kr.co.api.user.repository.EmailGuestRepository;
 import kr.co.api.user.repository.UserRepository;
 import kr.co.api.user.repository.UserVoteCountRepository;
-import kr.co.api.vote.domain.VoteFileInfo;
-import kr.co.api.vote.domain.VoteWeekly;
-import kr.co.api.vote.domain.VotingEmail;
+import kr.co.api.vote.domain.model.VoteFileInfo;
+import kr.co.api.vote.domain.model.VoteWeekly;
+import kr.co.api.vote.domain.model.VotingEmail;
 import kr.co.api.vote.dto.command.*;
 import kr.co.api.vote.repository.VoteHistoryRepository;
 import kr.co.api.vote.repository.VoteRepository;
@@ -58,9 +58,9 @@ public class VoteService {
         log.debug("Current week start date: {}", weekStartDate);
 
         // 2. petModeId 필수 검증
-        if (voteRegistrationDto.getPetModeId() == null) {
-            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
-        }
+//        if (voteRegistrationDto.getPetModeId() == null) {
+//            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
+//        }
 
         // 3. 주별 투표 등록 제한 검증 (주 1회만 등록 가능)
         int currentWeekVoteCount = voteRepository.countWeeklyVoteRegistrationByUser(voteRegistrationDto.getUserId());
@@ -120,8 +120,7 @@ public class VoteService {
         VoteWeekly voteWeekly = VoteWeekly.createVote(
             pet,
             user,
-            weekStartDate,
-            voteRegistrationDto.getPetModeId().intValue()
+            weekStartDate, voteRegistrationDto.getPetModeId() == null ? null : voteRegistrationDto.getPetModeId()
         );
 
         // 5. 영속성 저장 (도메인 객체 직접 전달)
@@ -131,7 +130,7 @@ public class VoteService {
         VoteWeekly savedVoteWeekly = voteWeekly.withId(voteWeeklyId);
 
         // 7. 투표 파일 정보 도메인 생성 (정적 팩토리 메서드 사용)
-        VoteFileInfo voteFileInfo = kr.co.api.vote.domain.VoteFileInfo.createFileInfo(
+        VoteFileInfo voteFileInfo = VoteFileInfo.createFileInfo(
             savedVoteWeekly,
             imageUrl,
             fileSize,
@@ -140,7 +139,7 @@ public class VoteService {
             originalFileName
         );
 
-        // 8. 영속성 저장 (도메인 객체 직접 전달)
+        // 8.  저장 (도메인 객체 직접 전달)
         voteRepository.insertVoteFileInfo(voteFileInfo);
 
         // 6. 사용자 투표 카운트 관리
@@ -345,6 +344,14 @@ public class VoteService {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
             }
 
+            // 가입전 이메일로 투표를 염두한 이메일 중복 검증
+            int emailExistingVoteCount = voteHistoryRepository.countTodayVoteByEmail(
+                    votingEmail.getEmail().getValue(), voteId, "WEEKLY");
+
+            if (emailExistingVoteCount > 0) {
+                throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
+            }
+
             // 투표 기록 생성 (historyDate는 Repository에서 current_date 사용)
             VoteHistoryDto voteHistoryDto = new VoteHistoryDto(
                     votingEmail.getUser().getUserId(), voteId, null, "WEEKLY");
@@ -388,94 +395,6 @@ public class VoteService {
                 email, voteId, votingEmail.isMember());
     }
 
-    /**
-     * 월간 투표하기 (Monthly 투표 카운트만 증가)
-     * DB의 current_date 사용으로 서버/DB 시간대 불일치 방지
-     */
-    @Transactional
-    public void castVoteMonthly(Long voteId, String email) {
-        // 1. Weekly 투표로부터 petId 조회
-        VoteInfoDto voteInfo = voteRepository.selectVoteWeeklyDetail(voteId);
-        if (voteInfo == null) {
-            throw new PetCrownException(VOTE_NOT_FOUND);
-        }
-
-        // 2. 자신의 펫에는 투표 불가
-        if (email != null && email.equalsIgnoreCase(voteInfo.getOwnerEmail())) {
-            throw new PetCrownException(BusinessCode.CANNOT_VOTE_OWN_PET);
-        }
-
-        // 3. Monthly 투표 존재 여부 확인 (WHERE 절에 date_trunc 직접 사용)
-        VoteMonthlyDto monthlyVote =
-            voteRepository.selectVoteMonthlyByPetIdAndMonth(voteInfo.getPetId());
-
-        if (monthlyVote == null) {
-            throw new PetCrownException(VOTE_NOT_FOUND);
-        }
-
-        // 4. 이메일 타입 결정 (회원/비회원)
-        UserInfoDto user = userRepository.selectByEmail(email);
-        VotingEmail votingEmail;
-        if (user != null) {
-            votingEmail = VotingEmail.createForMember(email, user.getUserId());
-        } else {
-            votingEmail = VotingEmail.createForGuest(email);
-        }
-
-        if (votingEmail.isMember()) {
-            // 회원 투표 처리
-            votingEmail.validateMemberVotingRight();
-
-            // 중복 투표 검증 (DB의 current_date 사용)
-            int existingVoteCount = voteHistoryRepository.countTodayVoteByUser(
-                    votingEmail.getUser().getUserId(), voteId, "MONTHLY");
-
-            if (existingVoteCount > 0) {
-                throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
-            }
-
-            // 투표 기록 생성 (historyDate는 Repository에서 current_date 사용)
-            VoteHistoryDto voteHistoryDto = new VoteHistoryDto(
-                    votingEmail.getUser().getUserId(), voteId, null, "MONTHLY");
-            voteHistoryRepository.insertVoteHistory(voteHistoryDto);
-
-            // Monthly 투표 카운트 증가
-            voteRepository.updateVoteMonthlyCount(monthlyVote.getVoteMonthlyId(), votingEmail.getUser().getUserId());
-
-            // 사용자 투표 카운트 감소 (투표권 사용)
-            decrementUserVoteCount(votingEmail.getUser().getUserId());
-
-            log.info("Member monthly vote cast: userId={}, voteId={}", votingEmail.getUser().getUserId(), voteId);
-
-        } else {
-            // 비회원 투표 처리 (DB의 current_date 사용)
-            EmailGuestDto emailGuest = emailGuestRepository.selectTodayVerifiedEmail(
-                    votingEmail.getEmail().getValue());
-            boolean isTodayVerified = (emailGuest != null);
-            votingEmail.validateGuestVotingRight(isTodayVerified);
-
-            // 중복 투표 검증 (DB의 current_date 사용)
-            int existingVoteCount = voteHistoryRepository.countTodayVoteByEmail(
-                    votingEmail.getEmail().getValue(), voteId, "MONTHLY");
-
-            if (existingVoteCount > 0) {
-                throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
-            }
-
-            // 투표 기록 생성 (historyDate는 Repository에서 current_date 사용)
-            VoteHistoryDto voteHistoryDto = new VoteHistoryDto(
-                    null, voteId, votingEmail.getEmail().getValue(), "MONTHLY");
-            voteHistoryRepository.insertVoteHistory(voteHistoryDto);
-
-            // Monthly 투표 카운트 증가
-            voteRepository.updateVoteMonthlyCount(monthlyVote.getVoteMonthlyId(), null);
-
-            log.info("Guest monthly vote cast: email={}, voteId={}", votingEmail.getEmail().getValue(), voteId);
-        }
-
-        log.info("Monthly vote cast successfully: email={}, voteId={}, isMember={}",
-                email, voteId, votingEmail.isMember());
-    }
 
     /**
      * 사용자 투표 카운트 감소 (공통 로직)

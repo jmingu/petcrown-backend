@@ -1,5 +1,7 @@
 package kr.co.api.vote.repository;
 
+import kr.co.api.vote.domain.model.VoteFileInfo;
+import kr.co.api.vote.domain.model.VoteWeekly;
 import kr.co.api.vote.dto.command.VoteInfoDto;
 import kr.co.api.vote.dto.command.VoteFileInfoDto;
 import kr.co.api.vote.dto.command.VoteMonthlyDto;
@@ -10,7 +12,6 @@ import org.jooq.Record;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static kr.co.common.jooq.Tables.*;
@@ -25,7 +26,7 @@ public class VoteRepository {
     /**
      * Weekly 투표 등록
      */
-    public Long insertVoteWeekly(kr.co.api.vote.domain.VoteWeekly voteWeekly) {
+    public Long insertVoteWeekly(VoteWeekly voteWeekly) {
         return dsl.insertInto(VOTE_WEEKLY)
                 .set(VOTE_WEEKLY.WEEK_START_DATE, voteWeekly.getWeekStartDate())
                 .set(VOTE_WEEKLY.PET_ID, voteWeekly.getPet().getPetId())
@@ -40,28 +41,12 @@ public class VoteRepository {
                 .fetchOne(VOTE_WEEKLY.VOTE_WEEKLY_ID);
     }
 
-    /**
-     * Monthly 투표 등록
-     */
-    public Long insertVoteMonthly(VoteMonthlyDto voteMonthlyDto) {
-        return dsl.insertInto(VOTE_MONTHLY)
-                .set(VOTE_MONTHLY.MONTHLY_START_DATE, voteMonthlyDto.getMonthStartDate())
-                .set(VOTE_MONTHLY.PET_ID, voteMonthlyDto.getPetId())
-                .set(VOTE_MONTHLY.VOTE_COUNT, voteMonthlyDto.getVoteCount())
-                .set(VOTE_MONTHLY.VIEW_COUNT, voteMonthlyDto.getViewCount())
-                .set(VOTE_MONTHLY.MODE_ID, voteMonthlyDto.getModeId())
-                .set(VOTE_MONTHLY.CREATE_DATE, currentLocalDateTime())
-                .set(VOTE_MONTHLY.CREATE_USER_ID, 0L)
-                .set(VOTE_MONTHLY.UPDATE_DATE, currentLocalDateTime())
-                .set(VOTE_MONTHLY.UPDATE_USER_ID, 0L)
-                .returningResult(VOTE_MONTHLY.VOTE_MONTHLY_ID)
-                .fetchOne(VOTE_MONTHLY.VOTE_MONTHLY_ID);
-    }
+
 
     /**
      * 투표 파일 정보 등록
      */
-    public Long insertVoteFileInfo(kr.co.api.vote.domain.VoteFileInfo voteFileInfo) {
+    public Long insertVoteFileInfo(VoteFileInfo voteFileInfo) {
         return dsl.insertInto(VOTE_FILE_INFO)
                 .set(VOTE_FILE_INFO.REF_TABLE, kr.co.common.jooq.enums.RefTableEnum.vote_weekly)
                 .set(VOTE_FILE_INFO.REF_ID, voteFileInfo.getVoteWeekly().getVoteWeeklyId())
@@ -95,22 +80,7 @@ public class VoteRepository {
                 .fetchOne(this::mapToVoteWeeklyDto);
     }
 
-    /**
-     * Monthly 투표 조회 (petId와 현재 월) - DB의 date_trunc 사용
-     */
-    public VoteMonthlyDto selectVoteMonthlyByPetIdAndMonth(Long petId) {
-        return dsl.select()
-                .from(VOTE_MONTHLY)
-                .where(
-                        VOTE_MONTHLY.PET_ID.eq(petId)
-                                .and(VOTE_MONTHLY.MONTHLY_START_DATE.eq(
-                                        function("date_trunc", String.class, inline("month"), currentDate())
-                                                .cast(LocalDate.class)
-                                ))
-                                .and(VOTE_MONTHLY.DELETE_DATE.isNull())
-                )
-                .fetchOne(this::mapToVoteMonthlyDto);
-    }
+
 
     /**
      * Weekly 투표 목록 조회 (현재 주) - DB의 date_trunc 사용
@@ -241,113 +211,8 @@ public class VoteRepository {
                 .fetchOne(this::mapToVoteInfoDtoForWeekly);
     }
 
-    /**
-     * Monthly 투표 목록 조회 (현재 월)
-     */
-    public List<VoteInfoDto> selectVoteMonthlyList(LocalDate monthStartDate, long offset, int limit) {
-        var vm = VOTE_MONTHLY.as("vm");
-        var vfi = VOTE_FILE_INFO.as("vfi");
-        var p = PET.as("p");
-        var u = USER.as("u");
-        var b = BREED.as("b");
-        var s = SPECIES.as("s");
 
-        return dsl.select()
-                .from(vm)
-                .innerJoin(p)
-                .on(
-                        vm.PET_ID.eq(p.PET_ID)
-                                .and(p.DELETE_DATE.isNull())
-                )
-                .innerJoin(u)
-                .on(
-                        p.USER_ID.eq(u.USER_ID)
-                                .and(u.DELETE_DATE.isNull())
-                )
-                .leftJoin(b)
-                .on(p.BREED_ID.eq(b.BREED_ID.cast(Long.class)))
-                .leftJoin(s)
-                .on(b.SPECIES_ID.eq(s.SPECIES_ID.cast(Long.class)))
-                .leftJoin(vfi)
-                .on(
-                        vfi.REF_TABLE.eq(kr.co.common.jooq.enums.RefTableEnum.vote_monthly)
-                                .and(vfi.REF_ID.eq(vm.VOTE_MONTHLY_ID))
-                                .and(vfi.DELETE_DATE.isNull())
-                )
-                .where(
-                        vm.MONTHLY_START_DATE.eq(monthStartDate)
-                                .and(vm.DELETE_DATE.isNull())
-                )
-                .orderBy(
-                        vm.VOTE_COUNT.desc(),
-                        vm.VOTE_MONTHLY_ID.desc()
-                )
-                .limit(limit)
-                .offset((int) offset)
-                .fetch(this::mapToVoteInfoDtoForMonthly);
-    }
 
-    /**
-     * Monthly 투표 목록 개수
-     */
-    public int selectVoteMonthlyListCount(LocalDate monthStartDate) {
-        var vm = VOTE_MONTHLY.as("vm");
-        var p = PET.as("p");
-
-        Integer count = dsl.selectCount()
-                .from(vm)
-                .innerJoin(p)
-                .on(
-                        vm.PET_ID.eq(p.PET_ID)
-                                .and(p.DELETE_DATE.isNull())
-                )
-                .where(
-                        vm.MONTHLY_START_DATE.eq(monthStartDate)
-                                .and(vm.DELETE_DATE.isNull())
-                )
-                .fetchOne(0, int.class);
-        return count != null ? count : 0;
-    }
-
-    /**
-     * Monthly 투표 상세 조회
-     */
-    public VoteInfoDto selectVoteMonthlyDetail(Long voteMonthlyId) {
-        var vm = VOTE_MONTHLY.as("vm");
-        var vfi = VOTE_FILE_INFO.as("vfi");
-        var p = PET.as("p");
-        var u = USER.as("u");
-        var b = BREED.as("b");
-        var s = SPECIES.as("s");
-
-        return dsl.select()
-                .from(vm)
-                .innerJoin(p)
-                .on(
-                        vm.PET_ID.eq(p.PET_ID)
-                                .and(p.DELETE_DATE.isNull())
-                )
-                .innerJoin(u)
-                .on(
-                        p.USER_ID.eq(u.USER_ID)
-                                .and(u.DELETE_DATE.isNull())
-                )
-                .leftJoin(b)
-                .on(p.BREED_ID.eq(b.BREED_ID.cast(Long.class)))
-                .leftJoin(s)
-                .on(b.SPECIES_ID.eq(s.SPECIES_ID.cast(Long.class)))
-                .leftJoin(vfi)
-                .on(
-                        vfi.REF_TABLE.eq(kr.co.common.jooq.enums.RefTableEnum.vote_monthly)
-                                .and(vfi.REF_ID.eq(vm.VOTE_MONTHLY_ID))
-                                .and(vfi.DELETE_DATE.isNull())
-                )
-                .where(
-                        vm.VOTE_MONTHLY_ID.eq(voteMonthlyId)
-                                .and(vm.DELETE_DATE.isNull())
-                )
-                .fetchOne(this::mapToVoteInfoDtoForMonthly);
-    }
 
     /**
      * Weekly 투표 카운트 증가
@@ -361,17 +226,7 @@ public class VoteRepository {
                 .execute();
     }
 
-    /**
-     * Monthly 투표 카운트 증가
-     */
-    public void updateVoteMonthlyCount(Long voteMonthlyId, Long updateUserId) {
-        dsl.update(VOTE_MONTHLY)
-                .set(VOTE_MONTHLY.VOTE_COUNT, VOTE_MONTHLY.VOTE_COUNT.plus(1))
-                .set(VOTE_MONTHLY.UPDATE_DATE, currentLocalDateTime())
-                .set(VOTE_MONTHLY.UPDATE_USER_ID, updateUserId)
-                .where(VOTE_MONTHLY.VOTE_MONTHLY_ID.eq(voteMonthlyId))
-                .execute();
-    }
+
 
     /**
      * Weekly 투표 삭제 (논리 삭제)
@@ -384,16 +239,7 @@ public class VoteRepository {
                 .execute();
     }
 
-    /**
-     * Monthly 투표 삭제 (논리 삭제)
-     */
-    public void deleteVoteMonthly(Long voteMonthlyId, Long deleteUserId) {
-        dsl.update(VOTE_MONTHLY)
-                .set(VOTE_MONTHLY.DELETE_DATE, currentLocalDateTime())
-                .set(VOTE_MONTHLY.DELETE_USER_ID, deleteUserId)
-                .where(VOTE_MONTHLY.VOTE_MONTHLY_ID.eq(voteMonthlyId))
-                .execute();
-    }
+
 
     /**
      * 투표 파일 정보 수정
@@ -523,23 +369,7 @@ public class VoteRepository {
         );
     }
 
-    /**
-     * Record를 VoteMonthlyDto로 변환
-     */
-    private VoteMonthlyDto mapToVoteMonthlyDto(Record record) {
-        if (record == null) {
-            return null;
-        }
 
-        return new VoteMonthlyDto(
-                record.get(VOTE_MONTHLY.VOTE_MONTHLY_ID),
-                record.get(VOTE_MONTHLY.MONTHLY_START_DATE),
-                record.get(VOTE_MONTHLY.PET_ID),
-                record.get(VOTE_MONTHLY.VOTE_COUNT),
-                record.get(VOTE_MONTHLY.VIEW_COUNT),
-                record.get(VOTE_MONTHLY.MODE_ID)
-        );
-    }
 
     /**
      * Record를 VoteInfoDto로 변환 (Weekly용)
@@ -561,6 +391,7 @@ public class VoteRepository {
                 record.get(vw.VOTE_WEEKLY_ID),
                 record.get(p.PET_ID),
                 record.get(u.USER_ID),
+                record.get(u.NICKNAME),
                 record.get(p.NAME),
                 record.get(p.GENDER),
                 record.get(p.BIRTH_DATE),
@@ -580,41 +411,4 @@ public class VoteRepository {
         );
     }
 
-    /**
-     * Record를 VoteInfoDto로 변환 (Monthly용)
-     */
-    private VoteInfoDto mapToVoteInfoDtoForMonthly(Record record) {
-        if (record == null) {
-            return null;
-        }
-
-        var vm = VOTE_MONTHLY.as("vm");
-        var vfi = VOTE_FILE_INFO.as("vfi");
-        var p = PET.as("p");
-        var u = USER.as("u");
-        var b = BREED.as("b");
-        var s = SPECIES.as("s");
-
-        return new VoteInfoDto(
-                record.get(vm.VOTE_MONTHLY_ID),
-                record.get(p.PET_ID),
-                record.get(u.USER_ID),
-                record.get(p.NAME),
-                record.get(p.GENDER),
-                record.get(p.BIRTH_DATE),
-                record.get(p.BREED_ID) != null ? record.get(p.BREED_ID).intValue() : null,
-                record.get(b.NAME),
-                record.get(p.CUSTOM_BREED),
-                record.get(b.SPECIES_ID) != null ? record.get(b.SPECIES_ID).intValue() : null,
-                record.get(s.NAME),
-                0, // petModeId (Monthly에는 없음)
-                null, // petModeName (Monthly에는 없음)
-                0, // dailyVoteCount
-                0, // weeklyVoteCount
-                record.get(vm.VOTE_COUNT) != null ? record.get(vm.VOTE_COUNT) : 0, // monthlyVoteCount
-                record.get(vm.MONTHLY_START_DATE),
-                record.get(vfi.FILE_URL),
-                record.get(u.EMAIL)
-        );
-    }
 }

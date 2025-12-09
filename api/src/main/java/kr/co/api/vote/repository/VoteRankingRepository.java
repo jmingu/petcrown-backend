@@ -135,6 +135,7 @@ public class VoteRankingRepository {
                 record.get(VOTE_WEEKLY.VOTE_WEEKLY_ID),
                 record.get(PET.PET_ID),
                 record.get(USER.USER_ID),
+                record.get(USER.NICKNAME),
                 record.get(PET.NAME),
                 record.get(PET.GENDER),
                 record.get(PET.BIRTH_DATE),

@@ -12,6 +12,7 @@ public class VoteInfoDto {
     private final Long voteId;
     private final Long petId;
     private final Long userId;
+    private final String nickname;
     private final String name;
     private final String gender;
     private final LocalDate birthDate;

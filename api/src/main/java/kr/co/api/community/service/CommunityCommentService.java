@@ -1,6 +1,6 @@
 package kr.co.api.community.service;
 
-import kr.co.api.community.domain.CommunityComment;
+import kr.co.api.community.domain.model.CommunityComment;
 import kr.co.api.community.dto.command.CommunityCommentInfoDto;
 import kr.co.api.community.dto.command.CommunityCommentQueryDto;
 import kr.co.api.community.dto.command.CommunityCommentRegistrationDto;

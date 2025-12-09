@@ -1,6 +1,6 @@
 package kr.co.api.event.repository;
 
-import kr.co.api.event.domain.Event;
+import kr.co.api.event.domain.model.Event;
 import kr.co.api.event.dto.command.EventQueryDto;
 import kr.co.api.event.dto.command.EventUpdateDto;
 import lombok.RequiredArgsConstructor;

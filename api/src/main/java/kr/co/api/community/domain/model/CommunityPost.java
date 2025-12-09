@@ -1,4 +1,4 @@
-package kr.co.api.community.domain;
+package kr.co.api.community.domain.model;
 
 import kr.co.api.notice.domain.vo.Content;
 import kr.co.api.notice.domain.vo.ContentType;

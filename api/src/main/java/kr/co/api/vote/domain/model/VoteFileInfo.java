@@ -1,4 +1,4 @@
-package kr.co.api.vote.domain;
+package kr.co.api.vote.domain.model;
 
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;

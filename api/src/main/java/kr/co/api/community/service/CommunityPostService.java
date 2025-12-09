@@ -1,7 +1,7 @@
 package kr.co.api.community.service;
 
 import kr.co.api.common.repository.FileInfoRepository;
-import kr.co.api.community.domain.CommunityPost;
+import kr.co.api.community.domain.model.CommunityPost;
 import kr.co.api.community.dto.command.CommunityPostInfoDtailDto;
 import kr.co.api.community.dto.command.CommunityPostInfoDto;
 import kr.co.api.community.dto.command.CommunityPostRegistrationDto;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package kr.co.api.pet.domain;
+package kr.co.api.pet.domain.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

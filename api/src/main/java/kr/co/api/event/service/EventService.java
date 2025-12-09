@@ -3,7 +3,7 @@ package kr.co.api.event.service;
 import kr.co.api.common.dto.FileInfoDto;
 import kr.co.api.common.repository.FileInfoRepository;
 import kr.co.api.common.service.FileService;
-import kr.co.api.event.domain.Event;
+import kr.co.api.event.domain.model.Event;
 import kr.co.api.event.dto.command.EventInfoDto;
 import kr.co.api.event.dto.command.EventQueryDto;
 import kr.co.api.event.dto.command.EventRegistrationDto;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

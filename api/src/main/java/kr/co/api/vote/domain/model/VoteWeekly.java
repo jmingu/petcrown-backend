@@ -1,6 +1,6 @@
-package kr.co.api.vote.domain;
+package kr.co.api.vote.domain.model;
 
-import kr.co.api.pet.domain.Pet;
+import kr.co.api.pet.domain.model.Pet;
 import kr.co.api.user.domain.model.User;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
@@ -37,9 +37,6 @@ public class VoteWeekly {
         }
         if (weekStartDate == null) {
             throw new PetCrownException(BusinessCode.MISSING_REQUIRED_VALUE);
-        }
-        if (modeId == null) {
-            throw new PetCrownException(BusinessCode.EMPTY_VALUE);
         }
 
         return new VoteWeekly(

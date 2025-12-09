@@ -61,6 +61,14 @@ public class SwaggerConfiguration {
     }
 
     @Bean
+    public GroupedOpenApi group4() {
+        return GroupedOpenApi.builder()
+                .group("게임관련")
+                .packagesToScan("kr.co.api.game")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi encryptionGroup() {
         return GroupedOpenApi.builder()
                 .group("암호화 (개발용)")
@@ -68,4 +76,6 @@ public class SwaggerConfiguration {
                 .pathsToMatch("/encrypt/**")
                 .build();
     }
+
+
 }

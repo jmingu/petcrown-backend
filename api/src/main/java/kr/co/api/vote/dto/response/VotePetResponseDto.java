@@ -14,6 +14,7 @@ import java.time.LocalDate;
 public class VotePetResponseDto {
     private Long voteId;
     private Long petId;
+    private String nickname;
     private String name;
     private String gender;
     private LocalDate birthDate;

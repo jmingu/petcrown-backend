@@ -1,6 +1,6 @@
 package kr.co.api.community.repository;
 
-import kr.co.api.community.domain.CommunityPost;
+import kr.co.api.community.domain.model.CommunityPost;
 import kr.co.api.community.dto.command.CommunityPostQueryDto;
 import kr.co.api.community.dto.command.CommunityPostUpdateDto;
 import lombok.RequiredArgsConstructor;

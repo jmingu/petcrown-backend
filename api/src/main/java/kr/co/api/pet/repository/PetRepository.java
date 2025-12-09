@@ -1,6 +1,6 @@
 package kr.co.api.pet.repository;
 
-import kr.co.api.pet.domain.Pet;
+import kr.co.api.pet.domain.model.Pet;
 import kr.co.api.pet.dto.command.BreedInfoDto;
 import kr.co.api.pet.dto.command.PetInfoDto;
 import kr.co.api.pet.dto.command.PetRegistrationDto;
@@ -9,9 +9,9 @@ import kr.co.api.pet.dto.command.SpeciesInfoDto;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -49,13 +49,17 @@ public class PetRepository {
      */
     public Long insertPetEntity(Pet pet) {
         return dsl.insertInto(PET)
-                .set(PET.BREED_ID, pet.getBreed() != null ? pet.getBreed().getBreedId() : (Long) null)
+                .set(PET.BREED_ID, DSL.val(
+                        pet.getBreed() != null ? pet.getBreed().getBreedId() : null, Long.class
+                ))
                 .set(PET.CUSTOM_BREED, pet.getCustomBreed())
-                .set(PET.OWNERSHIP_ID, pet.getOwnership() != null ? pet.getOwnership().getOwnershipId() :(Long) null)
+                .set(PET.OWNERSHIP_ID, DSL.val(
+                        pet.getOwnership() != null ? pet.getOwnership().getOwnershipId() : null, Long.class
+                ))
                 .set(PET.USER_ID, pet.getUserId())
                 .set(PET.NAME, pet.getName().getValue())
                 .set(PET.BIRTH_DATE, pet.getBirthDate())
-                .set(PET.GENDER, pet.getGender().getCode())
+                .set(PET.GENDER, pet.getGender() != null ? pet.getGender().getCode() : null)
                 .set(PET.WEIGHT, pet.getWeight())
                 .set(PET.HEIGHT, pet.getHeight())
                 .set(PET.IS_NEUTERED, pet.getIsNeutered())
@@ -189,12 +193,16 @@ public class PetRepository {
      */
     public void updatePetEntity(Pet pet) {
         dsl.update(PET)
-                .set(PET.BREED_ID, pet.getBreed() != null ? pet.getBreed().getBreedId() : (Long)null)
+                .set(PET.BREED_ID, DSL.val(
+                        pet.getBreed() != null ? pet.getBreed().getBreedId() : null, Long.class
+                ))
                 .set(PET.CUSTOM_BREED, pet.getCustomBreed())
-                .set(PET.OWNERSHIP_ID, pet.getOwnership() != null ? pet.getOwnership().getOwnershipId(): (Long)null)
+                .set(PET.OWNERSHIP_ID, DSL.val(
+                        pet.getOwnership() != null ? pet.getOwnership().getOwnershipId(): null, Long.class
+                ))
                 .set(PET.NAME, pet.getName().getValue())
                 .set(PET.BIRTH_DATE, pet.getBirthDate())
-                .set(PET.GENDER, pet.getGender().getCode())
+                .set(PET.GENDER, pet.getGender() != null ? pet.getGender().getCode() : null)
                 .set(PET.WEIGHT, pet.getWeight())
                 .set(PET.HEIGHT, pet.getHeight())
                 .set(PET.IS_NEUTERED, pet.getIsNeutered())
@@ -257,7 +265,7 @@ public class PetRepository {
                 )
                 .from(BREED)
                 .where(BREED.SPECIES_ID.eq(speciesId))
-                .orderBy(BREED.NAME)
+                .orderBy(BREED.BREED_ID)
                 .fetch(this::mapToBreedInfoDto);
     }
 

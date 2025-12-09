@@ -2,9 +2,9 @@ package kr.co.api.pet.service;
 
 import kr.co.api.common.dto.FileInfoDto;
 import kr.co.api.common.repository.FileInfoRepository;
-import kr.co.api.pet.domain.Breed;
-import kr.co.api.pet.domain.Ownership;
-import kr.co.api.pet.domain.Pet;
+import kr.co.api.pet.domain.model.Breed;
+import kr.co.api.pet.domain.model.Ownership;
+import kr.co.api.pet.domain.model.Pet;
 import kr.co.api.pet.domain.vo.PetGender;
 import kr.co.api.pet.domain.vo.PetName;
 import kr.co.api.pet.dto.command.*;

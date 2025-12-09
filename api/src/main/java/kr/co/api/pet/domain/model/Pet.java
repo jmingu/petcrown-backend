@@ -1,10 +1,9 @@
-package kr.co.api.pet.domain;
+package kr.co.api.pet.domain.model;
 
 import kr.co.api.pet.domain.vo.*;
 import kr.co.api.user.domain.model.User;
 import kr.co.common.enums.BusinessCode;
 import kr.co.common.exception.PetCrownException;
-import kr.co.common.util.DateUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -40,7 +39,7 @@ public class Pet {
         // Value Objects 생성 (유효성 검증 포함)
         PetName name = new PetName(nameValue);
 
-        return new Pet(null, breedId != null ? Breed.getBreedAllFiled(breedId, null, null) : null,
+        return new Pet(null, Breed.ofId(breedId),
                 customBreed, null,
                 User.ofId(userId), name, null, null, null, null, null, null, null, null);
     }

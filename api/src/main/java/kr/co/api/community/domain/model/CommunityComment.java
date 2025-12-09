@@ -1,4 +1,4 @@
-package kr.co.api.community.domain;
+package kr.co.api.community.domain.model;
 
 import kr.co.api.user.domain.model.User;
 import kr.co.common.enums.BusinessCode;

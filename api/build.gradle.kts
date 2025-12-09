@@ -65,19 +65,10 @@ jooq {
                     }
                     target.apply {
                         packageName = "kr.co.common.jooq"
-                        directory = "build/generated-src/jooq/main"
+                        directory = "common/src/main/java"
                     }
                 }
             }
-        }
-    }
-}
-
-// JOOQ 생성 코드를 소스 디렉토리에 추가
-sourceSets {
-    named("main") {
-        java {
-            srcDir("build/generated-src/jooq/main")
         }
     }
 }
