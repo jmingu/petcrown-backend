@@ -154,6 +154,7 @@ public class CommunityPostService {
         postRepository.updatePost(postUpdateDto);
 
         if (postUpdateDto.getImageFiles() != null && !postUpdateDto.getImageFiles().isEmpty()) {
+            // 새 이미지 파일이 있는 경우: 기존 이미지 삭제 + 새 이미지 업로드
             // 1. 기존 파일 조회
             List<FileInfoDto> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postUpdateDto.getPostId());
 
@@ -161,27 +162,20 @@ public class CommunityPostService {
             savePostFiles(postUpdateDto.getPostId(), postUpdateDto.getImageFiles(), postUpdateDto.getUpdateUserId());
 
             // 3. 기존 파일 삭제 (DB + Object Storage)
-            if (!existingFiles.isEmpty()) {
-                for (FileInfoDto existingFile : existingFiles) {
-                    // DB에서 삭제
-                    fileInfoRepository.deleteById(existingFile.getFileId(), postUpdateDto.getUpdateUserId());
+            deleteExistingFiles(existingFiles, postUpdateDto.getUpdateUserId());
 
-                    // Object Storage에서 삭제
-                    if (existingFile.getFileUrl() != null) {
-                        try {
-                            objectStorageService.deleteFileFromUrl(existingFile.getFileUrl());
-                            log.info("Community post image deleted: {}", existingFile.getFileUrl());
-                        } catch (Exception e) {
-                            log.warn("Failed to delete community post image (continuing): {}", e.getMessage());
-                        }
-                    }
-                }
-            }
+        } else if (postUpdateDto.getImageUrls() != null && postUpdateDto.getImageUrls().isEmpty()) {
+            // 이미지를 없애는 수정일 시 (imageUrls가 빈 배열인 경우)
+            List<FileInfoDto> existingFiles = fileInfoRepository.selectByRefTableAndRefId(COMMUNITY_REF_TABLE, postUpdateDto.getPostId());
+            deleteExistingFiles(existingFiles, postUpdateDto.getUpdateUserId());
         }
 
         log.info("Community post updated successfully: postId={}", postUpdateDto.getPostId());
     }
 
+    /**
+     * 게시글 삭제
+     */
     @Transactional
     public void deletePost(Long postId, Long deleteUserId) {
         CommunityPostQueryDto existingPost = postRepository.selectByPostId(postId);
@@ -294,6 +288,27 @@ public class CommunityPostService {
 
         if (!fileInfoList.isEmpty()) {
             fileInfoRepository.insertFileInfoBatch(fileInfoList);
+        }
+    }
+
+    private void deleteExistingFiles(List<FileInfoDto> existingFiles, Long deleteUserId) {
+        if (existingFiles == null || existingFiles.isEmpty()) {
+            return;
+        }
+
+        for (FileInfoDto existingFile : existingFiles) {
+            // DB에서 삭제
+            fileInfoRepository.deleteById(existingFile.getFileId(), deleteUserId);
+
+            // Object Storage에서 삭제
+            if (existingFile.getFileUrl() != null) {
+                try {
+                    objectStorageService.deleteFileFromUrl(existingFile.getFileUrl());
+                    log.info("Community post image deleted: {}", existingFile.getFileUrl());
+                } catch (Exception e) {
+                    log.warn("Failed to delete community post image (continuing): {}", e.getMessage());
+                }
+            }
         }
     }
 

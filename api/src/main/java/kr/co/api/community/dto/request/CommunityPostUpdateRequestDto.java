@@ -34,6 +34,7 @@ public class CommunityPostUpdateRequestDto {
     @Schema(description = "고정 순서", example = "1")
     private Integer pinOrder;
 
-    @Schema(description = "첨부 이미지 목록")
-    private List<MultipartFile> imageFiles;
+    @Schema(description = "기존 이미지 ", example = "https://~")
+    private List<String> imageUrls;
+
 }

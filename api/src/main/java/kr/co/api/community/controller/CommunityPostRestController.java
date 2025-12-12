@@ -152,6 +152,7 @@ public class CommunityPostRestController extends BaseController {
                 request.getIsPinned(),
                 request.getPinOrder(),
                 updateUserId,
+                request.getImageUrls(),
                 images
         );
 

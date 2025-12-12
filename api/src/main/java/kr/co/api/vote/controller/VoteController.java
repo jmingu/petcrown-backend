@@ -202,18 +202,4 @@ public class VoteController extends BaseController {
         return success();
     }
 
-    /**
-     * 월간 투표하기
-     */
-    @AuthRequired(authSkip = true)
-    @PostMapping("/v1/{voteId}/monthly")
-    @Operation(summary = "월간 투표하기", description = "월간 투표에 참여하기")
-    public ResponseEntity<CommonResponseDto> castVoteMonthly(
-            @PathVariable Long voteId,
-            @RequestBody VoteRequestDto request) {
-
-        voteService.castVoteWeekly(voteId, request.getEmail());
-
-        return success();
-    }
 }

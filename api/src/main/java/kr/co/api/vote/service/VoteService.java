@@ -4,14 +4,10 @@ import kr.co.api.common.dto.FileInfoDto;
 import kr.co.api.common.repository.FileInfoRepository;
 import kr.co.api.pet.domain.model.Pet;
 import kr.co.api.user.domain.model.User;
-import kr.co.api.user.domain.model.UserVoteCount;
 import kr.co.api.user.dto.command.EmailGuestDto;
 import kr.co.api.user.dto.command.UserInfoDto;
-import kr.co.api.user.dto.command.UserVoteCountDto;
-import kr.co.api.user.domain.model.UserVoteCountHistory;
 import kr.co.api.user.repository.EmailGuestRepository;
 import kr.co.api.user.repository.UserRepository;
-import kr.co.api.user.repository.UserVoteCountRepository;
 import kr.co.api.vote.domain.model.VoteFileInfo;
 import kr.co.api.vote.domain.model.VoteWeekly;
 import kr.co.api.vote.domain.model.VotingEmail;
@@ -43,7 +39,6 @@ public class VoteService {
     private final VoteHistoryRepository voteHistoryRepository;
     private final UserRepository userRepository;
     private final EmailGuestRepository emailGuestRepository;
-    private final UserVoteCountRepository userVoteCountRepository;
     private final ObjectStorageService objectStorageService;
     private final FileInfoRepository fileInfoRepository;
 
@@ -142,29 +137,6 @@ public class VoteService {
         // 8.  저장 (도메인 객체 직접 전달)
         voteRepository.insertVoteFileInfo(voteFileInfo);
 
-        // 6. 사용자 투표 카운트 관리
-        UserVoteCountDto userVoteCountDto = userVoteCountRepository.selectByUserId(voteRegistrationDto.getUserId());
-        if (userVoteCountDto == null) {
-            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
-        }
-
-        UserVoteCount userVoteCount = UserVoteCount.of(
-                User.ofId(userVoteCountDto.getUserId()),
-                userVoteCountDto.getVoteCount()
-        );
-
-
-
-        // 이번주 처음 등록일때만 투표수 증가 - 삭제 후 재 등록했을땐 투표수 증가 방지
-        if (currentWeekVoteCountNoDelete == 0) {
-            userVoteCountRepository.incrementVoteCount(voteRegistrationDto.getUserId());
-            UserVoteCountHistory history = UserVoteCountHistory.create(
-                    voteRegistrationDto.getUserId(), 1, userVoteCount.getVoteCount(), userVoteCount.getVoteCount() + 1
-            );
-            userVoteCountRepository.insertVoteCountHistory(history);
-        }
-
-
 
         log.info("Vote created successfully: petId={}, userId={}, weeklyId={}",
             voteRegistrationDto.getPetId(), voteRegistrationDto.getUserId(), voteWeeklyId);
@@ -242,14 +214,15 @@ public class VoteService {
             log.info("새 이미지 업로드 및 DB 수정 완료: {}", newImageUrl);
 
             // 3) DB 수정 성공 후, Object Storage에서 기존 이미지만 삭제
-            if (existingVote.getProfileImageUrl() != null && !existingVote.getProfileImageUrl().isEmpty()) {
-                try {
-                    objectStorageService.deleteFileFromUrl(existingVote.getProfileImageUrl());
-                    log.info("기존 이미지 삭제 완료: {}", existingVote.getProfileImageUrl());
-                } catch (Exception e) {
-                    log.warn("기존 이미지 삭제 실패 (계속 진행): {}", e.getMessage());
-                }
-            }
+            // todo 내 펫으로 등록된 사진 URL과 비교하여 삭제해야한다 같은게 존재하면 삭제하면 안된다
+//            if (existingVote.getProfileImageUrl() != null && !existingVote.getProfileImageUrl().isEmpty()) {
+//                try {
+//                    objectStorageService.deleteFileFromUrl(existingVote.getProfileImageUrl());
+//                    log.info("기존 이미지 삭제 완료: {}", existingVote.getProfileImageUrl());
+//                } catch (Exception e) {
+//                    log.warn("기존 이미지 삭제 실패 (계속 진행): {}", e.getMessage());
+//                }
+//            }
         }
 
         // 5. Weekly 투표 update_date 갱신
@@ -286,14 +259,15 @@ public class VoteService {
         }
 
         // 3. 이미지 삭제
-        if (existingVote.getProfileImageUrl() != null && !existingVote.getProfileImageUrl().isEmpty()) {
-            try {
-                objectStorageService.deleteFileFromUrl(existingVote.getProfileImageUrl());
-                log.info("이미지 삭제 완료: {}", existingVote.getProfileImageUrl());
-            } catch (Exception e) {
-                log.warn("이미지 삭제 실패 (계속 진행): {}", e.getMessage());
-            }
-        }
+        // todo 내 펫으로 등록된 사진 URL과 비교하여 삭제해야한다 같은게 존재하면 삭제하면 안된다
+//        if (existingVote.getProfileImageUrl() != null && !existingVote.getProfileImageUrl().isEmpty()) {
+//            try {
+//                objectStorageService.deleteFileFromUrl(existingVote.getProfileImageUrl());
+//                log.info("이미지 삭제 완료: {}", existingVote.getProfileImageUrl());
+//            } catch (Exception e) {
+//                log.warn("이미지 삭제 실패 (계속 진행): {}", e.getMessage());
+//            }
+//        }
 
         // 4. Weekly 투표 논리 삭제
         voteRepository.deleteVoteWeekly(voteId, userId);
@@ -337,16 +311,16 @@ public class VoteService {
             votingEmail.validateMemberVotingRight();
 
             // 중복 투표 검증 (DB의 current_date 사용)
-            int existingVoteCount = voteHistoryRepository.countTodayVoteByUser(
-                    votingEmail.getUser().getUserId(), voteId, "WEEKLY");
+            int existingVoteCount = voteHistoryRepository.countTodayByUser(
+                    votingEmail.getUser().getUserId(), "WEEKLY");
 
             if (existingVoteCount > 0) {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
             }
 
             // 가입전 이메일로 투표를 염두한 이메일 중복 검증
-            int emailExistingVoteCount = voteHistoryRepository.countTodayVoteByEmail(
-                    votingEmail.getEmail().getValue(), voteId, "WEEKLY");
+            int emailExistingVoteCount = voteHistoryRepository.countTodayByEmail(
+                    votingEmail.getEmail().getValue(), "WEEKLY");
 
             if (emailExistingVoteCount > 0) {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
@@ -360,9 +334,6 @@ public class VoteService {
             // Weekly 투표 카운트 증가
             voteRepository.updateVoteWeeklyCount(voteId, votingEmail.getUser().getUserId());
 
-            // 사용자 투표 카운트 감소 (투표권 사용)
-            decrementUserVoteCount(votingEmail.getUser().getUserId());
-
             log.info("Member weekly vote cast: userId={}, voteId={}", votingEmail.getUser().getUserId(), voteId);
 
         } else {
@@ -373,8 +344,8 @@ public class VoteService {
             votingEmail.validateGuestVotingRight(isTodayVerified);
 
             // 중복 투표 검증 (DB의 current_date 사용)
-            int existingVoteCount = voteHistoryRepository.countTodayVoteByEmail(
-                    votingEmail.getEmail().getValue(), voteId, "WEEKLY");
+            int existingVoteCount = voteHistoryRepository.countTodayByEmail(
+                    votingEmail.getEmail().getValue(), "WEEKLY");
 
             if (existingVoteCount > 0) {
                 throw new PetCrownException(BusinessCode.ALREADY_VOTED_TODAY);
@@ -399,27 +370,27 @@ public class VoteService {
     /**
      * 사용자 투표 카운트 감소 (공통 로직)
      */
-    private void decrementUserVoteCount(Long userId) {
-        UserVoteCountDto userVoteCountDto = userVoteCountRepository.selectByUserId(userId);
-        if (userVoteCountDto == null) {
-            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
-        }
-
-        UserVoteCount userVoteCount = UserVoteCount.of(
-            User.ofId(userVoteCountDto.getUserId()),
-            userVoteCountDto.getVoteCount()
-        );
-
-        userVoteCount.validateForCastingDecrement();
-        Integer beforeCount = userVoteCount.getVoteCount();
-        Integer afterCount = userVoteCount.calculateDecrementedCount();
-
-        userVoteCountRepository.decrementVoteCount(userId, userId);
-        UserVoteCountHistory history = UserVoteCountHistory.create(
-            userId, -1, beforeCount, afterCount
-        );
-        userVoteCountRepository.insertVoteCountHistory(history);
-    }
+//    private void decrementUserVoteCount(Long userId) {
+//        UserVoteCountDto userVoteCountDto = userVoteCountRepository.selectByUserId(userId);
+//        if (userVoteCountDto == null) {
+//            throw new PetCrownException(BusinessCode.MEMBER_NOT_FOUND);
+//        }
+//
+//        UserVoteCount userVoteCount = UserVoteCount.of(
+//            User.ofId(userVoteCountDto.getUserId()),
+//            userVoteCountDto.getVoteCount()
+//        );
+//
+//        userVoteCount.validateForCastingDecrement();
+//        Integer beforeCount = userVoteCount.getVoteCount();
+//        Integer afterCount = userVoteCount.calculateDecrementedCount();
+//
+//        userVoteCountRepository.decrementVoteCount(userId, userId);
+//        UserVoteCountHistory history = UserVoteCountHistory.create(
+//            userId, -1, beforeCount, afterCount
+//        );
+//        userVoteCountRepository.insertVoteCountHistory(history);
+//    }
 
     /**
      * URL에서 파일명 추출

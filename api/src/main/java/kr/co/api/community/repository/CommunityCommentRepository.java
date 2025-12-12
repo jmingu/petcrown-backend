@@ -151,6 +151,31 @@ public class CommunityCommentRepository {
     }
 
     /**
+     * 특정 부모 댓글의 모든 대댓글 삭제 (논리 삭제)
+     */
+    public void deleteRepliesByParentCommentId(Long parentCommentId, Long deleteUserId) {
+        dsl.update(COMMUNITY_COMMENT)
+                .set(COMMUNITY_COMMENT.DELETE_DATE, currentLocalDateTime())
+                .set(COMMUNITY_COMMENT.DELETE_USER_ID, deleteUserId)
+                .where(COMMUNITY_COMMENT.PARENT_COMMENT_ID.eq(parentCommentId))
+                .execute();
+    }
+
+    /**
+     * 특정 부모 댓글의 삭제되지 않은 대댓글 개수 조회
+     */
+    public int countRepliesByParentCommentId(Long parentCommentId) {
+        Integer count = dsl.selectCount()
+                .from(COMMUNITY_COMMENT)
+                .where(
+                        COMMUNITY_COMMENT.PARENT_COMMENT_ID.eq(parentCommentId)
+                                .and(COMMUNITY_COMMENT.DELETE_DATE.isNull())
+                )
+                .fetchOne(0, int.class);
+        return count != null ? count : 0;
+    }
+
+    /**
      * Record를 CommunityCommentQueryDto로 변환
      */
     private CommunityCommentQueryDto mapToCommunityCommentQueryDto(Record record) {

@@ -193,6 +193,20 @@ public class CommunityPostRepository {
     }
 
     /**
+     * 댓글 수 직접 업데이트
+     */
+    public void updateCommentCount(Long postId, int commentCount) {
+        dsl.update(COMMUNITY_POST)
+                .set(COMMUNITY_POST.COMMENT_COUNT, (long) commentCount)
+                .set(COMMUNITY_POST.UPDATE_DATE, currentLocalDateTime())
+                .where(
+                        COMMUNITY_POST.POST_ID.eq(postId)
+                                .and(COMMUNITY_POST.DELETE_DATE.isNull())
+                )
+                .execute();
+    }
+
+    /**
      * 게시글 삭제 (논리 삭제)
      */
     public void deleteById(Long postId, Long deleteUserId) {

@@ -39,7 +39,6 @@ public class UserService {
     private final JwtProperty jwtProperty;
     private final RoleRepository roleRepository;
     private final CompanyRepository companyRepository;
-    private final UserVoteCountRepository userVoteCountRepository;
     private final PetRepository petRepository;
 
     /**
@@ -129,10 +128,6 @@ public class UserService {
         emailVerificationRepository.insertEmailVerification(emailVerification);
         log.debug("Email verification code generated and saved for: {}", user.getEmail().getValue());
 
-
-        // 사용자 투표 카운트 초기화
-        UserVoteCount userVoteCount = UserVoteCount.createForRegistration(saveUser);
-        userVoteCountRepository.insertUserVoteCount(userVoteCount);
 
         // 이메일 인증 코드 발송
         emailService.sendVerificationEmailAsync(user.getEmail().getValue(), emailVerification.getVerificationCode());

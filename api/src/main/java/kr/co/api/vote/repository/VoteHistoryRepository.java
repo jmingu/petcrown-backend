@@ -31,6 +31,21 @@ public class VoteHistoryRepository {
     }
 
     /**
+     * 오늘 날짜에 사용자가 참여했는지 확인 (회원) - DB의 current_date 사용
+     */
+    public int countTodayByUser(Long userId, String voteCycle) {
+        Integer count = dsl.selectCount()
+                .from(VOTE_HISTORY)
+                .where(
+                        VOTE_HISTORY.USER_ID.eq(userId)
+                                .and(VOTE_HISTORY.HISTORY_DATE.eq(currentDate().cast(LocalDate.class)))  // DB 기준 날짜 비교
+                                .and(VOTE_HISTORY.VOTE_CYCLE.eq(kr.co.common.jooq.enums.VoteCycleType.valueOf(voteCycle)))
+                )
+                .fetchOne(0, int.class);
+        return count != null ? count : 0;
+    }
+
+    /**
      * 오늘 날짜에 특정 사용자가 특정 투표에 참여했는지 확인 (회원) - DB의 current_date 사용
      */
     public int countTodayVoteByUser(Long userId, Long voteId, String voteCycle) {
@@ -39,6 +54,21 @@ public class VoteHistoryRepository {
                 .where(
                         VOTE_HISTORY.USER_ID.eq(userId)
                                 .and(VOTE_HISTORY.VOTE_ID.eq(voteId))
+                                .and(VOTE_HISTORY.HISTORY_DATE.eq(currentDate().cast(LocalDate.class)))  // DB 기준 날짜 비교
+                                .and(VOTE_HISTORY.VOTE_CYCLE.eq(kr.co.common.jooq.enums.VoteCycleType.valueOf(voteCycle)))
+                )
+                .fetchOne(0, int.class);
+        return count != null ? count : 0;
+    }
+
+    /**
+     * 오늘 날짜에 이메일이 참여했는지 확인 (비회원) - DB의 current_date 사용
+     */
+    public int countTodayByEmail(String email, String voteCycle) {
+        Integer count = dsl.selectCount()
+                .from(VOTE_HISTORY)
+                .where(
+                        VOTE_HISTORY.EMAIL.eq(email)
                                 .and(VOTE_HISTORY.HISTORY_DATE.eq(currentDate().cast(LocalDate.class)))  // DB 기준 날짜 비교
                                 .and(VOTE_HISTORY.VOTE_CYCLE.eq(kr.co.common.jooq.enums.VoteCycleType.valueOf(voteCycle)))
                 )

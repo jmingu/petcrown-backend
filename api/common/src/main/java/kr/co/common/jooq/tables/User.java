@@ -18,8 +18,6 @@ import kr.co.common.jooq.tables.Company.CompanyPath;
 import kr.co.common.jooq.tables.EmailVerification.EmailVerificationPath;
 import kr.co.common.jooq.tables.Pet.PetPath;
 import kr.co.common.jooq.tables.Role.RolePath;
-import kr.co.common.jooq.tables.UserVoteCount.UserVoteCountPath;
-import kr.co.common.jooq.tables.UserVoteCountHistory.UserVoteCountHistoryPath;
 import kr.co.common.jooq.tables.records.UserRecord;
 
 import org.jooq.Condition;
@@ -315,32 +313,6 @@ public class User extends TableImpl<UserRecord> {
             _pet = new PetPath(this, null, Keys.PET__PET_USER_ID_FKEY.getInverseKey());
 
         return _pet;
-    }
-
-    private transient UserVoteCountHistoryPath _userVoteCountHistory;
-
-    /**
-     * Get the implicit to-many join path to the
-     * <code>public.user_vote_count_history</code> table
-     */
-    public UserVoteCountHistoryPath userVoteCountHistory() {
-        if (_userVoteCountHistory == null)
-            _userVoteCountHistory = new UserVoteCountHistoryPath(this, null, Keys.USER_VOTE_COUNT_HISTORY__USER_VOTE_COUNT_HISTORY_USER_FK.getInverseKey());
-
-        return _userVoteCountHistory;
-    }
-
-    private transient UserVoteCountPath _userVoteCount;
-
-    /**
-     * Get the implicit to-many join path to the
-     * <code>public.user_vote_count</code> table
-     */
-    public UserVoteCountPath userVoteCount() {
-        if (_userVoteCount == null)
-            _userVoteCount = new UserVoteCountPath(this, null, Keys.USER_VOTE_COUNT__USER_VOTE_COUNT_USER_FK.getInverseKey());
-
-        return _userVoteCount;
     }
 
     @Override

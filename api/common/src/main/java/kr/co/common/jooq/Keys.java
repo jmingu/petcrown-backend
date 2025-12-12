@@ -20,8 +20,6 @@ import kr.co.common.jooq.tables.PetMode;
 import kr.co.common.jooq.tables.Role;
 import kr.co.common.jooq.tables.Species;
 import kr.co.common.jooq.tables.User;
-import kr.co.common.jooq.tables.UserVoteCount;
-import kr.co.common.jooq.tables.UserVoteCountHistory;
 import kr.co.common.jooq.tables.VoteFileInfo;
 import kr.co.common.jooq.tables.VoteHistory;
 import kr.co.common.jooq.tables.VoteWeekly;
@@ -41,8 +39,6 @@ import kr.co.common.jooq.tables.records.PetRecord;
 import kr.co.common.jooq.tables.records.RoleRecord;
 import kr.co.common.jooq.tables.records.SpeciesRecord;
 import kr.co.common.jooq.tables.records.UserRecord;
-import kr.co.common.jooq.tables.records.UserVoteCountHistoryRecord;
-import kr.co.common.jooq.tables.records.UserVoteCountRecord;
 import kr.co.common.jooq.tables.records.VoteFileInfoRecord;
 import kr.co.common.jooq.tables.records.VoteHistoryRecord;
 import kr.co.common.jooq.tables.records.VoteWeeklyRecord;
@@ -83,8 +79,6 @@ public class Keys {
     public static final UniqueKey<RoleRecord> USER_ROLE_PKEY = Internal.createUniqueKey(Role.ROLE, DSL.name("user_role_pkey"), new TableField[] { Role.ROLE.ROLE_ID }, true);
     public static final UniqueKey<SpeciesRecord> SPECIES_PKEY = Internal.createUniqueKey(Species.SPECIES, DSL.name("species_pkey"), new TableField[] { Species.SPECIES.SPECIES_ID }, true);
     public static final UniqueKey<UserRecord> USER_PKEY = Internal.createUniqueKey(User.USER, DSL.name("user_pkey"), new TableField[] { User.USER.USER_ID }, true);
-    public static final UniqueKey<UserVoteCountRecord> USER_VOTE_COUNT_PK = Internal.createUniqueKey(UserVoteCount.USER_VOTE_COUNT, DSL.name("user_vote_count_pk"), new TableField[] { UserVoteCount.USER_VOTE_COUNT.USER_ID }, true);
-    public static final UniqueKey<UserVoteCountHistoryRecord> USER_VOTE_COUNT_HISTORY_PK = Internal.createUniqueKey(UserVoteCountHistory.USER_VOTE_COUNT_HISTORY, DSL.name("user_vote_count_history_pk"), new TableField[] { UserVoteCountHistory.USER_VOTE_COUNT_HISTORY.HISTORY_ID }, true);
     public static final UniqueKey<VoteFileInfoRecord> VOTE_FILE_INFO_PKEY = Internal.createUniqueKey(VoteFileInfo.VOTE_FILE_INFO, DSL.name("vote_file_info_pkey"), new TableField[] { VoteFileInfo.VOTE_FILE_INFO.VOTE_FILE_ID }, true);
     public static final UniqueKey<VoteHistoryRecord> VOTE_HISTORY_PK = Internal.createUniqueKey(VoteHistory.VOTE_HISTORY, DSL.name("vote_history_pk"), new TableField[] { VoteHistory.VOTE_HISTORY.VOTE_HISTORY_ID }, true);
     public static final UniqueKey<VoteHistoryRecord> VOTE_HISTORY_UNIQUE = Internal.createUniqueKey(VoteHistory.VOTE_HISTORY, DSL.name("vote_history_unique"), new TableField[] { VoteHistory.VOTE_HISTORY.HISTORY_DATE, VoteHistory.VOTE_HISTORY.USER_ID, VoteHistory.VOTE_HISTORY.VOTE_ID, VoteHistory.VOTE_HISTORY.VOTE_CYCLE }, true);
@@ -102,6 +96,4 @@ public class Keys {
     public static final ForeignKey<PetRecord, UserRecord> PET__PET_USER_ID_FKEY = Internal.createForeignKey(Pet.PET, DSL.name("pet_user_id_fkey"), new TableField[] { Pet.PET.USER_ID }, Keys.USER_PKEY, new TableField[] { User.USER.USER_ID }, true);
     public static final ForeignKey<UserRecord, CompanyRecord> USER__USER_COMPANY_ID_FKEY = Internal.createForeignKey(User.USER, DSL.name("user_company_id_fkey"), new TableField[] { User.USER.COMPANY_ID }, Keys.COMPANY_PKEY, new TableField[] { Company.COMPANY.COMPANY_ID }, true);
     public static final ForeignKey<UserRecord, RoleRecord> USER__USER_ROLE_ID_FKEY = Internal.createForeignKey(User.USER, DSL.name("user_role_id_fkey"), new TableField[] { User.USER.ROLE_ID }, Keys.USER_ROLE_PKEY, new TableField[] { Role.ROLE.ROLE_ID }, true);
-    public static final ForeignKey<UserVoteCountRecord, UserRecord> USER_VOTE_COUNT__USER_VOTE_COUNT_USER_FK = Internal.createForeignKey(UserVoteCount.USER_VOTE_COUNT, DSL.name("user_vote_count_user_fk"), new TableField[] { UserVoteCount.USER_VOTE_COUNT.USER_ID }, Keys.USER_PKEY, new TableField[] { User.USER.USER_ID }, true);
-    public static final ForeignKey<UserVoteCountHistoryRecord, UserRecord> USER_VOTE_COUNT_HISTORY__USER_VOTE_COUNT_HISTORY_USER_FK = Internal.createForeignKey(UserVoteCountHistory.USER_VOTE_COUNT_HISTORY, DSL.name("user_vote_count_history_user_fk"), new TableField[] { UserVoteCountHistory.USER_VOTE_COUNT_HISTORY.USER_ID }, Keys.USER_PKEY, new TableField[] { User.USER.USER_ID }, true);
 }

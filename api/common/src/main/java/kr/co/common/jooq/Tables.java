@@ -20,8 +20,6 @@ import kr.co.common.jooq.tables.PetMode;
 import kr.co.common.jooq.tables.Role;
 import kr.co.common.jooq.tables.Species;
 import kr.co.common.jooq.tables.User;
-import kr.co.common.jooq.tables.UserVoteCount;
-import kr.co.common.jooq.tables.UserVoteCountHistory;
 import kr.co.common.jooq.tables.VoteFileInfo;
 import kr.co.common.jooq.tables.VoteHistory;
 import kr.co.common.jooq.tables.VoteWeekly;
@@ -112,16 +110,6 @@ public class Tables {
      * The table <code>public.user</code>.
      */
     public static final User USER = User.USER;
-
-    /**
-     * The table <code>public.user_vote_count</code>.
-     */
-    public static final UserVoteCount USER_VOTE_COUNT = UserVoteCount.USER_VOTE_COUNT;
-
-    /**
-     * The table <code>public.user_vote_count_history</code>.
-     */
-    public static final UserVoteCountHistory USER_VOTE_COUNT_HISTORY = UserVoteCountHistory.USER_VOTE_COUNT_HISTORY;
 
     /**
      * The table <code>public.vote_file_info</code>.

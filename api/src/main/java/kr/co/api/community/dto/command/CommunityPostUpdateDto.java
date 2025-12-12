@@ -18,5 +18,6 @@ public class CommunityPostUpdateDto {
     private final String isPinned;
     private final Integer pinOrder;
     private final Long updateUserId;
+    private final List<String> imageUrls;
     private final List<MultipartFile> imageFiles;
 }

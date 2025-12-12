@@ -128,6 +128,10 @@ public class CommunityCommentService {
         log.info("Comment updated successfully: commentId={}", commentUpdateDto.getCommentId());
     }
 
+    /**
+     * 댓글삭제
+     * depth 0인 댓글 삭제 시, 연관된 모든 대댓글도 함께 삭제됨
+     */
     @Transactional
     public void deleteComment(Long commentId, Long deleteUserId) {
         CommunityCommentQueryDto existingComment = commentRepository.selectByCommentId(commentId);
@@ -135,12 +139,19 @@ public class CommunityCommentService {
             throw new PetCrownException(BusinessCode.COMMENT_NOT_FOUND);
         }
 
+        // depth 0인 댓글(최상위 댓글)인 경우, 대댓글들도 함께 삭제
+        if (existingComment.getDepth() == null || existingComment.getDepth() == 0) {
+            commentRepository.deleteRepliesByParentCommentId(commentId, deleteUserId);
+        }
+
+        // 댓글 삭제
         commentRepository.deleteById(commentId, deleteUserId);
 
-        // 게시글의 댓글 수 감소
-        postRepository.decrementCommentCount(existingComment.getPostId());
+        // 게시글의 댓글 수 재계산 후 업데이트
+        int commentCount = commentRepository.countByPostId(existingComment.getPostId());
+        postRepository.updateCommentCount(existingComment.getPostId(), commentCount);
 
-        log.info("Comment deleted successfully: commentId={}", commentId);
+        log.info("Comment deleted successfully: commentId={}, updatedCommentCount={}", commentId, commentCount);
     }
 
     @Transactional
