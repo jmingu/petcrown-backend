@@ -11,5 +11,5 @@ import java.util.List;
 @AllArgsConstructor
 public class VoteRankingResponseDto {
 
-    private List<VotePetResponseDto> ranking;
+    private List<VotePetRankResponseDto> ranking;
 }

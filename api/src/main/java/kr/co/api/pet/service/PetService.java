@@ -1,7 +1,9 @@
 package kr.co.api.pet.service;
 
 import kr.co.api.common.dto.FileInfoDto;
+import kr.co.api.common.repository.CommonDateRepository;
 import kr.co.api.common.repository.FileInfoRepository;
+import kr.co.api.game.service.GameScoreService;
 import kr.co.api.pet.domain.model.Breed;
 import kr.co.api.pet.domain.model.Ownership;
 import kr.co.api.pet.domain.model.Pet;
@@ -39,6 +41,8 @@ public class PetService {
     private final VoteRepository voteRepository;
     private final FileInfoRepository fileInfoRepository;
     private final ObjectStorageService objectStorageService;
+    private final CommonDateRepository commonDateRepository;
+    private final GameScoreService gameScoreService;
 
     /**
      * 펫 등록
@@ -187,11 +191,10 @@ public class PetService {
 
         // 투표와 관련된 삭제 제약 확인 (주간 투표 기준)
         try {
-            LocalDate today = LocalDate.now();
-            LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
+            LocalDate weekStartDate = commonDateRepository.selectCurrentWeekStartDate();
 
             VoteWeeklyDto existingWeeklyVote =
-                voteRepository.selectVoteWeeklyByPetIdAndWeek(petId, weekStart);
+                voteRepository.selectVoteWeeklyByPetIdAndWeek(petId, weekStartDate);
 
             // 현재 주에 활성화된 투표가 있으면 삭제 불가
             if (existingWeeklyVote != null) {
@@ -219,6 +222,8 @@ public class PetService {
             }
             fileInfoRepository.deleteByRefTableAndRefId(PET_REF_TABLE, petId, userId);
         }
+        // 게임 점수 삭제
+        gameScoreService.deleteScore(userId, petId);
 
         petRepository.deletePet(petId, userId);
 

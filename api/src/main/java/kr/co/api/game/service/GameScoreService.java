@@ -1,5 +1,6 @@
 package kr.co.api.game.service;
 
+import kr.co.api.common.repository.CommonDateRepository;
 import kr.co.api.game.domain.model.GameScore;
 import kr.co.api.game.dto.command.GameScoreDto;
 import kr.co.api.game.dto.command.GameScoreRegistrationDto;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +32,7 @@ public class GameScoreService {
     private final GameScoreRepository gameScoreRepository;
     private final PetRepository petRepository;
     private final UserRepository userRepository;
+    private final CommonDateRepository commonDateRepository;
 
     /**
      * 게임 스코어 등록 또는 업데이트
@@ -87,17 +90,27 @@ public class GameScoreService {
     }
 
     /**
-     * 주간 게임 랭킹 상위 N개 조회 (DB의 date_trunc로 주 계산)
+     * 이번주 랭킹조회
      */
-    public List<WeeklyRankingDto> getWeeklyTopRankings(int limit) {
-        return gameScoreRepository.findTopRankingsByCurrentWeek(limit);
+    public List<WeeklyRankingDto> getWeeklyTopRankings() {
+        LocalDate currentWeekStartDate = commonDateRepository.selectCurrentWeekStartDate();
+        return gameScoreRepository.findTopRankingsByCurrentWeek(currentWeekStartDate);
     }
 
     /**
      * 지난주 랭킹조회
      */
-    public List<WeeklyRankingDto> getLastWeeklyTopRankings(int limit) {
-        return gameScoreRepository.findLastWeekRankings(limit);
+    public List<WeeklyRankingDto> getLastWeeklyTopRankings() {
+        LocalDate lastWeekStartDate = commonDateRepository.selectLastWeekStartDate();
+        return gameScoreRepository.findTopRankingsByCurrentWeek(lastWeekStartDate);
+    }
+
+    /**
+     * 이번주 내 랭킹조회
+     */
+    public WeeklyRankingDto getWeeklyMyRankings(Long  userId) {
+        LocalDate currentWeekStartDate = commonDateRepository.selectCurrentWeekStartDate();
+        return gameScoreRepository.findMyRankingsByCurrentWeek(currentWeekStartDate, userId);
     }
 
     /**
@@ -123,6 +136,16 @@ public class GameScoreService {
         }
         return gameScoreRepository.findMaxScoreByUserIdAndCurrentWeek(userInfoDto.getUserId())
                 .orElse(null);
+    }
+
+    /**
+     * 게임 점수 삭제
+     */
+    public void deleteScore(Long userId, Long petId) {
+        LocalDate currentWeekStartDate = commonDateRepository.selectCurrentWeekStartDate();
+
+        gameScoreRepository.deleteScoreByUserIdAndCurrentWeek(userId,petId,currentWeekStartDate);
+
     }
 
 

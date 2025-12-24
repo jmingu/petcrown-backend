@@ -10,6 +10,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class WeeklyRankingDto {
 
+    private final Long scoreId;
     private final Integer ranking;
     private final Long userId;
     private final String nickname;

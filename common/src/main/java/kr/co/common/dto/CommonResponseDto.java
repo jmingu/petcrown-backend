@@ -13,6 +13,7 @@ public class CommonResponseDto {
     private int resultCode;
     private String resultMessageKo;
     private String resultMessageEn;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private Object result;
 
 

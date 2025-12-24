@@ -8,7 +8,9 @@ import kr.co.api.vote.dto.command.VoteMonthlyDto;
 import kr.co.api.vote.dto.command.VoteWeeklyDto;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -332,11 +334,10 @@ public class VoteRepository {
      * 현재 주의 weekStartDate 조회 (date_trunc 사용)
      */
     public LocalDate selectCurrentWeekStartDate() {
-        return dsl.select(
-                        function("date_trunc", String.class, inline("week"), currentDate())
-                                .cast(LocalDate.class).as("week_start_date")
-                )
-                .fetchOne(field("week_start_date"), LocalDate.class);
+        Field<LocalDate> weekStart =
+                DSL.field("date_trunc('week', current_date)::date", LocalDate.class);
+
+        return dsl.select(weekStart).fetchOne(weekStart);
     }
 
     /**

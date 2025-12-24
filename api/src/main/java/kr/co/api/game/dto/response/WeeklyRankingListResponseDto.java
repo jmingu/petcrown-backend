@@ -23,6 +23,9 @@ public class WeeklyRankingListResponseDto {
     @AllArgsConstructor
     public static class RankingItemDto {
 
+        @Schema(description = "스코어 ID", example = "1")
+        private Long scoreId;
+
         @Schema(description = "순위", example = "1")
         private Integer ranking;
 

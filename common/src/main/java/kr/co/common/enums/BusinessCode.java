@@ -61,7 +61,7 @@ public enum BusinessCode {
     INVALID_VERIFICATION_TOKEN(3309, "유효하지 않은 인증 토큰입니다", "Invalid verification token"),
     VERIFICATION_TOKEN_EXPIRED(3310, "인증 토큰이 만료되었습니다", "Verification token expired"),
     // 자신의 투표에는 투표 불가
-    CANNOT_VOTE_OWN_PET(3315, "자신의 펫에는 투표할 수 없습니다", "Cannot vote for your own pet"),
+    CANNOT_VOTE_OWN_PET(3315, "내 펫에는 투표할 수 없습니다", "Cannot vote for your own pet"),
 
     // 추가 비즈니스 코드들
     INVALID_PHONE_NUMBER(3111, "잘못된 전화번호 형식입니다", "Invalid phone number format"),

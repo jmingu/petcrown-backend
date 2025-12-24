@@ -62,11 +62,12 @@ public class GameRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> getWeeklyTopRankings() {
 
         // Service에서 내부용 Dto 리스트 받기
-        List<WeeklyRankingDto> rankings = gameScoreService.getWeeklyTopRankings(3);
+        List<WeeklyRankingDto> rankings = gameScoreService.getWeeklyTopRankings();
 
         // 내부용 Dto List → ResponseDto 변환
         List<WeeklyRankingListResponseDto.RankingItemDto> rankingItems = rankings.stream()
                 .map(dto -> new WeeklyRankingListResponseDto.RankingItemDto(
+                        dto.getScoreId(),
                         dto.getRanking(),
                         dto.getNickname(),
                         dto.getScore(),
@@ -89,11 +90,12 @@ public class GameRestController extends BaseController {
     public ResponseEntity<CommonResponseDto> getLastWeeklyTopRankings() {
 
         // Service에서 내부용 Dto 리스트 받기
-        List<WeeklyRankingDto> rankings = gameScoreService.getLastWeeklyTopRankings(3);
+        List<WeeklyRankingDto> rankings = gameScoreService.getLastWeeklyTopRankings();
 
         // 내부용 Dto List → ResponseDto 변환
         List<WeeklyRankingListResponseDto.RankingItemDto> rankingItems = rankings.stream()
                 .map(dto -> new WeeklyRankingListResponseDto.RankingItemDto(
+                        dto.getScoreId(),
                         dto.getRanking(),
                         dto.getNickname(),
                         dto.getScore(),
@@ -105,6 +107,36 @@ public class GameRestController extends BaseController {
         WeeklyRankingListResponseDto responseDto = new WeeklyRankingListResponseDto(rankingItems);
 
         return success(responseDto);
+    }
+
+    /**
+     * 주간 게임 내 랭킹 조회
+     */
+    @AuthRequired(authSkip = true)
+    @Operation(summary = "주간 게임 내 랭킹 조회", description = "주간 게임 내 랭킹 조회")
+    @GetMapping("/v1/my-weekly-rankings")
+    public ResponseEntity<CommonResponseDto> getWeeklyMyRankings(Principal principal) {
+
+        Long userId = Long.parseLong(principal.getName());
+
+        // Service에서 내부용 Dto 리스트 받기
+        WeeklyRankingDto dto = gameScoreService.getWeeklyMyRankings(userId);
+
+
+        if(dto == null){
+            return success(null);
+        }
+
+        // 내부용 Dto List → ResponseDto 변환
+
+        return success(new WeeklyRankingListResponseDto.RankingItemDto(
+                dto.getScoreId(),
+                dto.getRanking(),
+                dto.getNickname(),
+                dto.getScore(),
+                dto.getName(),
+                dto.getImageUrl()
+        ));
     }
 
     /**
